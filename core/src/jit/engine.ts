@@ -137,6 +137,8 @@ interface CompiledRegion {
   blocks: Map<number, number>;
   /** Block starts, ascending: used to work out how much of a block retired. */
   blockStarts: number[];
+  /** Block addresses in entry-index order, parallel to blockLengths. */
+  entryBlockStarts: number[];
   /** Instructions charged to the budget per block, indexed by entry index. */
   blockLengths: number[];
   moduleBytes: Uint8Array;
@@ -741,6 +743,7 @@ export class Engine {
         slot,
         blocks: new Map(blockStarts.map((start, i) => [start >>> 0, i])),
         blockStarts: [...blockStarts].map((x) => x >>> 0).sort((a, b) => a - b),
+        entryBlockStarts: blockStarts.map((x) => x >>> 0),
         blockLengths: blockLengths,
         moduleBytes: bytes,
         optimized: optimize,
@@ -810,7 +813,7 @@ export class Engine {
   private retirePartial(region: CompiledRegion, pc: number): number {
     const index = this.blockIndexAt(region, pc);
     if (index < 0) return 0;
-    const executed = (pc - region.blockStarts[index]!) >>> 2;
+    const executed = (pc - region.entryBlockStarts[index]!) >>> 2;
     const charged = region.blockLengths[index] ?? 0;
     return executed > charged ? charged : executed;
   }
@@ -869,7 +872,7 @@ export class Engine {
   private retireCorrection(region: CompiledRegion, pc: number): number {
     const index = this.blockIndexAt(region, pc);
     if (index < 0) return 0;
-    const executed = (pc - region.blockStarts[index]!) >>> 2;
+    const executed = (pc - region.entryBlockStarts[index]!) >>> 2;
     const charged = region.blockLengths[index] ?? 0;
     if (executed >= charged) return 0;
     return executed - charged; // negative

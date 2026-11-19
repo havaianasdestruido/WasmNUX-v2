@@ -846,3 +846,34 @@ fin:
     expect(Array.from(m.cpu.regs)).toEqual(first);
   });
 });
+
+describe('JIT retirement across sliced nested loops', () => {
+  it('matches the interpreter when region block order differs from address order', () => {
+    const src = `
+      li a1, ${SCRATCH}
+      li a2, 32
+      li s1, 20
+      li t0, 0
+    outer:
+      li t1, 0
+    inner:
+      slli t2, t1, 2
+      add t3, a1, t2
+      lw t5, 0(t3)
+      add s0, s0, t5
+      sw t5, 0(t3)
+      addi t1, t1, 1
+      blt t1, a2, inner
+      addi t0, t0, 1
+      blt t0, s1, outer
+      mv a0, s0
+      ${EXIT_ASM}`;
+    const options = { budget: 100_000, tickInterval: 37 };
+    const expected = runInterpreted(src, options);
+    const actual = run(src, { ...options, jit: { hotThreshold: 1, interpChunk: 2 } });
+    expect(actual.cpu.stop).toBe('exit');
+    expect(actual.machine.stats().jitInstructions).toBeGreaterThan(0);
+    expect(actual.instructions).toBe(expected.instructions);
+    expect(Array.from(actual.cpu.regs)).toEqual(Array.from(expected.cpu.regs));
+  });
+});

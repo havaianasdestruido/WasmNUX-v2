@@ -59,8 +59,10 @@ full-width RV64 addresses and PCs; full privileged architecture; storage
 crash-consistency; bounded copies and buffers; cyclic DNS pointers; branch and
 assembler range checks; thorough independent SMP/AMO stress tests; additional
 MMU fault, permission, TLB and JIT interactions. The current test results do not
-prove these are correct. A performance run showed mismatched retired instruction
-counts on memory-copy, matrix and calls workloads between interpreter and JIT.
+prove these are correct. A sliced nested-loop regression exposed and fixed a JIT block-order retirement
+accounting error. After the fix, a one-sample JIT benchmark showed matching
+counts for memory-copy, matrix and calls, but device-poll still differed
+(interpreter 100007, JIT globals/trap 100001); further investigation is required.
 
 ## 6. Compatibility changes
 
@@ -79,8 +81,10 @@ script”. `web/test` runs in Node and is not a substitute for browser testing.
 
 `npm run bench` ran on Node 22.22.3, Linux x64, 2 vCPUs on a dirty checkout on
 2026-11-19. It printed best-of-sample results with reported sample spreads as
-high as 1017%, and different retired counts for several JIT variants. These
-numbers are **not** accepted as validated KPIs. No browser benchmarks were
+high as 1017%, and different retired counts for several JIT variants. A later
+`--suite jit --reps 1` run after the block-order fix still showed a device-poll
+count mismatch; it was run concurrently with tests and is not a clean performance
+measurement. These numbers are **not** accepted as validated KPIs. No browser benchmarks were
 run. A reproducible, warmed multi-sample run with median and dispersion, a
 separate validation phase, and matching architectural counters is still needed.
 

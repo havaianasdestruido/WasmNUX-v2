@@ -44,8 +44,9 @@ privileged architecture implementation):
 ## Numbers
 
 Historical Phase 0 samples are in `benchmarks/results/` and the original spike
-notes. The latest integration run exposed differing interpreter/JIT instruction
-counts on several workloads, and high sample spread. Do not treat its speedups
+notes. A retirement-accounting fix made several workloads agree, but the latest
+check still exposed differing interpreter/JIT counts for device polling and the
+original run showed high sample spread. Do not treat its speedups
 as correctness-validated or compare them across hosts. See
 [integration status](docs/integration-status.md).
 
