@@ -6,3 +6,6 @@ docs/adr/template.md
 *.snap
 package-lock.json
 web/vendor
+# Kept byte-identical: it is the upstream-authored specification, and
+# reflowing its tables adds churn to every diff without changing meaning.
+ROADMAP.md

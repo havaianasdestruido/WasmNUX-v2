@@ -13,7 +13,13 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['core/test/**/*.test.ts', 'host/test/**/*.test.ts', 'relay/test/**/*.test.ts', 'benchmarks/test/**/*.test.ts'],
+    include: [
+      'core/test/**/*.test.ts',
+      'host/test/**/*.test.ts',
+      'relay/test/**/*.test.ts',
+      'benchmarks/test/**/*.test.ts',
+      'web/test/**/*.test.ts',
+    ],
     // The SMP litmus/worker tests need real threads; keep them off the fake-timer path.
     testTimeout: 60_000,
     hookTimeout: 60_000,
