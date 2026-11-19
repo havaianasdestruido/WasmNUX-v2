@@ -14,6 +14,12 @@ test("Spike E: SpscPacketRing preserves packet contents and order", () => {
   assert.equal(ring.dequeue(), null);
 });
 
+test("Spike E: SpscPacketRing rejects packets exceeding slot capacity", () => {
+  const ring = new SpscPacketRing(16, 128);
+  const oversized = new Uint8Array(127); // max payload is 128 - 2 = 126
+  assert.equal(ring.enqueue(oversized), false);
+});
+
 test("Spike E: detects Direct Sockets IWA vs relay fallback", () => {
   assert.equal(detectNetworkTier({}), "userspace-tcpip-relay");
   assert.equal(detectNetworkTier({ TCPSocket: function () {} }), "direct-sockets-iwa");

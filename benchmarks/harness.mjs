@@ -1,7 +1,7 @@
 import { execSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 import { runSpikeA } from "../spikes/spike-a-jit/bench.mjs";
 import { runSpikeB } from "../spikes/spike-b-smp/bench.mjs";
@@ -44,7 +44,7 @@ export async function runAllBenchmarks({ writeReport = true } = {}) {
   return report;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const report = await runAllBenchmarks();
   console.log(JSON.stringify(report, null, 2));
 }

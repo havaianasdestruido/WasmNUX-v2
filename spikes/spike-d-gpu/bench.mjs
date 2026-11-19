@@ -1,15 +1,21 @@
 import { performance } from "node:perf_hooks";
+import { pathToFileURL } from "node:url";
 import { GPU_PATHS, CommandStreamRing } from "./gpu-paths.mjs";
 
 export function runSpikeD() {
   const ring = new CommandStreamRing(1024 * 1024);
   const draws = 100_000;
+  const batchSize = 4096;
 
   const t0 = performance.now();
+  let checksum = 0;
   for (let i = 0; i < draws; i++) {
-    ring.pushDraw(i & 0xff, 36, 1);
+    if (!ring.pushDraw(i & 0xff, 36, 1)) {
+      checksum = (checksum + ring.drain(batchSize)) | 0;
+      ring.pushDraw(i & 0xff, 36, 1);
+    }
   }
-  const checksum = ring.drain(draws);
+  checksum = (checksum + ring.drain()) | 0;
   const cmdMs = performance.now() - t0;
 
   // Simulate 1080p RGBA8 scanout copy (damage rect = 10% of frame)
@@ -32,6 +38,6 @@ export function runSpikeD() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike D (Display + GPU):", JSON.stringify(runSpikeD(), null, 2));
 }

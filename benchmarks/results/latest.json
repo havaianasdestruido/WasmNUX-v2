@@ -1,73 +1,73 @@
 {
-  "timestamp": "2026-11-19T01:32:16.593Z",
+  "timestamp": "2026-11-19T17:01:15.668Z",
   "commit": "fee2d04",
   "nodeVersion": "v22.22.3",
   "spikes": {
     "spikeA_jit": {
       "interpRes": "1999000",
       "jitRes": "1999000",
-      "interpMs": 47.646,
-      "jitMs": 0.839,
-      "compileMs": 0.604,
-      "interpMips": 63,
-      "jitMips": 3579.06,
-      "speedup": 56.81,
+      "interpMs": 36.917,
+      "jitMs": 0.67,
+      "compileMs": 0.446,
+      "interpMips": 81.3,
+      "jitMips": 4482.63,
+      "speedup": 55.13,
       "wasmBytes": 84
     },
     "spikeB_smp": {
       "lrsc4Expected": 400000,
       "lrsc4Actual": 400000,
-      "lrsc4Ms": 142.56,
+      "lrsc4Ms": 116.29,
       "amo4Expected": 400000,
       "amo4Actual": 400000,
-      "amo4Ms": 130.25,
-      "par1Ms": 98.73,
-      "par4Ms": 301.16,
-      "scalingPerCore": 0.33
+      "amo4Ms": 94.13,
+      "par1Ms": 57.25,
+      "par4Ms": 128.64,
+      "scalingPerCore": 0.45
     },
     "spikeC_storage": [
       {
         "chunkSize": 4096,
-        "seqWriteMBs": 2.5,
-        "seqReadMBs": 1798.3,
-        "rand4kIOPS": 801964
+        "seqWriteMBs": 392.1,
+        "seqReadMBs": 2667.1,
+        "rand4kIOPS": 460786
       },
       {
         "chunkSize": 65536,
-        "seqWriteMBs": 103,
-        "seqReadMBs": 7957,
-        "rand4kIOPS": 695375
+        "seqWriteMBs": 548.9,
+        "seqReadMBs": 10265.4,
+        "rand4kIOPS": 824323
       },
       {
         "chunkSize": 262144,
-        "seqWriteMBs": 334.6,
-        "seqReadMBs": 2548.1,
-        "rand4kIOPS": 1197914
+        "seqWriteMBs": 870.6,
+        "seqReadMBs": 6122.6,
+        "rand4kIOPS": 751292
       },
       {
         "chunkSize": 1048576,
-        "seqWriteMBs": 1220.3,
-        "seqReadMBs": 10476.6,
-        "rand4kIOPS": 1190557
+        "seqWriteMBs": 1373.9,
+        "seqReadMBs": 7212.9,
+        "rand4kIOPS": 847679
       }
     ],
     "spikeD_gpu": {
       "recommendedPath": "Custom virtio-webgpu + Mesa driver",
       "fallbackPath": "lavapipe/llvmpipe (Wasm SIMD + threads)",
-      "drawsPerSec": 19872794,
+      "drawsPerSec": 17457305,
       "scanoutMsPerFrame1080p": 0.025,
       "checksum": 16342320
     },
     "spikeE_network": {
       "tier": "userspace-tcpip-relay",
       "packets": 50000,
-      "throughputMBs": 887,
-      "ms": 80.63
+      "throughputMBs": 747.9,
+      "ms": 95.63
     },
     "spikeF_terminal": {
       "lines": 20000,
-      "throughputMBs": 39.8,
-      "ms": 24.92,
+      "throughputMBs": 2.3,
+      "ms": 493.39,
       "atlasSize": 28
     }
   }

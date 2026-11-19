@@ -29,12 +29,15 @@ export class GlyphAtlas {
       this.cache.set(key, entry);
       return { hit: true, entry };
     }
+    let slotIdx;
     if (this.cache.size >= this.maxGlyphs) {
-      const oldest = this.cache.keys().next().value;
-      this.cache.delete(oldest);
+      const oldestKey = this.cache.keys().next().value;
+      slotIdx = this.cache.get(oldestKey).slotIdx;
+      this.cache.delete(oldestKey);
+    } else {
+      slotIdx = this.cache.size;
     }
-    const idx = this.cache.size;
-    const entry = { u: (idx % 64) * 16, v: Math.floor(idx / 64) * 32, w: 16, h: 32 };
+    const entry = { slotIdx, u: (slotIdx % 64) * 16, v: Math.floor(slotIdx / 64) * 32, w: 16, h: 32 };
     this.cache.set(key, entry);
     return { hit: false, entry };
   }
@@ -52,14 +55,15 @@ export class TerminalGrid {
   }
 
   writeText(text) {
-    for (const ch of text) {
-      const cp = ch.codePointAt(0);
+    const segmenter = new Intl.Segmenter("en", { granularity: "grapheme" });
+    for (const { segment } of segmenter.segment(text)) {
+      const cp = segment.codePointAt(0);
       if (cp === 0x0a) {
         this.cursorX = 0;
         this.cursorY = (this.cursorY + 1) % this.rows;
         continue;
       }
-      const width = charDisplayWidth(cp);
+      const width = segment.length > 1 && cp >= 0x1f000 ? 2 : charDisplayWidth(cp);
       if (width === 0) continue;
       if (this.cursorX + width > this.cols) {
         this.cursorX = 0;

@@ -38,23 +38,32 @@ export const GPU_PATHS = {
 export class CommandStreamRing {
   constructor(byteLength = 65536) {
     this.buf = new Uint32Array(new SharedArrayBuffer(byteLength));
-    this.writeIdx = 0;
+    this.capacity = Math.floor(this.buf.length / 4);
+    this.writeSlot = 0;
+    this.readSlot = 0;
+    this.count = 0;
   }
 
   pushDraw(pipelineId, vertexCount, instanceCount) {
-    const idx = this.writeIdx;
+    if (this.count >= this.capacity) return false;
+    const idx = this.writeSlot * 4;
     this.buf[idx] = 0x01; // CMD_DRAW
     this.buf[idx + 1] = pipelineId;
     this.buf[idx + 2] = vertexCount;
     this.buf[idx + 3] = instanceCount;
-    this.writeIdx = (idx + 4) % this.buf.length;
+    this.writeSlot = (this.writeSlot + 1) % this.capacity;
+    this.count++;
+    return true;
   }
 
-  drain(count) {
+  drain(maxCount = this.count) {
+    const toDrain = Math.min(maxCount, this.count);
     let checksum = 0;
-    for (let i = 0; i < count; i++) {
-      const idx = (i * 4) % this.buf.length;
+    for (let i = 0; i < toDrain; i++) {
+      const idx = this.readSlot * 4;
       checksum = (checksum + this.buf[idx + 1] + this.buf[idx + 2]) | 0;
+      this.readSlot = (this.readSlot + 1) % this.capacity;
+      this.count--;
     }
     return checksum;
   }

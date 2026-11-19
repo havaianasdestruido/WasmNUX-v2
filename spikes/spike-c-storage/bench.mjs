@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { pathToFileURL } from "node:url";
 import { CowBlockDevice, MemorySyncAccessHandle } from "./opfs-block.mjs";
 
 export function runSpikeC() {
@@ -44,6 +45,6 @@ export function runSpikeC() {
   return results;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike C (Storage):", JSON.stringify(runSpikeC(), null, 2));
 }

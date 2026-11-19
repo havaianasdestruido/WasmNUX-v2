@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { pathToFileURL } from "node:url";
 import { TerminalGrid, GlyphAtlas } from "./terminal-grid.mjs";
 
 export function runSpikeF() {
@@ -16,7 +17,7 @@ export function runSpikeF() {
     atlas.getOrInsert(ch);
   }
   const ms = performance.now() - t0;
-  const totalBytes = lines * line.length;
+  const totalBytes = lines * Buffer.byteLength(line, "utf8");
 
   return {
     lines,
@@ -26,6 +27,6 @@ export function runSpikeF() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike F (Terminal):", JSON.stringify(runSpikeF(), null, 2));
 }

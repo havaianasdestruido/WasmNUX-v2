@@ -15,13 +15,24 @@ test("Spike F: wide chars and emoji occupy 2 cells and track damage", () => {
   assert.deepEqual(grid.flushDamage(), []);
 });
 
-test("Spike F: GlyphAtlas caches and evicts LRU", () => {
+test("Spike F: GlyphAtlas caches, evicts LRU, and reuses evicted slot", () => {
   const atlas = new GlyphAtlas(2);
-  assert.equal(atlas.getOrInsert("a").hit, false);
-  assert.equal(atlas.getOrInsert("b").hit, false);
+  const a = atlas.getOrInsert("a");
+  const b = atlas.getOrInsert("b");
+  assert.equal(a.hit, false);
+  assert.equal(b.hit, false);
   assert.equal(atlas.getOrInsert("a").hit, true);
-  assert.equal(atlas.getOrInsert("c").hit, false); // evicts "b"
+  const c = atlas.getOrInsert("c"); // evicts "b"
+  assert.equal(c.hit, false);
   assert.equal(atlas.cache.has("b"), false);
+  assert.equal(c.entry.slotIdx, b.entry.slotIdx);
+  assert.notEqual(c.entry.slotIdx, a.entry.slotIdx);
+});
+
+test("Spike F: ZWJ emoji sequence occupies 2 columns", () => {
+  const grid = new TerminalGrid(80, 24);
+  grid.writeText("👨‍👩‍👧‍👦");
+  assert.equal(grid.cursorX, 2);
 });
 
 test("Spike F: benchmark runs cleanly", () => {

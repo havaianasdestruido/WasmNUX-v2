@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { pathToFileURL } from "node:url";
 import { SpscPacketRing, detectNetworkTier } from "./net-ring.mjs";
 
 export function runSpikeE() {
@@ -23,6 +24,6 @@ export function runSpikeE() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike E (Network):", JSON.stringify(runSpikeE(), null, 2));
 }

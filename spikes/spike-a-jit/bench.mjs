@@ -1,4 +1,5 @@
 import { performance } from "node:perf_hooks";
+import { pathToFileURL } from "node:url";
 import { Rv64Interpreter, addi, add, blt, ecall } from "./rv64i.mjs";
 import { compileRv64ToWasm } from "./wasm-jit.mjs";
 
@@ -73,6 +74,6 @@ export function runSpikeA() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike A (RV64I -> Wasm JIT):", JSON.stringify(runSpikeA(), null, 2));
 }

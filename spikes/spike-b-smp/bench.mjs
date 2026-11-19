@@ -1,6 +1,6 @@
 import { Worker } from "node:worker_threads";
 import { performance } from "node:perf_hooks";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +54,6 @@ export async function runSpikeB() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   console.log("Spike B (SMP):", JSON.stringify(await runSpikeB(), null, 2));
 }

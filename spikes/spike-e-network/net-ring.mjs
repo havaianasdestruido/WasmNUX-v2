@@ -11,16 +11,17 @@ export class SpscPacketRing {
   }
 
   enqueue(packet) {
+    if (packet.byteLength > this.slotSize - 2) return false; // reject oversized packet
     const head = Atomics.load(this.ctrl, 0);
     const tail = Atomics.load(this.ctrl, 1);
     const nextHead = (head + 1) % this.slotCount;
     if (nextHead === tail) return false; // full
 
     const offset = head * this.slotSize;
-    const len = Math.min(packet.byteLength, this.slotSize - 2);
+    const len = packet.byteLength;
     this.data[offset] = len & 0xff;
     this.data[offset + 1] = (len >> 8) & 0xff;
-    this.data.set(packet.subarray(0, len), offset + 2);
+    this.data.set(packet, offset + 2);
 
     Atomics.store(this.ctrl, 0, nextHead);
     return true;
