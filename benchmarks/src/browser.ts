@@ -33,6 +33,16 @@ export interface BrowserRunOptions {
   headless?: boolean;
 }
 
+/**
+ * How long to wait for a page before calling it hung.
+ *
+ * Twenty minutes is longer than CI is willing to spend discovering that a page
+ * died, and a dead renderer produces neither a report nor an error - just
+ * silence until the timeout expires. Ten minutes is well past a legitimate run
+ * (the same suites take ~20 s in Node) and short enough that the failure is cheap.
+ */
+export const DEFAULT_BROWSER_TIMEOUT_MS = 10 * 60_000;
+
 const ENTRY = fileURLToPath(new URL('./browser-entry.ts', import.meta.url));
 
 /** Bundle the browser entry point into a single ESM file. */
@@ -111,7 +121,14 @@ export async function serveBundle(opts: {
     rejectDone = rej;
   });
   const timer = setTimeout(
-    () => rejectDone(new Error(`browser run timed out after ${opts.timeoutMs} ms`)),
+    () =>
+      rejectDone(
+        new Error(
+          `browser run timed out after ${opts.timeoutMs} ms with no report from the page.\n` +
+            `last progress: ${logs.length ? logs[logs.length - 1] : '(nothing logged)'}\n` +
+            `a silent page usually means the renderer died; the log lines above show the last case it reached.`,
+        ),
+      ),
     opts.timeoutMs,
   );
 
@@ -241,7 +258,7 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     code,
     port: opts.port ?? 0,
     query,
-    timeoutMs: opts.timeoutMs ?? 20 * 60_000,
+    timeoutMs: opts.timeoutMs ?? DEFAULT_BROWSER_TIMEOUT_MS,
   });
 
   const { chromium } = await import('playwright-core');
@@ -261,6 +278,13 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     const page = await browser.newPage();
     page.on('console', (msg) => process.stdout.write(`  [console.${msg.type()}] ${msg.text()}\n`));
     page.on('pageerror', (err) => process.stdout.write(`  [pageerror] ${err.message}\n`));
+    // A crashed renderer will never POST a report. Without these handlers the
+    // CLI waits out the whole timeout and then reports a mystery.
+    page.on('crash', () => {
+      process.stdout.write('  [crash] the renderer crashed\n');
+      served.close();
+    });
+    page.on('close', () => process.stdout.write('  [close] the page closed before reporting\n'));
     process.stdout.write(`launching ${executablePath}\nloading ${served.url}\n`);
     await page.goto(served.url, { waitUntil: 'load', timeout: 60_000 });
     const isolated = await page.evaluate('crossOriginIsolated');

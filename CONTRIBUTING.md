@@ -115,8 +115,14 @@ Two known-noisy situations:
   environment (runtime, CPUs, memory, git commit, Wasm feature probes) for
   exactly this reason.
 - **A gate failure on a loaded machine is usually noise.** Re-run before
-  believing it. If a case is genuinely bimodal, give it a per-row `tolerance`
-  rather than widening the global one.
+  believing it. Measured on the 2-vCPU box these baselines came from: the same
+  tree, gated repeatedly, flags between 0 and 2 of 48 rows per run at the default
+  20% tolerance - one `matrix` configuration swings ±25% between processes even
+  though its 25 samples within a process agree with each other. That is why CI
+  _records_ benchmarks and gates only when a baseline exists for that runner
+  label, and why one red gate on a shared runner is not by itself a reason to
+  revert. If a case is genuinely bimodal, give it a per-row `tolerance` rather
+  than widening the global one.
 
 Results are data, not prose: `npm run report -- --md` renders the latest result
 file, and numbers quoted in a document should name the result file they came

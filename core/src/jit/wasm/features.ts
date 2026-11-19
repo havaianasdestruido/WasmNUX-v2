@@ -26,8 +26,14 @@ export interface WasmFeatureReport {
   exceptions: boolean;
   /** Largest 32-bit memory we could reserve (pages of 64 KiB). */
   maxMemory32Pages: number;
-  /** Largest shared memory we could reserve (pages of 64 KiB). */
+  /**
+   * Largest shared memory we could reserve (pages of 64 KiB). Bounded by
+   * `sharedCeilingPages`, which is also reported, so a small number here is
+   * distinguishable from "we did not dare probe higher".
+   */
   maxSharedMemoryPages: number;
+  /** Ceiling the shared probe was allowed to reach (pages of 64 KiB). */
+  sharedProbeCeilingPages: number;
   hardwareConcurrency: number;
   crossOriginIsolated: boolean | null;
   isWorker: boolean;
@@ -45,7 +51,30 @@ const validate = (build: (b: WasmModuleBuilder) => void): boolean => {
   }
 };
 
-export function probeWasmFeatures(): WasmFeatureReport {
+export interface ProbeOptions {
+  /**
+   * Highest shared-memory reservation the probe may attempt, in 64 KiB pages.
+   *
+   * A shared `WebAssembly.Memory` is backed by a `SharedArrayBuffer`, and
+   * browsers commit that eagerly rather than reserving address space the way
+   * V8-in-Node does: probing the full 4 GiB in a renderer can exhaust it, and a
+   * dead renderer reports nothing at all. Callers that run in a page therefore
+   * pass `SHARED_PROBE_CEILING_BROWSER`; Node keeps the full range, which is
+   * where the 4 GiB reservation result in ADR-0004 was measured.
+   */
+  sharedCeilingPages?: number;
+}
+
+/** Full 32-bit range: safe where reservations are lazy (V8 in Node). */
+export const SHARED_PROBE_CEILING_FULL = 65536;
+/** 256 MiB: safe to allocate eagerly inside a browser renderer. */
+export const SHARED_PROBE_CEILING_BROWSER = 4096;
+
+export function probeWasmFeatures(opts: ProbeOptions = {}): WasmFeatureReport {
+  const sharedCeiling = Math.min(
+    SHARED_PROBE_CEILING_FULL,
+    opts.sharedCeilingPages ?? SHARED_PROBE_CEILING_FULL,
+  );
   const nav = (globalThis as { navigator?: { userAgent?: string; hardwareConcurrency?: number } }).navigator;
 
   // Shared memory (the threads proposal's entry ticket).
@@ -132,8 +161,9 @@ export function probeWasmFeatures(): WasmFeatureReport {
     memory64,
     tailCalls,
     exceptions,
-    maxMemory32Pages: probeMaxPages(false),
-    maxSharedMemoryPages: probeMaxPages(true),
+    maxMemory32Pages: probeMaxPages(false, SHARED_PROBE_CEILING_FULL),
+    maxSharedMemoryPages: probeMaxPages(true, sharedCeiling),
+    sharedProbeCeilingPages: sharedCeiling,
     hardwareConcurrency: nav?.hardwareConcurrency ?? 1,
     crossOriginIsolated:
       typeof (globalThis as { crossOriginIsolated?: boolean }).crossOriginIsolated === 'boolean'
@@ -146,12 +176,15 @@ export function probeWasmFeatures(): WasmFeatureReport {
 }
 
 /** Binary-search the largest memory we can reserve without actually touching it. */
-function probeMaxPages(shared: boolean): number {
+function probeMaxPages(shared: boolean, ceiling: number): number {
   // Probe `maximum` with `initial: 1`, i.e. what a guest could *reserve* and
   // grow into. Probing `initial: pages` instead would measure how much the
   // runtime is willing to commit right now, which is a different (and much
   // smaller) number, and which used to make this report 1024 pages for shared
   // memory while a 65536-page reservation succeeds in microseconds.
+  //
+  // The ceiling exists because "succeeds in microseconds" is a property of V8 in
+  // Node, not of every engine: see ProbeOptions.
   const tryPages = (pages: number): boolean => {
     try {
       new WebAssembly.Memory({ initial: 1, maximum: pages, shared });
@@ -160,7 +193,7 @@ function probeMaxPages(shared: boolean): number {
       return false;
     }
   };
-  const cap = 65536; // 4 GiB, the whole 32-bit address space
+  const cap = ceiling; // 65536 pages = 4 GiB, the whole 32-bit address space
   let lo = 1;
   let hi = cap;
   if (tryPages(hi)) return hi;

@@ -17,6 +17,7 @@
  */
 
 import { WasmFeatures } from '@wasmnux/core';
+import type { ProbeOptions } from '@wasmnux/core';
 import type {
   BenchCase,
   BenchEnv,
@@ -43,6 +44,10 @@ export interface MeasureOptions {
   minSampleMs?: number;
   /** Upper bound on repetitions when `minSampleMs` is set. */
   maxReps?: number;
+  /** Called before each case, so a long run (a browser page) can show progress. */
+  onProgress?: (line: string) => void;
+  /** Passed to `captureEnv`; a browser page must bound the shared-memory probe. */
+  envOptions?: ProbeOptions;
 }
 
 export const DEFAULT_REPS = 5;
@@ -57,7 +62,7 @@ export const DEFAULT_MIN_SAMPLE_MS = 20;
  * provenance (git, cpu model, total memory) is filled in by the CLI via
  * `store.captureGit` and `withHostInfo`.
  */
-export function captureEnv(): BenchEnv {
+export function captureEnv(opts: ProbeOptions = {}): BenchEnv {
   const nav = (globalThis as { navigator?: { userAgent?: string; hardwareConcurrency?: number } }).navigator;
   const proc = (
     globalThis as {
@@ -78,7 +83,7 @@ export function captureEnv(): BenchEnv {
     arch: proc?.arch ?? 'unknown',
     cpus: nav?.hardwareConcurrency ?? 0,
     totalMemoryMB: 0,
-    wasm: WasmFeatures.probeWasmFeatures(),
+    wasm: WasmFeatures.probeWasmFeatures(opts),
   };
 }
 
@@ -159,6 +164,7 @@ function metricOf(c: BenchCase, r: CaseResult): CaseResult['metric'] {
 
 /** Measure every variant of one case. */
 export function measureCase(suite: Suite, c: BenchCase, opts: MeasureOptions = {}): CaseResult[] {
+  opts.onProgress?.(`${suite.id}/${c.name}: ${c.variants.length} variant(s)`);
   return c.variants.map((v) => {
     const r = measureVariant(suite.id, c.name, v, opts);
     r.metric = metricOf(c, r);
@@ -179,7 +185,12 @@ export function runSuites(suites: Suite[], opts: MeasureOptions = {}): BenchRepo
   const started = performance.now();
   const results: CaseResult[] = [];
   for (const s of suites) results.push(...runSuite(s, opts));
-  return { version: 1, env: captureEnv(), results, durationMs: performance.now() - started };
+  return {
+    version: 1,
+    env: captureEnv(opts.envOptions ?? {}),
+    results,
+    durationMs: performance.now() - started,
+  };
 }
 
 /**

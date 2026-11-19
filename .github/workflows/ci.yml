@@ -102,8 +102,12 @@ jobs:
       # Cross-origin isolated (the runner sets COOP/COEP), so SharedArrayBuffer
       # and Wasm atomics exist and the atomics case measures the real path.
       - name: Measure in Chromium
-        run: npm run bench:browser -- --suite jit,wasm --reps 5 --out browser-report.json
+        # --timeout-min bounds a hung page: a renderer that dies produces no
+        # report and no error, only silence, and the default wait is longer than
+        # it is worth spending to find that out.
+        run: npm run bench:browser -- --suite jit,wasm --reps 5 --timeout-min 8 --out browser-report.json
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: benchmarks-browser-${{ github.sha }}
           path: browser-report.json

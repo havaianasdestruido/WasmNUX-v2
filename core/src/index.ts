@@ -57,7 +57,12 @@ export {
   createFuncTable,
 } from './jit/wasm/encoder.ts';
 export * as WasmFeatures from './jit/wasm/features.ts';
-export type { AtomicsMicroResult, WasmFeatureReport } from './jit/wasm/features.ts';
+export {
+  SHARED_PROBE_CEILING_BROWSER,
+  SHARED_PROBE_CEILING_FULL,
+  probeWasmFeatures,
+} from './jit/wasm/features.ts';
+export type { AtomicsMicroResult, ProbeOptions, WasmFeatureReport } from './jit/wasm/features.ts';
 
 // Devices.
 export { DeviceBus, truncate, type Device } from './devices/bus.ts';

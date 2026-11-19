@@ -94,10 +94,18 @@ RAM and no control page.
   which makes COOP/COEP a hard dependency of the whole product (ADR-0010). In
   Node it reports `null`; in a browser without the headers, shared memory
   construction throws.
-- **Shared memory is committed more eagerly than private memory on some
-  engines.** Reservation was free here, but a browser under memory pressure may
-  refuse a 65536-page shared maximum. The engine should fall back to a smaller
-  maximum derived from `navigator.deviceMemory`, and report it via `wnx doctor`.
+- **Shared memory is committed more eagerly than private memory in browsers, and
+  the 4 GiB shared figure above is a Node figure.** Probing it inside a renderer
+  killed the page outright: the first CI browser run produced twenty minutes of
+  silence because the capability probe binary-searched the shared maximum up to
+  4 GiB and the renderer never came back. The probe is now bounded
+  (`SHARED_PROBE_CEILING_BROWSER`, 256 MiB in a page against the full range in
+  Node) and reports the ceiling alongside the result, so a capped number cannot
+  be read as a limit. **The largest shared reservation a browser will grant is an
+  open question**, and it is load-bearing: guest RAM has to be shared for SMP, so
+  Spike B must measure it per engine, in a worker so a refusal cannot take the
+  page down, and the engine must fall back to a smaller maximum derived from
+  `navigator.deviceMemory`, reported via `wnx doctor`.
 - **`ramBase` subtraction is a per-region constant.** It must be folded at
   translation time (it is), and any change to the mapping invalidates the code
   cache. The slow-pc set has the same dependency and is currently _not_
@@ -105,17 +113,17 @@ RAM and no control page.
 
 ## Evidence
 
-| probe                                                      | result (Node 22 / V8)       |
-| ---------------------------------------------------------- | --------------------------- |
-| `threads`, `atomics`, `atomicWait`, `sharedMemoryGrowable` | all **yes**                 |
-| `memory64`                                                 | validates, **does not run** |
-| reserve 4 GiB, `initial:1 maximum:65536`                   | **0.007 ms**                |
-| reserve 4 GiB, shared                                      | **0.006 ms**                |
-| commit 256 MiB / shared 256 MiB                            | 0.010 ms / 0.007 ms         |
-| max reservable pages (private / shared)                    | 65536 / 65536               |
-| `i32.atomic.add` in Wasm                                   | 9.7 ns/op                   |
-| `Atomics.add` / `compareExchange` from JS                  | 10.1 / 10.7 ns/op           |
-| plain Wasm store+load                                      | 0.29 ns/op                  |
+| probe                                                      | result (Node 22 / V8)               |
+| ---------------------------------------------------------- | ----------------------------------- |
+| `threads`, `atomics`, `atomicWait`, `sharedMemoryGrowable` | all **yes**                         |
+| `memory64`                                                 | validates, **does not run**         |
+| reserve 4 GiB, `initial:1 maximum:65536`                   | **0.007 ms**                        |
+| reserve 4 GiB, shared                                      | **0.006 ms** - Node only, see below |
+| commit 256 MiB / shared 256 MiB                            | 0.010 ms / 0.007 ms                 |
+| max reservable pages (private / shared)                    | 65536 / 65536                       |
+| `i32.atomic.add` in Wasm                                   | 9.7 ns/op                           |
+| `Atomics.add` / `compareExchange` from JS                  | 10.1 / 10.7 ns/op                   |
+| plain Wasm store+load                                      | 0.29 ns/op                          |
 
 An atomic RMW costs ≈33× a plain access — relevant to Spike B and to any
 spinlock-heavy guest path.
@@ -127,5 +135,6 @@ spinlock-heavy guest path.
 - Software TLB in the load/store path once the MMU exists (Phase 1), then
   re-measure: the inline-bounds result may not survive an address translation.
 - Size the shared `maximum` from `navigator.deviceMemory` and report refusals.
+- Measure the largest shared reservation per browser engine, in a worker.
 - Invalidate the slow-pc set when guest mappings change.
 - Test that guest writes to the control-page offset fault.

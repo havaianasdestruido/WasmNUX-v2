@@ -122,6 +122,7 @@ describe('result store', () => {
         exceptions: true,
         maxMemory32Pages: 65536,
         maxSharedMemoryPages: 65536,
+        sharedProbeCeilingPages: 65536,
         hardwareConcurrency: 4,
         crossOriginIsolated: null,
         isWorker: false,

@@ -171,7 +171,7 @@ Probed at runtime, not read from a compatibility table:
 | SIMD, bulk-memory, tail calls, exceptions          | **yes**                                                                         |
 | memory64                                           | validates, **does not run** in Node 22 even with `--experimental-wasm-memory64` |
 | reserve 4 GiB (32-bit, `initial:1, maximum:65536`) | **ok, 0.007 ms** — reservation is lazy                                          |
-| reserve 4 GiB shared                               | **ok, 0.006 ms**                                                                |
+| reserve 4 GiB shared                               | **ok, 0.006 ms** (Node only - see below)                                        |
 | commit 256 MiB / 256 MiB shared                    | ok, 0.010 ms / 0.007 ms                                                         |
 | `i32.atomic.add` (Wasm)                            | 9.7 ns/op                                                                       |
 | `Atomics.add` / `compareExchange` (JS)             | 10.1 / 10.7 ns/op                                                               |
@@ -182,6 +182,19 @@ Two consequences. First, guest RAM can be a single lazily-reserved 4 GiB
 the hardware (ADR-0004) — the reservation is free. Second, **memory64 cannot be
 part of the design**: it validates but traps at runtime, so the RV32 guest must
 fit a 32-bit memory, which it does.
+
+**The shared-reservation row is a Node result and must not be generalised.** A
+shared `WebAssembly.Memory` is backed by a `SharedArrayBuffer`, and browsers
+commit that eagerly where V8-in-Node reserves lazily. The first CI browser run
+died silently for exactly this reason: the capability probe binary-searched the
+shared maximum up to 4 GiB, the renderer went away, and the page never posted a
+report - twenty minutes of nothing. The probe now takes a ceiling
+(`SHARED_PROBE_CEILING_BROWSER`, 256 MiB in a page against the full 4 GiB in
+Node) and reports that ceiling next to the result, so a capped number cannot be
+mistaken for a limit. Whether a browser will reserve 4 GiB of _shared_ memory is
+therefore **not measured here**, and it matters: ADR-0004 wants guest RAM shared
+for SMP, so Spike B has to answer it per engine, in a worker, with a fallback
+sized from `navigator.deviceMemory`.
 
 An atomic RMW costs ~33× a plain access. Guest spinlocks and `amoswap`-heavy
 kernel paths will therefore be slow in absolute terms; Spike B has to measure the
@@ -292,7 +305,8 @@ retired instructions) so cold regions are never translated twice.
 
 ### 4.7 What the spike did not measure
 
-- **In a browser.** Everything above is Node/V8. `npm run bench:browser`
+- **In a browser.** Everything above is Node/V8, and one row - the 4 GiB shared
+  reservation - is known _not_ to generalise (see the note in §3.3). `npm run bench:browser`
   bundles the same suites with esbuild, serves them with COOP/COEP so
   `SharedArrayBuffer` exists (ADR-0010), and drives them with playwright-core;
   this sandbox has no Chromium binary, so those numbers are outstanding and are
@@ -325,6 +339,7 @@ retired instructions) so cold regions are never translated twice.
 - [ ] `CpuState.regs` as a view onto the control page → zero-copy host transitions (§4.2).
 - [ ] Calibrate `TIER_DOWN_INSNS_PER_EXIT` from a measured sync cost at startup instead of a constant (§4.5).
 - [ ] Run all three suites in Chromium, Firefox and WebKit in CI; compare the config ranking (§4.2, §4.3).
+- [ ] Measure the largest _shared_ reservation each browser engine will hand a tab, and a worker. §3.3 shows the Node answer does not transfer, and ADR-0004's SMP story depends on it.
 - [ ] `riscv-tests` + `riscv-arch-test` in CI, and QEMU-TCG differential fuzzing as the real oracle (§3.1).
 - [ ] Re-measure with an MMU/software TLB in the load/store path.
 - [ ] Slow-pc set must be invalidated when guest mappings change (it is a static-RAM assumption today).

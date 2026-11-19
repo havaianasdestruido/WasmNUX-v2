@@ -70,6 +70,7 @@ const EXPECTS_VALUE = new Set([
   'out',
   'browser',
   'port',
+  'timeout-min',
   'spike',
 ]);
 
@@ -104,7 +105,7 @@ usage:
   npm run bench:gate -- [--tolerance 0.2] [--suite ...]
   npm run report -- [--from benchmarks/results/x.json] [--md] [--out docs/kpi/latest.md]
   npm run spike -- a|b|c|d|e|f
-  npm run bench:browser -- [--suite ...] [--browser /path/to/chromium] [--out report.json]
+  npm run bench:browser -- [--suite ...] [--browser /path/to/chromium] [--timeout-min 10] [--out report.json]
 
 suites: ${suiteIds().join(', ')}
 `;
@@ -221,12 +222,13 @@ async function main(argv: string[]): Promise<number> {
       return 0;
     }
     case 'browser': {
-      const { runInBrowser } = await import('./browser.ts');
+      const { DEFAULT_BROWSER_TIMEOUT_MS, runInBrowser } = await import('./browser.ts');
       let report = await runInBrowser({
         suites: suiteSelection(args) === 'all' ? suiteIds() : (suiteSelection(args) as string[]),
         browserPath:
           typeof args.flags.get('browser') === 'string' ? (args.flags.get('browser') as string) : undefined,
         port: num(args.flags, 'port', 8420),
+        timeoutMs: num(args.flags, 'timeout-min', DEFAULT_BROWSER_TIMEOUT_MS / 60_000) * 60_000,
       });
       report = { ...report, env: withHostInfo(report.env, hostInfo()) };
       // The browser runner also writes page logs to stdout, so `--json` alone is

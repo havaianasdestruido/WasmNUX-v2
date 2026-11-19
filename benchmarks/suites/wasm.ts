@@ -20,13 +20,35 @@
  * change instead of a code change.
  */
 
-import { WasmFeatures, WasmModuleBuilder, compileModuleSync } from '@wasmnux/core';
+import {
+  SHARED_PROBE_CEILING_BROWSER,
+  WasmFeatures,
+  WasmModuleBuilder,
+  compileModuleSync,
+} from '@wasmnux/core';
 import type { BenchCase, Outcome, Suite } from '../src/types.ts';
 
 const PAGE = 65536;
 const MAX_PAGES_RV32 = 65536; // 4 GiB: the whole RV32 address space
 
-function featureCase(): BenchCase {
+/**
+ * How this suite is allowed to probe shared memory.
+ *
+ * A shared reservation is committed eagerly in browsers, so the 4 GiB shared
+ * cases are attempted only where reservations are lazy (Node). In a page they
+ * are recorded as skipped with the reason, which is a real result: "a browser
+ * renderer will not hand a tab a 4 GiB SharedArrayBuffer" is exactly the kind of
+ * platform fact this suite exists to establish, and discovering it by killing
+ * the renderer tells nobody anything.
+ */
+export interface WasmSuiteOptions {
+  /** Ceiling for shared reservations, in 64 KiB pages. Defaults to the full 4 GiB. */
+  sharedCeilingPages?: number;
+  /** True when running inside a browser page rather than Node. */
+  inBrowser?: boolean;
+}
+
+function featureCase(opts: WasmSuiteOptions): BenchCase {
   return {
     name: 'features',
     description: 'Runtime capability probes (recorded, not timed)',
@@ -37,7 +59,9 @@ function featureCase(): BenchCase {
         name: 'probe',
         run: (): Outcome => {
           const t0 = performance.now();
-          const f = WasmFeatures.probeWasmFeatures();
+          const f = WasmFeatures.probeWasmFeatures({
+            sharedCeilingPages: opts.sharedCeilingPages,
+          });
           const ms = performance.now() - t0;
           const meta: Record<string, string | number | boolean> = {};
           for (const [k, v] of Object.entries(f)) {
@@ -53,8 +77,18 @@ function featureCase(): BenchCase {
   };
 }
 
-function reserveCase(): BenchCase {
+function reserveCase(suiteOpts: WasmSuiteOptions): BenchCase {
+  const ceiling = Math.min(MAX_PAGES_RV32, suiteOpts.sharedCeilingPages ?? MAX_PAGES_RV32);
   const reserve = (name: string, opts: WebAssembly.MemoryDescriptor, pages: number): Outcome => {
+    // Skip, do not attempt: a shared reservation above the ceiling can take the
+    // renderer with it, and then there is no result to report at all.
+    if (opts.shared && pages > ceiling) {
+      return {
+        ms: 0,
+        instructions: pages,
+        meta: { ok: false, skipped: true, ceilingPages: ceiling, requestedMaxPages: pages },
+      };
+    }
     const t0 = performance.now();
     let ok = true;
     let current = 0;
@@ -82,8 +116,13 @@ function reserveCase(): BenchCase {
         run: () => reserve('lazy', { initial: 1, maximum: MAX_PAGES_RV32 }, MAX_PAGES_RV32),
       },
       {
-        name: '4 GiB max, shared',
-        run: () => reserve('shared', { initial: 1, maximum: MAX_PAGES_RV32, shared: true }, MAX_PAGES_RV32),
+        // The name is part of the baseline key, so it stays '4 GiB max, shared'
+        // wherever the full range is allowed and only changes when it is capped.
+        name:
+          ceiling === MAX_PAGES_RV32
+            ? '4 GiB max, shared'
+            : `${(ceiling * PAGE) / (1 << 20)} MiB max, shared (capped)`,
+        run: () => reserve('shared', { initial: 1, maximum: ceiling, shared: true }, ceiling),
       },
       {
         name: '256 MiB committed',
@@ -91,6 +130,7 @@ function reserveCase(): BenchCase {
       },
       {
         name: '256 MiB committed, shared',
+        // 4096 pages committed eagerly: above the browser ceiling, so skipped there.
         run: () => reserve('committed-shared', { initial: 4096, maximum: 4096, shared: true }, 4096),
       },
     ],
@@ -177,11 +217,16 @@ function round(x: number): number {
   return Math.round(x * 1000) / 1000;
 }
 
-export function wasmSuite(atomicsIterations = 1_000_000): Suite {
+export function wasmSuite(atomicsIterations = 1_000_000, opts: WasmSuiteOptions = {}): Suite {
+  // A page that did not say what it can afford gets the browser ceiling: the
+  // default is only safe where reservations are lazy.
+  const effective = opts.inBrowser
+    ? { sharedCeilingPages: SHARED_PROBE_CEILING_BROWSER, ...opts, inBrowser: true }
+    : opts;
   return {
     id: 'wasm',
     title: 'WebAssembly platform capabilities and costs',
     spike: 'A',
-    cases: [featureCase(), reserveCase(), compileCase(), atomicsCase(atomicsIterations)],
+    cases: [featureCase(effective), reserveCase(effective), compileCase(), atomicsCase(atomicsIterations)],
   };
 }

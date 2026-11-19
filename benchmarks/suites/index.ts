@@ -16,6 +16,10 @@ import { wasmSuite } from './wasm.ts';
 export interface SuiteOptions {
   /** Workload size multiplier: 1 is the default (~0.1 s interpreted per case). */
   scale?: number;
+  /** Ceiling for shared-memory reservations, in 64 KiB pages (see wasm.ts). */
+  sharedCeilingPages?: number;
+  /** True when the suites are running inside a browser page. */
+  inBrowser?: boolean;
 }
 
 export interface SuiteEntry {
@@ -41,7 +45,11 @@ export const SUITE_REGISTRY: SuiteEntry[] = [
     title: 'WebAssembly platform capabilities and costs',
     spike: 'A',
     costSeconds: 10,
-    factory: (o) => wasmSuite(o.scale && o.scale > 1 ? 2_000_000 : 1_000_000),
+    factory: (o) =>
+      wasmSuite(o.scale && o.scale > 1 ? 2_000_000 : 1_000_000, {
+        sharedCeilingPages: o.sharedCeilingPages,
+        inBrowser: o.inBrowser,
+      }),
   },
   {
     id: 'baseline',
