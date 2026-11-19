@@ -573,10 +573,15 @@ poll:
     });
     const s = r.machine.engine.stats;
     expect(s.wasmTraps).toBeLessThanOrEqual(MAX_TRAPS_PER_PC); // it learns, then stops trapping
-    expect(s.declinedPcs).toBe(0); // retired so it can be recompiled, not declined
     expect(s.regionsCompiled).toBeGreaterThan(1); // the split region replaced the first one
-    expect(s.jitInstructions).toBeGreaterThan(0); // the loop body still runs compiled
+    expect(s.jitInstructions).toBeGreaterThan(0); // the loop body did run compiled
     expect(s.interpInstructions).toBeGreaterThan(100); // the MMIO access does not
+    // A polling loop leaves compiled code once per iteration and retires only a
+    // couple of instructions each time, which cannot pay for the register-file
+    // sync, so the engine tiers it back down to the interpreter. That is the
+    // point of the heuristic: compiled code is not automatically better.
+    expect(s.tierDowns).toBeGreaterThan(0);
+    expect(s.declinedPcs).toBeGreaterThan(0);
     expect(r.cpu.stop).toBe('running'); // still polling: no input yet
 
     // Now deliver a byte; the loop must observe it exactly once. Reading a device

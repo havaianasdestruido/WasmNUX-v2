@@ -88,6 +88,8 @@ export interface MachineStats {
   mmioReads: number;
   mmioWrites: number;
   traps: number;
+  /** Regions retired because they exited to the host too often to pay for themselves. */
+  tierDowns: number;
   wallMs: number;
   /** Retired instructions per second over the last `run()` call. */
   ips: number;
@@ -447,6 +449,7 @@ export class Machine implements MachinePort {
       mmioReads: this.mmioReads,
       mmioWrites: this.mmioWrites,
       traps: jit.wasmTraps,
+      tierDowns: jit.tierDowns,
       wallMs: this.lastRunMs,
       ips: this.lastRunMs > 0 ? (this.lastRunInstructions / this.lastRunMs) * 1000 : 0,
     };

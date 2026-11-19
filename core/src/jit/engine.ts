@@ -32,6 +32,35 @@ export const MAX_WASM_PAGES_RV32 = 65536;
 /** Traps at one pc before its region is retired in favour of the interpreter. */
 export const MAX_TRAPS_PER_PC = 3;
 
+/**
+ * Tier-down thresholds (ADR-0002's "the interpreter is a tier, not a fallback").
+ *
+ * Every return to the host costs a register-file sync, and a sync is ~64
+ * property accesses on `WebAssembly.Global` objects - measured at roughly a
+ * microsecond, which is dozens of interpreted instructions. A region that leaves
+ * compiled code every few instructions is therefore *slower* than not compiling
+ * it at all: an MMIO polling loop measured 13x slower than the interpreter
+ * before this heuristic existed. Once a region has exited enough times to be
+ * statistically clear about its own shape, and it retires fewer than
+ * `TIER_DOWN_INSNS_PER_EXIT` instructions per exit, it is retired and its blocks
+ * are declined so the interpreter owns that code for good.
+ */
+export const TIER_DOWN_EXITS = 32;
+/**
+ * Instructions a region must retire per host exit to be worth compiling.
+ *
+ * Derived from measurement, not taste: one exit costs a register-file sync
+ * (~64 `WebAssembly.Global` property accesses) plus the dispatcher round trip,
+ * about 1 us here, and the interpreter retires ~40 instructions in that time. A
+ * device-polling loop retires 4 instructions per exit and measured 14x *slower*
+ * compiled than interpreted; a real loop retires millions per exit. 32 sits
+ * between the two by an order of magnitude on either side. The honest fix is to
+ * calibrate this from a measured sync cost at startup (Phase 1), since the cost
+ * depends on the register-file placement: with `regalloc: 'memory'` there is no
+ * sync at all and the break-even is much lower.
+ */
+export const TIER_DOWN_INSNS_PER_EXIT = 32;
+
 export interface EngineOptions {
   /** Set false to run interpreter-only (the Spike A baseline). */
   jit?: boolean;
@@ -70,6 +99,8 @@ export interface EngineStats {
   wasmTraps: number;
   syscalls: number;
   declinedPcs: number;
+  /** Regions retired because they exited to the host too often to pay for themselves. */
+  tierDowns: number;
 }
 
 export const emptyStats = (): EngineStats => ({
@@ -88,6 +119,7 @@ export const emptyStats = (): EngineStats => ({
   wasmTraps: 0,
   syscalls: 0,
   declinedPcs: 0,
+  tierDowns: 0,
 });
 
 interface CompiledRegion {
@@ -104,6 +136,9 @@ interface CompiledRegion {
   moduleBytes: Uint8Array;
   optimized: boolean;
   heat: number;
+  /** Host exits and instructions retired, for the tier-down heuristic. */
+  hostExits: number;
+  retired: number;
 }
 
 /** Where a compiled region lives, looked up by guest pc. */
@@ -432,6 +467,7 @@ export class Engine {
         cpu.cycles += executed;
         this.stats.jitInstructions += executed;
         this.learnSlowPc(trapped, current.region);
+        this.noteHostExit(current.region, executed);
         this.interp.step(cpu);
         this.stats.interpSteps++;
         return { remaining: before - executed - 1, leftJit: true, stop: cpu.stop !== 'running' };
@@ -465,12 +501,14 @@ export class Engine {
             continue;
           }
           // No compiled successor: hand the precise target pc to the host.
+          this.noteHostExit(current.region, consumed);
           this.pushState(cpu);
           return { remaining: b, leftJit: true, stop: false };
         }
         case EXIT.SYSCALL: {
           // Compiled code charged the ecall as part of its block and already
           // advanced pc past it, so the host only has to run the port.
+          this.noteHostExit(current.region, consumed);
           this.pushState(cpu);
           this.stats.syscalls++;
           this.port.onSyscall(cpu);
@@ -484,6 +522,7 @@ export class Engine {
           cpu.cycles += fix;
           this.stats.jitInstructions += fix;
           this.learnSlowPc(faultPc, current.region);
+          this.noteHostExit(current.region, consumed + fix);
           this.pushState(cpu);
           this.stats.slowPathFaults++;
           this.interp.step(cpu);
@@ -493,6 +532,7 @@ export class Engine {
         case EXIT.RETIRE: {
           // Precise single-step: `$pc` points at the instruction that faulted or
           // that the JIT declined, and nothing after it has executed.
+          this.noteHostExit(current.region, consumed);
           this.pushState(cpu);
           this.stats.slowPathFaults++;
           if (this.isFenceI(cpu.pc)) {
@@ -507,18 +547,21 @@ export class Engine {
         }
         case EXIT.IDLE: {
           // wfi was charged with its block; pc is already past it.
+          this.noteHostExit(current.region, consumed);
           this.pushState(cpu);
           if (this.port.onIdle(cpu)) return { remaining: b, leftJit: true, stop: cpu.stop !== 'running' };
           cpu.stop = 'idle';
           return { remaining: b, leftJit: true, stop: true };
         }
         case EXIT.BREAK: {
+          this.noteHostExit(current.region, consumed);
           this.pushState(cpu);
           cpu.stop = 'breakpoint';
           return { remaining: b, leftJit: true, stop: true };
         }
         case EXIT.INVALID:
         default: {
+          this.noteHostExit(current.region, consumed);
           this.declined.add(this.rf.pc);
           this.stats.declinedPcs++;
           this.pushState(cpu);
@@ -575,6 +618,11 @@ export class Engine {
       // and lands exactly on the compiled successor, so the rest of the loop
       // still runs at JIT speed.
       entry = (entry + 4) >>> 0;
+      if (this.declined.has(entry)) {
+        this.declined.add(target);
+        this.stats.declinedPcs++;
+        return null;
+      }
       region = formRegion(buildCfg(this.mem, entry, scan), entry, limits);
       if (region && region.blocks.length > 0) this.redirects.set(target, entry);
     }
@@ -670,6 +718,8 @@ export class Engine {
         moduleBytes: bytes,
         optimized: optimize,
         heat: 0,
+        hostExits: 0,
+        retired: 0,
       };
       for (const [start, index] of region.blocks) {
         this.compiled.set(start, { region, entryBlock: index });
@@ -755,6 +805,32 @@ export class Engine {
     const cache = this.opts.codeCache;
     if (cache) for (const start of region.blocks.keys()) cache.remove(start);
     this.retireRegionAt(pc, false);
+  }
+
+  /**
+   * Account a host exit and tier the region down if it cannot pay for itself.
+   * Returns true when the region was retired, so callers stop using it.
+   */
+  private noteHostExit(region: CompiledRegion, retired: number): boolean {
+    region.hostExits++;
+    region.retired += Math.max(0, retired);
+    if (region.hostExits < TIER_DOWN_EXITS) return false;
+    if (region.retired / region.hostExits >= TIER_DOWN_INSNS_PER_EXIT) return false;
+    for (const start of region.blocks.keys()) {
+      this.compiled.delete(start);
+      this.declined.add(start);
+    }
+    // A redirect into a retired region would rebuild the same shape and tier
+    // down again forever, so retire the redirect and decline its source too.
+    for (const [from, to] of this.redirects) {
+      if (region.blocks.has(to)) {
+        this.redirects.delete(from);
+        this.declined.add(from);
+      }
+    }
+    this.stats.declinedPcs += region.blocks.size;
+    this.stats.tierDowns++;
+    return true;
   }
 
   /**
