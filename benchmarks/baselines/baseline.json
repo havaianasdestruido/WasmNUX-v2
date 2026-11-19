@@ -1,0 +1,745 @@
+{
+  "version": 1,
+  "env": {
+    "date": "2026-11-19T16:41:29.426Z",
+    "runtime": "node 22.22.3",
+    "platform": "linux",
+    "arch": "x64",
+    "cpus": 2,
+    "totalMemoryMB": 3940,
+    "wasm": {
+      "threads": true,
+      "sharedMemoryGrowable": true,
+      "atomics": true,
+      "atomicWait": true,
+      "simd": true,
+      "bulkMemory": true,
+      "memory64": true,
+      "tailCalls": true,
+      "exceptions": true,
+      "maxMemory32Pages": 65536,
+      "maxSharedMemoryPages": 1024,
+      "hardwareConcurrency": 2,
+      "crossOriginIsolated": null,
+      "isWorker": false,
+      "isNode": true,
+      "userAgent": "Node.js/22"
+    },
+    "git": {
+      "commit": "061bd0e99285003e6185249413a7b7f37c00f84a",
+      "branch": "arena/8368d687-wasmnux-v2",
+      "dirty": true,
+      "describe": "061bd0e-dirty"
+    }
+  },
+  "results": [
+    {
+      "suite": "baseline",
+      "case": "arith-loop",
+      "variant": "interpreter (ours)",
+      "samples": [
+        {
+          "ms": 118.29856300000029,
+          "instructions": 8000006
+        },
+        {
+          "ms": 117.78827600000113,
+          "instructions": 8000006
+        },
+        {
+          "ms": 118.96440099999927,
+          "instructions": 8000006
+        },
+        {
+          "ms": 117.92056600000069,
+          "instructions": 8000006
+        },
+        {
+          "ms": 126.15434699999969,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 117.78827600000113,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 118.29856300000029,
+        "instructions": 8000006
+      },
+      "ips": 67918525.26986575,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 8000006,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 63414430
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "arith-loop",
+      "variant": "jit globals/trap (ours)",
+      "samples": [
+        {
+          "ms": 3.973759999998947,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.950345000001107,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.079606999999669,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.703395000000455,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.9916809999995166,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.359248000000662,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.803649999999834,
+          "instructions": 8000006
+        },
+        {
+          "ms": 7.188750999999684,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.002983000000313,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.622323999999935,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.871831000000384,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.935725999999704,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6698490000017046,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8159060000016325,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.963281000000279,
+          "instructions": 8000006
+        },
+        {
+          "ms": 7.511473000000478,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.06163000000015,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.841298999999708,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.755052999998952,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6093779999991966,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7496870000013587,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8341789999994944,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.409341000000495,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.54336400000102,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.18004800000017,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 3.6093779999991966,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 3.973759999998947,
+        "instructions": 8000006
+      },
+      "ips": 2216450036.544186,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 622,
+        "compileMs": 0.093,
+        "instantiateMs": 0.335,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1544388392
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "arith-loop",
+      "variant": "8086emu 1.5.1 (rust/wasm)",
+      "samples": [
+        {
+          "ms": 48.399546000000555,
+          "instructions": 8000006
+        },
+        {
+          "ms": 48.61629200000061,
+          "instructions": 8000006
+        },
+        {
+          "ms": 49.43392499999936,
+          "instructions": 8000006
+        },
+        {
+          "ms": 48.50956599999881,
+          "instructions": 8000006
+        },
+        {
+          "ms": 50.732678999998825,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 48.399546000000555,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 48.61629200000061,
+        "instructions": 8000006
+      },
+      "ips": 165290930.62153742,
+      "meta": {
+        "imageBytes": 40,
+        "halted": true,
+        "stoppedAtPc": 40
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "divmod",
+      "variant": "interpreter (ours)",
+      "samples": [
+        {
+          "ms": 149.27254200000243,
+          "instructions": 8000010
+        },
+        {
+          "ms": 157.84647900000346,
+          "instructions": 8000010
+        },
+        {
+          "ms": 149.80182200000127,
+          "instructions": 8000010
+        },
+        {
+          "ms": 146.23986299999888,
+          "instructions": 8000010
+        },
+        {
+          "ms": 145.60140899999897,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 145.60140899999897,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 149.27254200000243,
+        "instructions": 8000010
+      },
+      "ips": 54944591.91668987,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 8000010,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 54944592
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "divmod",
+      "variant": "jit globals/trap (ours)",
+      "samples": [
+        {
+          "ms": 4.633419000001595,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.606629000001703,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4512050000012096,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.6727219999993395,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.604183999999805,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.896239000001515,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.952215000001161,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.771300000000338,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.581057999999757,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.48896799999784,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.840089999997872,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.047107999998843,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.643040999999357,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.53522299999895,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.3715940000001865,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.794402000003174,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.729835999998613,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.8083110000006855,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.67290100000173,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.833506999999372,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.0157450000006065,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4645089999976335,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.18910600000163,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.786254999999073,
+          "instructions": 8000010
+        },
+        {
+          "ms": 8.972783000001073,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 3.794402000003174,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 4.67290100000173,
+        "instructions": 8000010
+      },
+      "ips": 2108371753.9663188,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 682,
+        "compileMs": 0.118,
+        "instantiateMs": 4.543,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 891586256
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "divmod",
+      "variant": "8086emu 1.5.1 (rust/wasm)",
+      "samples": [
+        {
+          "ms": 56.40592000000106,
+          "instructions": 8000010
+        },
+        {
+          "ms": 60.10899399999835,
+          "instructions": 8000010
+        },
+        {
+          "ms": 60.420679999999265,
+          "instructions": 8000010
+        },
+        {
+          "ms": 56.20301499999914,
+          "instructions": 8000010
+        },
+        {
+          "ms": 64.80420999999842,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 56.20301499999914,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 60.10899399999835,
+        "instructions": 8000010
+      },
+      "ips": 142341296.1030671,
+      "meta": {
+        "imageBytes": 72,
+        "halted": true,
+        "stoppedAtPc": 72
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "branchy",
+      "variant": "interpreter (ours)",
+      "samples": [
+        {
+          "ms": 82.968112999999,
+          "instructions": 5100215
+        },
+        {
+          "ms": 82.82853900000191,
+          "instructions": 5100215
+        },
+        {
+          "ms": 87.6891829999986,
+          "instructions": 5100215
+        },
+        {
+          "ms": 83.27964900000006,
+          "instructions": 5100215
+        },
+        {
+          "ms": 82.20471300000281,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 82.20471300000281,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 82.968112999999,
+        "instructions": 5100215
+      },
+      "ips": 62042853.91763153,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 5100215,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 62042854
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "branchy",
+      "variant": "jit globals/trap (ours)",
+      "samples": [
+        {
+          "ms": 5.408960000000661,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.298376999999164,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.667076999998244,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.208838999998989,
+          "instructions": 5100215
+        },
+        {
+          "ms": 9.796485000002576,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.495704000000842,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.362252999999328,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.447311000003538,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.41631100000086,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.5899460000000545,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.291676999997435,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.075308999999834,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.946925000000192,
+          "instructions": 5100215
+        },
+        {
+          "ms": 9.721173999998427,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.506438000000344,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.8450749999974505,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.959562000000005,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.987880000000587,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.372634999999718,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.841953999999532,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.483218000001216,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.913306000002194,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.615518000002339,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.544855000000098,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.402990000002319,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 4.913306000002194,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 6.41631100000086,
+        "instructions": 5100215
+      },
+      "ips": 1038041392.0886918,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 701,
+        "compileMs": 0.216,
+        "instantiateMs": 0.939,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 796536462
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "baseline",
+      "case": "branchy",
+      "variant": "8086emu 1.5.1 (rust/wasm)",
+      "samples": [
+        {
+          "ms": 34.209248999999545,
+          "instructions": 5100215
+        },
+        {
+          "ms": 33.745858999998745,
+          "instructions": 5100215
+        },
+        {
+          "ms": 33.62352900000042,
+          "instructions": 5100215
+        },
+        {
+          "ms": 38.11519599999883,
+          "instructions": 5100215
+        },
+        {
+          "ms": 34.00237500000003,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 33.62352900000042,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 34.00237500000003,
+        "instructions": 5100215
+      },
+      "ips": 151685892.34044817,
+      "meta": {
+        "imageBytes": 80,
+        "halted": false,
+        "stoppedAtPc": 44
+      },
+      "showMeta": true
+    }
+  ]
+}
