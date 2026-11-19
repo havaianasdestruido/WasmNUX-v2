@@ -20,5 +20,5 @@ const results = await withBrowser(async (page, cdp, browser) => ({
   network:await page.evaluate(() => probes.network()),
 }));
 await mkdir(dirname(out), {recursive:true});
-await writeFile(out, JSON.stringify({schema:1, commit, dirty, recordedAt:new Date().toISOString(), ...results}, null, 2)+'\n');
+await writeFile(out, JSON.stringify({schema:2, commit, dirty, recordedAt:new Date().toISOString(), ...results}, null, 2)+'\n');
 console.log(out);

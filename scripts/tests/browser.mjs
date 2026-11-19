@@ -12,6 +12,12 @@ await withBrowser(async (page, cdp, browser) => {
   assert.ok(smp.some(run => run.harts.some(hart => hart.wake === 'ok')), 'a hart should park and be notified');
   assert.ok(smp.every(run => run.totals.every(n => n === run.count * run.iterations)));
   assert.ok(smp.find(run => run.count === 2).harts.every(hart => hart.scLitmusRounds === 256));
+  for (const run of smp) {
+    const lastWork = Math.max(...run.harts.map(hart => hart.workFinishedAtMs));
+    assert.equal(run.elapsedMs, lastWork - run.wakeIssuedAtMs);
+    assert.ok(run.elapsedMs > 0);
+    assert.ok(run.harts.every(hart => hart.validationFinishedAtMs >= hart.workFinishedAtMs));
+  }
   console.log('Shared Wasm atomics and worker wait/notify verified');
   const storage = await page.evaluate(() => probes.storage());
   assert.equal(storage.sweep.length, 4);
