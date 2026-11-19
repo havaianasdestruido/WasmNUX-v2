@@ -1,0 +1,8 @@
+node_modules
+coverage
+benchmarks/results
+benchmarks/baselines
+docs/adr/template.md
+*.snap
+package-lock.json
+web/vendor

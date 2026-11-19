@@ -1,0 +1,31 @@
+# Node / build artefacts
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.vite/
+.cache/
+
+# Editors / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Local benchmark scratch output (recorded results ARE committed under benchmarks/results/)
+benchmarks/.tmp/
+*.local.json
+
+# Playwright
+playwright-report/
+test-results/
+
+# Guest images and large binaries never belong in git (see docs/benchmarks.md)
+*.raw
+*.qcow2
+*.wnx
+images/
+
+# Throwaway probes and bisect scripts used while developing (not part of the build)
+.scratch/
