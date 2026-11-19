@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+/tmp/
+benchmarks/third_party/
+benchmarks/results/tmp/
+.coremark*/
+*.o
+*.wasm.map
+benchmarks/c/coremark/coremark.exe
+benchmarks/c/coremark/run?.log
+benchmarks/c/dhrystone/dhry
+benchmarks/results/ci-smoke.json

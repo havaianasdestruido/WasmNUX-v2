@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "benchmark": "wasmnux-host-benchmarks",
+  "kind": "screening",
+  "timestamp": "2026-11-19T02:03:33.601Z",
+  "commit": "fee2d04f187c9048b1b1489dd6ee9ac6810f68f5",
+  "host": {
+    "cpus": 2,
+    "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "release": "6.1.158+",
+    "totalMemoryBytes": 4131278848
+  },
+  "benchmarks": {
+    "coremark": {
+      "status": "ok",
+      "iterationsPerSec": 29689.44837,
+      "valid": true,
+      "screeningOnly": true,
+      "wallMs": 34352
+    },
+    "dhrystone": {
+      "status": "ok",
+      "dhrystonesPerSecond": 55555556,
+      "runs": 500000000,
+      "tooSmallToBeMeaningful": false,
+      "screeningOnly": true,
+      "wallMs": 8572
+    },
+    "sysbenchCpu": {
+      "status": "skipped",
+      "reason": "sysbench not installed on host (guest-side run comes with Phase 1)"
+    },
+    "fio4kRandomRead": {
+      "status": "skipped",
+      "reason": "fio not installed on host; OPFS-path 4k numbers come from the browser probe (web/probe/)"
+    },
+    "gccCompileSelf": {
+      "status": "ok",
+      "proxyFor": "self-compiling gcc (host compile of CoreMark amalgamation)",
+      "note": "guest self-compile of gcc is measured in Phase 1 with the real GCC tree",
+      "compileMs": 337,
+      "wallMs": 340
+    },
+    "bootCold": {
+      "status": "skipped",
+      "reason": "requires the Phase 1 Debian guest image (boot-time probe not yet measurable)"
+    },
+    "bootResume": {
+      "status": "skipped",
+      "reason": "requires snapshot/restore machinery (Phase 3)"
+    },
+    "bytesFirstPrompt": {
+      "status": "skipped",
+      "reason": "requires the image packager (Phase 1)"
+    }
+  }
+}

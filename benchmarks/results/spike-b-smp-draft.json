@@ -1,0 +1,89 @@
+{
+  "benchmark": "wasmnux-spike-b-smp",
+  "version": 1,
+  "timestamp": "2026-11-19T01:44:17.541Z",
+  "host": {
+    "cpus": 2,
+    "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "platform": "linux",
+    "release": "6.1.158+"
+  },
+  "config": {
+    "maxWorkers": 2,
+    "amoIters": 200000,
+    "spinIters": 2000,
+    "hashIters": 40000000,
+    "litmusRounds": 100000
+  },
+  "amoAddScaling": [
+    {
+      "workers": 1,
+      "wallMs": 42.89966,
+      "speedup": 1,
+      "efficiency": 1,
+      "correct": true
+    },
+    {
+      "workers": 2,
+      "wallMs": 54.15472899999999,
+      "speedup": 0.7921683072220711,
+      "efficiency": 0.39608415361103555,
+      "correct": true
+    }
+  ],
+  "spinlockScaling": [
+    {
+      "workers": 1,
+      "wallMs": 39.455551,
+      "speedup": 1,
+      "efficiency": 1,
+      "correct": true
+    },
+    {
+      "workers": 2,
+      "wallMs": 47.775998999999985,
+      "speedup": 0.8258446045262186,
+      "efficiency": 0.4129223022631093,
+      "correct": true
+    }
+  ],
+  "hashScaling": [
+    {
+      "workers": 1,
+      "wallMs": 2958.532753,
+      "speedup": 1,
+      "efficiency": 1,
+      "hash": "8a1e698ec469689e"
+    },
+    {
+      "workers": 2,
+      "wallMs": 1534.6638360000002,
+      "speedup": 1.9278050890357983,
+      "efficiency": 0.9639025445178991,
+      "hash": "434648f2dc203d98"
+    }
+  ],
+  "atomicsWait": {
+    "wokeNs": 84558,
+    "waitResult": "ok",
+    "attempts": 1
+  },
+  "litmus": [
+    {
+      "kind": "litmus-sb",
+      "rounds": 100000,
+      "forbidden": 0,
+      "bothFresh": 0,
+      "bothStale": 0,
+      "mixed": 100000
+    },
+    {
+      "kind": "litmus-lb",
+      "rounds": 100000,
+      "forbidden": 0,
+      "bothFresh": 0,
+      "bothStale": 0,
+      "mixed": 100000
+    }
+  ]
+}

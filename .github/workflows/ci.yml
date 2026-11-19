@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Build & test
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Test (all spikes)
+        run: npm test
+
+  benchmarks:
+    name: Benchmark results valid
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate results files (schema)
+        run: npm run validate:results
+      - name: CoreMark + Dhrystone smoke (screening)
+        continue-on-error: true # timings vary on shared runners; informational in Phase 0
+        run: npm run bench -- --out benchmarks/results/ci-smoke.json
+
+  docs:
+    name: ADRs & shell hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: ADR check (0001-0012)
+        run: npm run check:adrs
+      - name: Shell script check
+        run: npm run check:shell
+      - name: ShellCheck if available
+        run: |
+          if command -v shellcheck >/dev/null; then
+            find scripts -name '*.sh' -type f -print0 | xargs -0 -r shellcheck --severity=warning
+          else
+            echo "shellcheck not installed; check_shell.sh already ran"
+          fi
+
+  license:
+    name: License headers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: NOTICE present and Apache-2.0 core
+        run: |
+          test -f LICENSE
+          grep -q 'Apache License' LICENSE
+          test -f NOTICE
+          grep -qi 'Apache' NOTICE
+          echo "license files OK"

@@ -1,0 +1,81 @@
+{
+  "benchmark": "wasmnux-spike-c-storage",
+  "version": 1,
+  "timestamp": "2026-11-19T01:46:40.869Z",
+  "host": {
+    "cpus": 2,
+    "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "platform": "linux",
+    "release": "6.1.158+"
+  },
+  "config": {
+    "sizeBytes": 268435456,
+    "quick": false
+  },
+  "proxy": "NodeFileBlockDevice (positional pread/pwrite) stands in for OPFS SyncAccessHandle; run in-browser harness for release numbers",
+  "chunkSweep": [
+    {
+      "chunkBytes": 4096,
+      "seqWriteMBs": 1033.3172623166854,
+      "seqReadMBs": 1028.4229278904086,
+      "random4KReadIOPS": 294918.9592191966,
+      "random4KWriteIOPS": 122549.38505331283
+    },
+    {
+      "chunkBytes": 8192,
+      "seqWriteMBs": 1591.7095928750189,
+      "seqReadMBs": 2275.0163315105256,
+      "random4KReadIOPS": 215687.88582518586,
+      "random4KWriteIOPS": 143977.4243398629
+    },
+    {
+      "chunkBytes": 16384,
+      "seqWriteMBs": 1866.2710583373723,
+      "seqReadMBs": 3001.5617688573157,
+      "random4KReadIOPS": 361468.3422411176,
+      "random4KWriteIOPS": 166883.42969924244
+    },
+    {
+      "chunkBytes": 32768,
+      "seqWriteMBs": 1800.1798225262482,
+      "seqReadMBs": 4536.281197684991,
+      "random4KReadIOPS": 464105.033776015,
+      "random4KWriteIOPS": 152881.95479759556
+    },
+    {
+      "chunkBytes": 65536,
+      "seqWriteMBs": 1999.2730876305952,
+      "seqReadMBs": 4253.089673835567,
+      "random4KReadIOPS": 456049.7969894274,
+      "random4KWriteIOPS": 156489.73901997512
+    },
+    {
+      "chunkBytes": 131072,
+      "seqWriteMBs": 2197.6817945228695,
+      "seqReadMBs": 5240.492300695492,
+      "random4KReadIOPS": 587729.155597772,
+      "random4KWriteIOPS": 160664.8353731697
+    },
+    {
+      "chunkBytes": 262144,
+      "seqWriteMBs": 2175.892800691532,
+      "seqReadMBs": 5920.486110927331,
+      "random4KReadIOPS": 548722.236255281,
+      "random4KWriteIOPS": 154451.1349815919
+    },
+    {
+      "chunkBytes": 524288,
+      "seqWriteMBs": 2203.374480321835,
+      "seqReadMBs": 4504.7941191673235,
+      "random4KReadIOPS": 516398.75899049814,
+      "random4KWriteIOPS": 167903.283678922
+    },
+    {
+      "chunkBytes": 1048576,
+      "seqWriteMBs": 2292.322798671899,
+      "seqReadMBs": 4380.527335384112,
+      "random4KReadIOPS": 615464.6573523601,
+      "random4KWriteIOPS": 171444.49127418964
+    }
+  ]
+}

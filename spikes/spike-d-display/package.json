@@ -1,0 +1,7 @@
+{
+  "name": "@wasmnux/spike-d-display",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike D: Display + GPU — scanout blit cost (JS vs Wasm SIMD), frame-pacing model, WebGPU probe harness, GPU path comparison data."
+}

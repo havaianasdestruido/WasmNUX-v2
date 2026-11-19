@@ -1,0 +1,7 @@
+{
+  "name": "@wasmnux/spike-c-storage",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike C: Storage — OPFS-class block device (sync access handles), chunk-size sweep, COW overlay with journaled metadata and crash recovery."
+}

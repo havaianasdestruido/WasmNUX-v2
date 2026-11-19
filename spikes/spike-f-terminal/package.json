@@ -1,0 +1,7 @@
+{
+  "name": "@wasmnux/spike-f-terminal",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike F: Terminal — wcwidth/graphemes/ligatures, glyph atlas packing + LRU eviction, scrollback ring, damage tracking, CPU-side render throughput."
+}

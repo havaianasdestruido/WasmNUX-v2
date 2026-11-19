@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "wasmnux-benchmark-results",
+  "type": "object",
+  "required": ["schema", "benchmark", "timestamp", "commit", "host", "benchmarks"],
+  "properties": {
+    "schema": { "const": 1 },
+    "benchmark": { "type": "string" },
+    "kind": { "enum": ["full", "screening"] },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "commit": { "type": "string" },
+    "host": {
+      "type": "object",
+      "required": ["cpus", "model", "platform", "release", "totalMemoryBytes"],
+      "properties": {
+        "cpus": { "type": "integer", "minimum": 1 },
+        "model": { "type": "string" },
+        "platform": { "type": "string" },
+        "release": { "type": "string" },
+        "totalMemoryBytes": { "type": "integer" }
+      },
+      "additionalProperties": true
+    },
+    "benchmarks": {
+      "type": "object",
+      "required": [
+        "coremark", "dhrystone", "sysbenchCpu", "fio4kRandomRead",
+        "gccCompileSelf", "bootCold", "bootResume", "bytesFirstPrompt"
+      ],
+      "properties": {
+        "coremark":        { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "dhrystone":       { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "sysbenchCpu":     { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "fio4kRandomRead": { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "gccCompileSelf":  { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "bootCold":        { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "bootResume":      { "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true },
+        "bytesFirstPrompt":{ "type": "object", "required": ["status"], "properties": { "status": { "enum": ["ok", "skipped", "error", "fail"] } }, "additionalProperties": true }
+      }
+    }
+  }
+}

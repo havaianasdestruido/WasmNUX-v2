@@ -1,0 +1,7 @@
+{
+  "name": "@wasmnux/spike-b-smp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike B: SMP — N vCPU workers on shared memory; RV64A LR/SC & AMO mapped to Wasm/JS atomics; futex-style idle via Atomics.wait."
+}

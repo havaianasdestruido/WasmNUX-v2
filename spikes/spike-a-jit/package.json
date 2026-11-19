@@ -1,0 +1,11 @@
+{
+  "name": "@wasmnux/spike-a-jit",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike A: JIT feasibility — RV64 hot blocks translated to WebAssembly vs interpreter.",
+  "scripts": {
+    "build": "tsc -b .",
+    "bench": "node dist/src/bench.js"
+  }
+}

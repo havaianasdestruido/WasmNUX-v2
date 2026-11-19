@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "references": [
+    { "path": "spikes/spike-a-jit" },
+    { "path": "spikes/spike-b-smp" },
+    { "path": "spikes/spike-c-storage" },
+    { "path": "spikes/spike-d-display" },
+    { "path": "spikes/spike-e-network" },
+    { "path": "spikes/spike-f-terminal" }
+  ]
+}

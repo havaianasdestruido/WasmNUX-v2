@@ -1,0 +1,9 @@
+WasmNUX
+Copyright 2026 the WasmNUX authors.
+
+This product includes software developed at WasmNUX (see LICENSE, Apache-2.0).
+
+The WasmNUX emulator core is licensed under Apache-2.0 (see ADR-0011).
+Components that ship GPL-licensed material (e.g., the Linux kernel, some
+firmware and codec blobs) are isolated and distributed separately under their
+own licenses; see docs/adr/0011-license.md.

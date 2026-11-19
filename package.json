@@ -1,0 +1,31 @@
+{
+  "name": "wasmnux",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WasmNUX: a complete Debian Linux system running inside a browser tab (WebAssembly + WebGPU).",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "workspaces": [
+    "spikes/*",
+    "benchmarks/harness-pkg"
+  ],
+  "scripts": {
+    "build": "tsc -b tsconfig.build.json",
+    "test": "tsc -b tsconfig.build.json && node --test spikes/*/dist/test/*.test.js",
+    "bench": "node benchmarks/harness/run.mjs",
+    "bench:quick": "node benchmarks/harness/run.mjs --quick",
+    "check:adrs": "node scripts/lib/check_adrs.mjs",
+    "check:shell": "bash scripts/lib/check_shell.sh",
+    "validate:results": "node benchmarks/harness/run.mjs --validate-only"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "@types/node": "^22.9.0",
+    "binaryen": "^123.0.0",
+    "ws": "^8.18.0",
+    "@types/ws": "^8.5.13"
+  }
+}

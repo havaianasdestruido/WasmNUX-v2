@@ -1,0 +1,10 @@
+{
+  "name": "@wasmnux/spike-e-network",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spike E: Network — user-space IPv4 stack (ARP/ICMP/UDP/mini-TCP) over an in-memory wire, minimal wnx-relay (WebSocket), Direct Sockets feature detection.",
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

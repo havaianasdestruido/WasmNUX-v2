@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WasmNUX — Spike D WebGPU scanout probe</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #ddd; margin: 2rem; }
+    h1 { font-size: 1.1rem; color: #8f8; }
+    pre { background: #000; padding: 1rem; border: 1px solid #333; white-space: pre-wrap; }
+    canvas { image-rendering: pixelated; border: 1px solid #444; width: 640px; height: 360px; }
+  </style>
+</head>
+<body>
+  <h1>WasmNUX · Spike D · WebGPU scanout cost probe</h1>
+  <p>Runs the same measurement as <code>host/display</code> will rely on: uploading a guest scanout frame
+     (1920×1080 RGBA) via <code>queue.writeTexture</code> and rendering it. Results land in
+     <code>report.json</code> on the page and in the console (copy into PR description).</p>
+  <canvas id="preview" width="1920" height="1080"></canvas>
+  <pre id="out">running…</pre>
+<script type="module">
+const WIDTH = 1920, HEIGHT = 1080, FRAME_BYTES = WIDTH * HEIGHT * 4, REPS = 60;
+const out = document.getElementById('out');
+const log = (s) => { out.textContent += '\n' + s; console.log(s); };
+const report = { timestamp: new Date().toISOString(), userAgent: navigator.userAgent };
+
+if (!navigator.gpu) {
+  report.available = false;
+  report.note = 'navigator.gpu missing — Tier 2 path (Canvas2D/WebGL fallback) required.';
+  out.textContent = JSON.stringify(report, null, 2);
+} else {
+  const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+  if (!adapter) {
+    report.available = false;
+    report.note = 'requestAdapter() → null (blocked GPU / no adapter).';
+    out.textContent = JSON.stringify(report, null, 2);
+  } else {
+    const info = adapter.info ?? {};
+    const device = await adapter.requestDevice();
+    const canvas = document.getElementById('preview');
+    const context = canvas.getContext('webgpu');
+    const format = navigator.gpu.getPreferredCanvasFormat();
+    context.configure({ device, format, alphaMode: 'opaque' });
+
+    const texture = device.createTexture({
+      size: { width: WIDTH, height: HEIGHT, depthOrArrayLayers: 1 },
+      format: 'rgba8unorm',
+      usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.RENDER_ATTACHMENT,
+    });
+    // synthetic scanout content (moving bar so the eye confirms frames land)
+    const frame = new Uint8Array(FRAME_BYTES);
+    let tick = 0;
+    const paint = () => {
+      tick++;
+      for (let i = 0; i < FRAME_BYTES; i += 4) frame[i] = (i >> 2) & 0xff;
+      for (let y = 0; y < 40; y++) {
+        const row = ((tick * 7 + y) % HEIGHT) * WIDTH * 4;
+        frame.fill(0x30eFa0 & 0xff, row, row + WIDTH * 4);
+      }
+    };
+
+    paint();
+    const t0 = performance.now();
+    for (let i = 0; i < REPS; i++) {
+      device.queue.writeTexture(
+        { texture },
+        frame,
+        { offset: 0, bytesPerRow: WIDTH * 4, rowsPerImage: HEIGHT },
+        { width: WIDTH, height: HEIGHT, depthOrArrayLayers: 1 },
+      );
+    }
+    await device.queue.onSubmittedWorkDone();
+    const uploadMs = performance.now() - t0;
+
+    // render a few frames for fidelity
+    for (let i = 0; i < 3; i++) {
+      const view = context.getCurrentTexture().createView();
+      const encoder = device.createCommandEncoder();
+      const pass = encoder.beginRenderPass({ colorAttachments: [{ view, clearValue: { r: 0, g: 0, b: 0, a: 1 }, loadOp: 'clear', storeOp: 'store' }] });
+      pass.end();
+      device.queue.submit([encoder.finish()]);
+    }
+
+    report.available = true;
+    report.adapter = { description: info.description, device: info.device, vendor: info.vendor, backendType: info.backendType, architecture: info.architecture };
+    report.limits = {};
+    for (const k of ['maxTextureDimension2D', 'maxBufferSize', 'maxComputeWorkgroupStorageSize', 'maxStorageBufferBindingSize'])
+      report.limits[k] = adapter.limits[k];
+    report.frameBytes = FRAME_BYTES;
+    report.reps = REPS;
+    report.writeTextureTotalMs = uploadMs;
+    report.writeTextureMBps = (FRAME_BYTES * REPS) / (uploadMs / 1000) / 1e6;
+    report.uploadPerFrameMs = uploadMs / REPS;
+    out.textContent = JSON.stringify(report, null, 2);
+    console.log('REPORT', JSON.stringify(report));
+  }
+}
+</script>
+</body>
+</html>

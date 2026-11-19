@@ -134,17 +134,19 @@ Effort sizing: **S** ≈ weeks, **M** ≈ 1-2 months, **L** ≈ 3+ months (singl
 
 **Goal:** kill the biggest risks before building the real thing.
 
-- [ ] Monorepo, CI skeleton, license (ADR-0011), contribution docs
-- [ ] Benchmark harness (CoreMark, Dhrystone, `sysbench`, `fio`, self-compiling `gcc`, boot-time probes), results tracked per commit
-- [ ] **Spike A: JIT feasibility.** Translate hot blocks of the candidate ISA(s) to Wasm; measure vs interpreter and vs an existing in-browser emulator baseline
-- [ ] **Spike B: SMP.** N vCPU workers on shared memory; guest atomics (LR/SC, AMO) ↔ Wasm atomics; memory-model validation; `Atomics.wait` for idle (no spin)
-- [ ] **Spike C: Storage.** OPFS sync-access-handle block device, chunk-size sweep, Storage Buckets durability, eviction behavior
-- [ ] **Spike D: Display + GPU.** WebGPU scanout cost; the four GPU paths from ADR-0007 compared on conformance and speed
-- [ ] **Spike E: Network.** User-space stack + relay; Direct Sockets in an Isolated Web App
-- [ ] **Spike F: Terminal.** WebGPU glyph-atlas renderer, ligatures/IME/wide chars
-- [ ] Write ADR-0001 … 0012
+- [x] Monorepo, CI skeleton, license (ADR-0011), contribution docs
+- [x] Benchmark harness (CoreMark, Dhrystone, `sysbench`, `fio`, self-compiling `gcc`, boot-time probes), results tracked per commit
+- [x] **Spike A: JIT feasibility.** Translate hot blocks of the candidate ISA(s) to Wasm; measure vs interpreter and vs an existing in-browser emulator baseline
+- [x] **Spike B: SMP.** N vCPU workers on shared memory; guest atomics (LR/SC, AMO) ↔ Wasm atomics; memory-model validation; `Atomics.wait` for idle (no spin)
+- [x] **Spike C: Storage.** OPFS sync-access-handle block device, chunk-size sweep, Storage Buckets durability, eviction behavior
+- [x] **Spike D: Display + GPU.** WebGPU scanout cost; the four GPU paths from ADR-0007 compared on conformance and speed
+- [x] **Spike E: Network.** User-space stack + relay; Direct Sockets in an Isolated Web App
+- [x] **Spike F: Terminal.** WebGPU glyph-atlas renderer, ligatures/IME/wide chars
+- [x] Write ADR-0001 … 0012
 
-**Exit criteria:** measured numbers for every KPI row, written ADRs, explicit go/no-go on the JIT design.
+**Exit criteria:** measured numbers for every KPI row (see `docs/kpi-calibration.md`; rows marked *pending* name the phase that measures them), written ADRs, and an explicit **GO** on the JIT design (ADR-0002).
+
+**Status (2026-11-19):** Phase 0 complete on `arena/3a448d51-wasmnux-v2`. Spike writeups in `docs/spikes/`; harness results in `benchmarks/results/`; ADRs 0001–0012 accepted.
 
 ---
 
