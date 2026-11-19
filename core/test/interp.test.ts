@@ -364,6 +364,21 @@ describe('A extension', () => {
     expect(r.word(SCRATCH)).toBe(99);
   });
 
+  it('invalidates an LR on a store-then-restore by the same hart', () => {
+    const r = runInterpreted(`
+      li a0, ${SCRATCH}
+      li t0, 11
+      sw t0, 0(a0)
+      lr.w t2, (a0)
+      li t1, 22
+      sw t1, 0(a0)
+      sw t0, 0(a0)
+      sc.w t3, t1, (a0)
+    ${EXIT}`);
+    expect(r.reg(28)).toBe(1);
+    expect(r.word(SCRATCH)).toBe(11);
+  });
+
   it('a CAS retry loop increments a counter atomically', () => {
     const r = runInterpreted(`
       li   a0, ${SCRATCH}

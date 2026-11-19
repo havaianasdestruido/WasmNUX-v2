@@ -24,8 +24,7 @@ export type MmuMode = 'bare' | 'sv32' | 'sv39';
 export type AccessKind = 'fetch' | 'load' | 'store' | 'amo';
 
 export type TranslateResult =
-  | { ok: true; pa: number; tlbHit: boolean }
-  | { ok: false; cause: number; tval: number };
+  { ok: true; pa: number; tlbHit: boolean } | { ok: false; cause: number; tval: number };
 
 export interface MmuHost {
   /** Read a PTE from guest physical memory. `null` when the address is not RAM. */
@@ -101,7 +100,7 @@ export class Mmu {
   /** Root table physical address (PPN field shifted to a byte address). */
   get rootTable(): number {
     if (this.mode === 'sv39') {
-      return Number((this.satp & 0x0000_ffff_ffff_ffffn) << 12n) >>> 0;
+      return Number((this.satp & 0x0000_0fff_ffff_ffffn) << 12n) >>> 0;
     }
     return Number((this.satp & 0x0000_0000_003f_ffffn) << 12n) >>> 0;
   }
@@ -164,13 +163,15 @@ export class Mmu {
   }
 
   private walkSv32(va: number, vpn: number, kind: AccessKind): TranslateResult {
+    if ((this.satp & 0x3f_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
     let a = this.rootTable;
     let level = 1;
     for (;;) {
       const vpnPart = level === 1 ? (va >>> 22) & 0x3ff : (va >>> 12) & 0x3ff;
       const pte = this.host.readPte((a + vpnPart * 4) >>> 0, 4);
       if (pte === null) return this.fault(kind, va);
-      if ((pte & PTE_V) === 0n) return this.fault(kind, va);
+      if ((pte & PTE_V) === 0n || ((pte & PTE_R) === 0n && (pte & PTE_W) !== 0n)) return this.fault(kind, va);
+      if (((pte >> 10n) & 0x3f_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
       const leaf = (pte & (PTE_R | PTE_X)) !== 0n;
       if (leaf) {
         const perm = this.checkPermission(pte, kind);
@@ -198,6 +199,7 @@ export class Mmu {
   }
 
   private walkSv39(va: number, vpn: number, kind: AccessKind): TranslateResult {
+    if ((this.satp & 0x0000_0fff_ffff_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
     let a = this.rootTable;
     let level = 2;
     for (;;) {
@@ -205,7 +207,8 @@ export class Mmu {
       const vpnPart = (va >>> shift) & 0x1ff;
       const pte = this.host.readPte((a + vpnPart * 8) >>> 0, 8);
       if (pte === null) return this.fault(kind, va);
-      if ((pte & PTE_V) === 0n) return this.fault(kind, va);
+      if ((pte & PTE_V) === 0n || ((pte & PTE_R) === 0n && (pte & PTE_W) !== 0n)) return this.fault(kind, va);
+      if (((pte >> 10n) & 0x0000_0fff_ffff_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
       const leaf = (pte & (PTE_R | PTE_X)) !== 0n;
       if (leaf) {
         const perm = this.checkPermission(pte, kind);
@@ -229,7 +232,7 @@ export class Mmu {
         return { ok: true, pa, tlbHit: false };
       }
       if (level === 0) return this.fault(kind, va);
-      const next = (pte >> 10n) & 0x0000_ffff_ffff_ffffn; // 44-bit PPN
+      const next = (pte >> 10n) & 0x0000_0fff_ffff_ffffn; // 44-bit PPN
       a = Number(next << 12n) >>> 0;
       level--;
     }
@@ -278,6 +281,10 @@ export class Mmu {
         break;
     }
     return { ok: true };
+  }
+
+  private accessFault(kind: AccessKind, va: number): TranslateResult {
+    return { ok: false, cause: kind === 'fetch' ? 1 : kind === 'load' ? 5 : 7, tval: va >>> 0 };
   }
 
   private fault(kind: AccessKind, va: number): TranslateResult {

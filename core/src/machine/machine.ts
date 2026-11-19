@@ -20,6 +20,7 @@ import { Clint, Plic, TestFinisher, TEST_FAIL, TEST_PASS } from '../devices/clin
 import { DEFAULT_RAM_BASE, GuestMemory, MMIO } from './memory.ts';
 import { isElf, parseElf32 } from './elf.ts';
 import { Mmu, type AccessKind, type TranslateResult } from '../mmu/mmu.ts';
+import { SmpChannel } from '../smp/channel.ts';
 
 export { TEST_PASS, TEST_FAIL };
 
@@ -66,12 +67,16 @@ export interface MachineOptions {
   /** Attach an existing memory (vCPU workers share one). */
   memory?: WebAssembly.Memory;
   /**
-   * Install the Sv32/Sv39 MMU. Off by default (M-mode identity). When paging is
+   * Compatibility option; MMU state is always present and defaults to M-mode identity. When paging is
    * active the machine runs the interpreter tier: generated code assumes
    * physical addresses, so the JIT is bypassed rather than producing a wrong
    * translation. JIT + paging is a Phase 1 work item.
    */
   mmu?: boolean;
+  /** Hart id for this machine instance (SMP workers). */
+  hartId?: number;
+  /** Shared SMP channel; installs the write barrier and reservation table. */
+  smp?: SmpChannel;
 }
 
 export interface BenchmarkReport {
@@ -113,8 +118,10 @@ export class Machine implements MachinePort {
   readonly finisher: TestFinisher;
   readonly engine: Engine;
   readonly interp: Interpreter;
-  /** Sv32/Sv39 MMU. Identity unless `opts.mmu` is set and `satp` is written. */
+  /** Experimental page-table walker; machine is identity mapped in M-mode. */
   readonly mmu: Mmu;
+  /** Shared SMP channel, or null on a single-hart machine. */
+  readonly smp: SmpChannel | null;
   readonly reports: BenchmarkReport[] = [];
   readonly marks: Array<{ name: string; atInstruction: number }> = [];
 
@@ -139,7 +146,15 @@ export class Machine implements MachinePort {
       controlPage: opts.controlPage ?? false,
       memory: opts.memory,
     });
-    this.cpu = new CpuState({ pc: this.mem.ramBase });
+    this.cpu = new CpuState({ pc: this.mem.ramBase, hartId: opts.hartId ?? 0 });
+    this.smp = opts.smp ?? null;
+    if (
+      this.smp &&
+      (!(this.mem.buffer instanceof SharedArrayBuffer) ||
+        this.cpu.hartId >= this.smp.harts ||
+        this.cpu.hartId < 0)
+    )
+      throw new Error('SMP requires shared memory and a valid hart id');
     const sink = opts.uartSink ?? new StringUartSink();
     this.uart = new Uart(sink, MMIO.uart);
     this.clint = new Clint({ harts: opts.harts ?? 1, now: opts.now });
@@ -213,6 +228,7 @@ export class Machine implements MachinePort {
     this.cpu.instret = 0;
     this.cpu.cycles = 0;
     this.cpu.lrValid = false;
+    this.smp?.clearReservation(this.cpu.hartId);
     this.directInterpInstructions = 0;
     this.cpu.setReg(2, (stackTop ?? this.heapBase) >>> 0); // sp
     this.cpu.setReg(4, 0); // tp (thread pointer; unused by the spike)
@@ -269,7 +285,7 @@ export class Machine implements MachinePort {
    * active MMU forces the interpreter; the semantics stay exact.
    */
   private runner(): { run(cpu: CpuState, budget: number): StopReason } {
-    return this.mmuActive ? this.interp : this.engine;
+    return this.mmuActive || this.smp ? this.interp : this.engine;
   }
 
   private nowNs(): bigint {
@@ -327,6 +343,24 @@ export class Machine implements MachinePort {
     return this.mmu.translate(va, kind);
   }
 
+  onWriteBegin(hart: number): void {
+    void hart;
+    this.smp?.beginWrite();
+  }
+
+  onWriteEnd(hart: number, addr: number, size: number): void {
+    void hart;
+    this.smp?.endWrite(addr, size);
+  }
+
+  onLr(hart: number, addr: number, index: number): number | null {
+    return this.smp?.lr(hart, addr, this.mem.i32, index) ?? null;
+  }
+
+  onSc(hart: number, addr: number, value: number, index: number): boolean | null {
+    return this.smp?.sc(hart, addr, value, this.mem.i32, index) ?? null;
+  }
+
   onSatpWrite(value: number): void {
     // `satp` is a 32-bit CSR on RV32; the MMU keeps the full BigInt form for
     // the Sv39 expansion.
@@ -334,9 +368,10 @@ export class Machine implements MachinePort {
     this.engine.invalidateAll('satp');
   }
 
-  onSfenceVma(rs1: number, rs2: number): void {
-    if (rs1 === 0 && rs2 === 0) this.mmu.invalidateAll();
-    else this.mmu.invalidateVpn(rs1 >>> 0);
+  onSfenceVma(address: number | null, asid: number | null): void {
+    void asid; // The TLB is flushed on every satp write; ASID-specific flushes may over-flush.
+    if (address === null) this.mmu.invalidateAll();
+    else this.mmu.invalidateVpn(address);
     this.engine.invalidateAll('sfence.vma');
   }
 

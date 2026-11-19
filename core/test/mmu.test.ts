@@ -294,3 +294,100 @@ describe('machine integration', () => {
     expect(machine.cpu.exitCode).toBe(5);
   });
 });
+
+describe('MMU regression cases', () => {
+  it('rejects PTEs with W=1 and R=0, including non-leaves', () => {
+    const mem = newMem();
+    const root = RAM_BASE + 0x1000;
+    const mmu = mmuWith(mem);
+    mmu.privilege = 1;
+    mmu.setSatp(BigInt(0x80000000 | (root >>> 12)));
+    for (const flags of [PTE_V | PTE_W | PTE_A | PTE_D, PTE_V | PTE_W | PTE_X | PTE_A | PTE_D]) {
+      putPte(mem, root, flags);
+      mmu.invalidateAll();
+      expect(mmu.translate(0, 'load').ok).toBe(false);
+    }
+  });
+
+  it('uses the rs1 value, not the register number, for sfence.vma', () => {
+    const machine = new Machine({ ramBytes: RAM_BYTES, jit: false });
+    const word = ((0x09 << 25) | (11 << 20) | (10 << 15) | 0x73) >>> 0;
+    const asm = assemble(`  .word ${word}`, { base: RAM_BASE });
+    machine.load(asm.bytes);
+    machine.reset(RAM_BASE);
+    machine.cpu.regs[10] = 0x12345000;
+    let flushed = -1;
+    machine.mmu.invalidateVpn = (address) => {
+      flushed = address;
+    };
+    machine.step();
+    expect(flushed).toBe(0x12345000);
+  });
+
+  it('does not retire an instruction which faults into mtvec', () => {
+    const machine = new Machine({ ramBytes: RAM_BYTES, jit: false });
+    const asm = assemble('  .word 0xffffffff', { base: RAM_BASE });
+    machine.load(asm.bytes);
+    machine.reset(RAM_BASE);
+    machine.cpu.writeCsr(CSR.mtvec, RAM_BASE + 0x100);
+    machine.step();
+    expect(machine.cpu.readCsr(CSR.mepc) >>> 0).toBe(RAM_BASE);
+    expect(machine.cpu.instret).toBe(0);
+  });
+});
+
+describe('out-of-range physical addresses', () => {
+  it('does not wrap a 34-bit Sv32 leaf into the 32-bit address space', () => {
+    const mem = newMem();
+    const root = RAM_BASE + 0x1000;
+    const mmu = mmuWith(mem);
+    mmu.privilege = 1;
+    mmu.setSatp(BigInt(0x80000000 | (root >>> 12)));
+    putPte(mem, root, (0x100000n << 10n) | RWX);
+    expect(mmu.translate(0, 'load')).toEqual({ ok: false, cause: 5, tval: 0 });
+  });
+
+  it('does not wrap an out-of-range Sv32 root into RAM', () => {
+    const mem = newMem();
+    const mmu = mmuWith(mem);
+    mmu.privilege = 1;
+    mmu.setSatp(0x80180001n); // root 0x180001000
+    expect(mmu.translate(0, 'fetch')).toEqual({ ok: false, cause: 1, tval: 0 });
+  });
+});
+
+describe('paging activation', () => {
+  it('continues in the interpreter when satp is written during a JIT-enabled run', () => {
+    const root = RAM_BASE + 0x8000;
+    const machine = new Machine({ ramBytes: 8 << 20, jit: { hotThreshold: 1, interpChunk: 2 } });
+    putPte(
+      machine.mem,
+      root + ((RAM_BASE >>> 22) & 0x3ff) * 4,
+      BigInt(sv32Leaf((RAM_BASE + 0x400000) >>> 12, RWX)),
+    );
+    const satp = (0x80000000 | (root >>> 12)) >>> 0;
+    const program = (result: number) =>
+      assemble(
+        `
+      li t0, ${satp}
+      csrw satp, t0
+      li a0, ${result}
+      li t1, 100
+    loop:
+      addi t1, t1, -1
+      bnez t1, loop
+      li a7, 93
+      ecall
+    `,
+        { base: RAM_BASE },
+      ).bytes;
+    machine.load(program(1), RAM_BASE);
+    machine.mem.u8.set(program(42), 0x400000);
+    machine.reset(RAM_BASE);
+    machine.mmu.privilege = 1;
+    machine.run(10000);
+    expect(machine.cpu.stop).toBe('exit');
+    expect(machine.cpu.exitCode).toBe(42);
+    expect(machine.stats().jitInstructions).toBe(0);
+  });
+});

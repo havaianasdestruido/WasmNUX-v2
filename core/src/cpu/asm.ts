@@ -168,6 +168,7 @@ export const CSR_ALIASES: Record<string, number> = {
   cycle: 0xc00,
   time: 0xc01,
   instret: 0xc02,
+  satp: 0x180,
   mstatus: 0x300,
   misa: 0x301,
   mie: 0x304,

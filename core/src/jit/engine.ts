@@ -355,6 +355,15 @@ export class Engine {
     let inJit = false;
 
     while (remaining > 0 && cpu.stop === 'running') {
+      // Paging may have been enabled by the last interpreted CSR instruction.
+      // Generated regions use physical addresses and must never run in that mode.
+      if (this.port.mmuActive) {
+        if (inJit) this.pushState(cpu);
+        const before = cpu.instret;
+        const reason = this.interp.run(cpu, remaining);
+        this.stats.interpInstructions += cpu.instret - before;
+        return reason;
+      }
       const pc = cpu.pc >>> 0;
       const ep = this.compiled.get(pc);
 
@@ -364,7 +373,7 @@ export class Engine {
           inJit = false;
         }
         const consumed = this.interpretChunk(cpu, remaining);
-        remaining -= consumed;
+        remaining -= Math.max(consumed, 1);
         this.stats.interpInstructions += consumed;
         if (cpu.stop !== 'running') break;
         this.maybeCompile(cpu);

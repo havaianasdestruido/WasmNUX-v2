@@ -31,14 +31,11 @@ export {
   type AccessKind,
   type TranslateResult,
 } from './mmu/mmu.ts';
-export {
-  PTE_FLAGS,
-  sv32Leaf,
-  sv32Pointer,
-  sv39Leaf,
-  sv39Pointer,
-  writePte,
-} from './mmu/tables.ts';
+export { PTE_FLAGS, sv32Leaf, sv32Pointer, sv39Leaf, sv39Pointer, writePte } from './mmu/tables.ts';
+
+// SMP shared-memory channel and guest stress programs.
+export { SmpChannel, CHANNEL_HEADER_INTS } from './smp/channel.ts';
+export { SMP_RAM_BASE, SMP_DATA, amoCounterProgram, lrscLockProgram, hartIdProgram } from './smp/programs.ts';
 
 // JIT (Spike A).
 export {

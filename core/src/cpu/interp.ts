@@ -58,6 +58,7 @@ import type { AccessKind, TranslateResult } from '../mmu/mmu.ts';
 /** What the interpreter needs from the machine. Implemented by `Machine`. */
 export interface MachinePort {
   readonly mem: GuestMemory;
+  readonly mmuActive?: boolean;
   /**
    * Translate a guest virtual address for `kind`. Identity in M-mode/bare mode.
    * A page fault is reported, not thrown, so the interpreter can raise the
@@ -73,7 +74,19 @@ export interface MachinePort {
   /** `satp` was written: translation state must be invalidated. */
   onSatpWrite?(value: number): void;
   /** `sfence.vma rs1, rs2` retired. */
-  onSfenceVma?(rs1: number, rs2: number): void;
+  onSfenceVma?(address: number | null, asid: number | null): void;
+  // -- SMP barriers (absent on a single-hart machine) ------------------------
+  /** Before a shared store/AMO writes. */
+  onWriteBegin?(hart: number): void;
+  /** After a shared store/AMO, with the guest physical address written. */
+  onWriteEnd?(hart: number, addr: number, size: number): void;
+  /** Record an LR reservation. */
+  onLr?(hart: number, addr: number, index: number): number | null;
+  /**
+   * Attempt an SC. `true`/`false` is an SMP verdict; `null` means "no SMP
+   * channel", so the interpreter uses its single-hart compare-exchange path.
+   */
+  onSc?(hart: number, addr: number, value: number, index: number): boolean | null;
 }
 
 export class Interpreter {
@@ -109,7 +122,7 @@ export class Interpreter {
       return;
     }
     const off = mem.ramOffset(fetchTr.pa);
-    if (off < 0) {
+    if (off < 0 || off + 4 > mem.ramSize) {
       this.trap(cpu, CAUSE.INSTRUCTION_ACCESS_FAULT, pc);
       return;
     }
@@ -363,7 +376,7 @@ export class Interpreter {
           if (funct7(instr) === 0x09 && rd === 0) {
             cpu.pc = next;
             cpu.instret++;
-            this.port.onSfenceVma?.(rs1, rs2);
+            this.port.onSfenceVma?.(rs1 === 0 ? null : regs[rs1]! >>> 0, rs2 === 0 ? null : regs[rs2]! >>> 0);
             return;
           }
           const f12 = (instr >>> 20) & 0xfff;
@@ -462,7 +475,7 @@ export class Interpreter {
     }
     const off = mem.ramOffset(tr.pa);
     if (off < 0 || off + size > mem.ramSize) {
-      const value = this.port.onMMIORead(cpu, addr, size);
+      const value = this.port.onMMIORead(cpu, tr.pa, size);
       if (cpu.stop !== 'running') return 0;
       return signExtend(value, size, f3 < 4);
     }
@@ -483,7 +496,7 @@ export class Interpreter {
           return null;
       }
     } catch {
-      this.trap(cpu, CAUSE.LOAD_ACCESS_FAULT, tr.pa);
+      this.trap(cpu, CAUSE.LOAD_ACCESS_FAULT, addr);
       return null;
     }
   }
@@ -499,9 +512,12 @@ export class Interpreter {
     }
     const off = mem.ramOffset(tr.pa);
     if (off < 0 || off + size > mem.ramSize) {
-      this.port.onMMIOWrite(cpu, addr, size, value);
+      this.port.onMMIOWrite(cpu, tr.pa, size, value);
       return cpu.stop === 'running';
     }
+    this.port.onWriteBegin?.(cpu.hartId);
+    if (cpu.lrValid && tr.pa >>> 0 < (cpu.lrAddr >>> 0) + 4 && cpu.lrAddr >>> 0 < (tr.pa >>> 0) + size)
+      cpu.lrValid = false;
     try {
       switch (f3) {
         case 0b000:
@@ -518,8 +534,10 @@ export class Interpreter {
           return false;
       }
     } catch {
-      this.trap(cpu, CAUSE.STORE_ACCESS_FAULT, tr.pa);
+      this.trap(cpu, CAUSE.STORE_ACCESS_FAULT, addr);
       return false;
+    } finally {
+      this.port.onWriteEnd?.(cpu.hartId, tr.pa, size);
     }
     return true;
   }
@@ -547,8 +565,8 @@ export class Interpreter {
     }
     const idx = off >> 2;
     if (f5 === AMO5_LR) {
-      const value = Atomics.load(mem.i32, idx);
-      cpu.lrAddr = addr;
+      const value = this.port.onLr?.(cpu.hartId, tr.pa, idx) ?? Atomics.load(mem.i32, idx);
+      cpu.lrAddr = tr.pa;
       cpu.lrValue = value;
       cpu.lrValid = true;
       if (rd) cpu.regs[rd] = value;
@@ -556,9 +574,13 @@ export class Interpreter {
     }
     if (f5 === AMO5_SC) {
       let success = 0;
-      if (cpu.lrValid && cpu.lrAddr === addr) {
-        // `Atomics.compareExchange` gives us the SC semantics we need: the
-        // store only happens when the word still holds the value LR.W read.
+      const sc = this.port.onSc?.(cpu.hartId, tr.pa, src, idx);
+      if (sc !== undefined && sc !== null) {
+        // The SMP channel checks the reservation and stores under its write
+        // lock, so a store-then-restore by another hart cannot commit a stale SC.
+        success = sc ? 0 : 1;
+      } else if (cpu.lrValid && cpu.lrAddr === tr.pa) {
+        // Single-hart fallback: `compareExchange` gives the SC semantics.
         const old = Atomics.compareExchange(mem.i32, idx, cpu.lrValue, src);
         success = old === cpu.lrValue ? 0 : 1;
       } else {
@@ -568,7 +590,10 @@ export class Interpreter {
       if (rd) cpu.regs[rd] = success;
       return true;
     }
+    this.port.onWriteBegin?.(cpu.hartId);
+    if (cpu.lrValid && cpu.lrAddr === tr.pa) cpu.lrValid = false;
     let old: number;
+    let illegal = false;
     switch (f5) {
       case AMO5_SWAP:
         old = Atomics.exchange(mem.i32, idx, src);
@@ -587,40 +612,39 @@ export class Interpreter {
         break;
       case AMO5_MIN: {
         old = Atomics.load(mem.i32, idx);
-        const v = Math.min(old, src);
-        while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
+        while (Atomics.compareExchange(mem.i32, idx, old, Math.min(old, src)) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
         break;
       }
       case AMO5_MAX: {
         old = Atomics.load(mem.i32, idx);
-        const v = Math.max(old, src);
-        while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
+        while (Atomics.compareExchange(mem.i32, idx, old, Math.max(old, src)) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
         break;
       }
       case AMO5_MINU: {
         old = Atomics.load(mem.i32, idx);
-        const v = old >>> 0 < src >>> 0 ? old : src;
-        while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
+        while (Atomics.compareExchange(mem.i32, idx, old, old >>> 0 < src >>> 0 ? old : src) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
         break;
       }
       case AMO5_MAXU: {
         old = Atomics.load(mem.i32, idx);
-        const v = old >>> 0 > src >>> 0 ? old : src;
-        while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
+        while (Atomics.compareExchange(mem.i32, idx, old, old >>> 0 > src >>> 0 ? old : src) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
         break;
       }
       default:
         this.illegal(cpu, 0, pc);
-        return false;
+        illegal = true;
+        old = 0;
     }
+    this.port.onWriteEnd?.(cpu.hartId, tr.pa, 4);
+    if (illegal) return false;
     if (rd) cpu.regs[rd] = old;
     return true;
   }
@@ -640,7 +664,6 @@ export class Interpreter {
       cpu.writeCsr(CSR.mcause, cause);
       cpu.writeCsr(CSR.mtval, tval | 0);
       cpu.pc = (mtvec & ~0x3) >>> 0;
-      cpu.instret++;
       return true;
     }
     cpu.stop = 'trap';
