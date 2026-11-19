@@ -14,7 +14,13 @@
  */
 
 import { writeFileSync } from 'node:fs';
-import { DEFAULT_MIN_SAMPLE_MS, DEFAULT_REPS, runSuites, speedupsAgainstReference, withHostInfo } from './harness.ts';
+import {
+  DEFAULT_MIN_SAMPLE_MS,
+  DEFAULT_REPS,
+  runSuites,
+  speedupsAgainstReference,
+  withHostInfo,
+} from './harness.ts';
 import { formatEnv, formatGate, formatResults, toMarkdown } from './report.ts';
 import { gate as runGate, hostInfo, latestReport, readReport, writeBaselines, writeReport } from './store.ts';
 import { resolveSuites, SUITE_REGISTRY, suiteIds } from '../suites/index.ts';
@@ -82,7 +88,8 @@ function suiteSelection(args: Args, spike?: string): string[] | 'all' {
   for (const p of raw) if (SUITE_REGISTRY.some((s) => s.id === p)) ids.push(p);
   const explicit = args.flags.get('suite');
   if (typeof explicit === 'string') ids.push(...explicit.split(','));
-  if (spike) ids.push(...SUITE_REGISTRY.filter((s) => s.spike.toLowerCase() === spike.toLowerCase()).map((s) => s.id));
+  if (spike)
+    ids.push(...SUITE_REGISTRY.filter((s) => s.spike.toLowerCase() === spike.toLowerCase()).map((s) => s.id));
   if (args.flags.has('all')) return 'all';
   return [...new Set(ids)];
 }
@@ -97,7 +104,7 @@ usage:
   npm run bench:gate -- [--tolerance 0.2] [--suite ...]
   npm run report -- [--from benchmarks/results/x.json] [--md] [--out docs/kpi/latest.md]
   npm run spike -- a|b|c|d|e|f
-  npm run bench:browser -- [--suite ...] [--browser /path/to/chromium]
+  npm run bench:browser -- [--suite ...] [--browser /path/to/chromium] [--out report.json]
 
 suites: ${suiteIds().join(', ')}
 `;
@@ -107,7 +114,8 @@ async function measure(args: Args, spike?: string): Promise<{ report: BenchRepor
   const ids = suiteSelection(args, spike);
   const selection = ids === 'all' || ids.length === 0 ? 'all' : ids;
   const suites = await resolveSuites(selection, { scale: num(args.flags, 'scale', 1) });
-  if (suites.length === 0) throw new UsageError(`no suites matched (${ids === 'all' ? 'all' : ids.join(', ') || 'none given'})`);
+  if (suites.length === 0)
+    throw new UsageError(`no suites matched (${ids === 'all' ? 'all' : ids.join(', ') || 'none given'})`);
   for (const s of suites) {
     // A suite whose variants disagree is measuring a bug; refuse to time it.
     s.verify?.();
@@ -135,13 +143,21 @@ function printReport(report: BenchReport, json: boolean): void {
   const best = [...speedups.entries()].filter(([, v]) => Number.isFinite(v)).sort((a, b) => b[1] - a[1]);
   if (best.length > 1) {
     process.stdout.write(`\nbest speedup vs reference: ${best[0]![0]} x${best[0]![1].toFixed(2)}\n`);
-    process.stdout.write(`worst speedup vs reference: ${best[best.length - 1]![0]} x${best[best.length - 1]![1].toFixed(2)}\n`);
+    process.stdout.write(
+      `worst speedup vs reference: ${best[best.length - 1]![0]} x${best[best.length - 1]![1].toFixed(2)}\n`,
+    );
   }
   process.stdout.write(`\nmeasured in ${(report.durationMs / 1000).toFixed(1)} s\n`);
 }
 
 async function main(argv: string[]): Promise<number> {
   const args = parseArgs(argv);
+  // `npm run bench -- --help` parses as command `run` plus a flag, so check the
+  // flag before dispatching: running every suite is not what was asked for.
+  if (args.flags.has('help') || args.flags.has('h')) {
+    process.stdout.write(HELP);
+    return 0;
+  }
   switch (args.command) {
     case 'run': {
       const { report } = await measure(args);
@@ -160,6 +176,13 @@ async function main(argv: string[]): Promise<number> {
     }
     case 'gate': {
       const { report } = await measure(args);
+      if (args.flags.has('quick')) {
+        // `--quick` disables adaptive sampling, so short cases are measured over
+        // a few milliseconds on a shared runner. That is fine for iterating and
+        // useless for gating: the same tree gates PASS with default sampling and
+        // reports ~9 regressions with `--quick`.
+        process.stderr.write('warning: --quick disables adaptive sampling; gate results are unreliable\n');
+      }
       const result = runGate(report, num(args.flags, 'tolerance', 0.2));
       process.stdout.write(`${formatGate(result)}\n`);
       if (result.rows.length === 0 || result.rows.every((r) => r.status === 'new')) {
@@ -201,10 +224,18 @@ async function main(argv: string[]): Promise<number> {
       const { runInBrowser } = await import('./browser.ts');
       let report = await runInBrowser({
         suites: suiteSelection(args) === 'all' ? suiteIds() : (suiteSelection(args) as string[]),
-        browserPath: typeof args.flags.get('browser') === 'string' ? (args.flags.get('browser') as string) : undefined,
+        browserPath:
+          typeof args.flags.get('browser') === 'string' ? (args.flags.get('browser') as string) : undefined,
         port: num(args.flags, 'port', 8420),
       });
       report = { ...report, env: withHostInfo(report.env, hostInfo()) };
+      // The browser runner also writes page logs to stdout, so `--json` alone is
+      // not enough to capture a report; `--out` writes just the JSON.
+      const out = args.flags.get('out');
+      if (typeof out === 'string') {
+        writeFileSync(out, `${JSON.stringify(report, null, 2)}\n`);
+        process.stdout.write(`wrote ${out}\n`);
+      }
       printReport(report, args.flags.has('json'));
       return 0;
     }

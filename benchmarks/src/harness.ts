@@ -17,7 +17,16 @@
  */
 
 import { WasmFeatures } from '@wasmnux/core';
-import type { BenchCase, BenchEnv, BenchReport, CaseResult, GitInfo, Sample, Suite, Variant } from './types.ts';
+import type {
+  BenchCase,
+  BenchEnv,
+  BenchReport,
+  CaseResult,
+  GitInfo,
+  Sample,
+  Suite,
+  Variant,
+} from './types.ts';
 
 export interface MeasureOptions {
   /** Timed repetitions to take at minimum. */
@@ -50,10 +59,21 @@ export const DEFAULT_MIN_SAMPLE_MS = 20;
  */
 export function captureEnv(): BenchEnv {
   const nav = (globalThis as { navigator?: { userAgent?: string; hardwareConcurrency?: number } }).navigator;
-  const proc = (globalThis as { process?: { platform?: string; arch?: string; versions?: { node?: string }; release?: { name?: string } } }).process;
+  const proc = (
+    globalThis as {
+      process?: {
+        platform?: string;
+        arch?: string;
+        versions?: { node?: string };
+        release?: { name?: string };
+      };
+    }
+  ).process;
   return {
     date: new Date().toISOString(),
-    runtime: proc?.versions?.node ? `${proc.release?.name ?? 'node'} ${proc.versions.node}` : (nav?.userAgent ?? 'unknown runtime'),
+    runtime: proc?.versions?.node
+      ? `${proc.release?.name ?? 'node'} ${proc.versions.node}`
+      : (nav?.userAgent ?? 'unknown runtime'),
     platform: proc?.platform ?? 'browser',
     arch: proc?.arch ?? 'unknown',
     cpus: nav?.hardwareConcurrency ?? 0,
@@ -63,15 +83,26 @@ export function captureEnv(): BenchEnv {
 }
 
 /** Attach host-only provenance (git commit, memory) to an environment block. */
-export function withHostInfo(env: BenchEnv, info: { git?: GitInfo; totalMemoryMB?: number; cpus?: number }): BenchEnv {
-  return { ...env, git: info.git ?? env.git, totalMemoryMB: info.totalMemoryMB ?? env.totalMemoryMB, cpus: info.cpus ?? env.cpus };
+export function withHostInfo(
+  env: BenchEnv,
+  info: { git?: GitInfo; totalMemoryMB?: number; cpus?: number },
+): BenchEnv {
+  return {
+    ...env,
+    git: info.git ?? env.git,
+    totalMemoryMB: info.totalMemoryMB ?? env.totalMemoryMB,
+    cpus: info.cpus ?? env.cpus,
+  };
 }
 
 function statsOf(samples: Sample[]): { best: Sample; median: Sample } {
   const sorted = [...samples].sort((a, b) => a.ms - b.ms);
   const best = sorted[0]!;
   const mid = sorted.length >> 1;
-  const median = sorted.length % 2 === 1 ? sorted[mid]! : { ms: (sorted[mid - 1]!.ms + sorted[mid]!.ms) / 2, instructions: sorted[mid]!.instructions };
+  const median =
+    sorted.length % 2 === 1
+      ? sorted[mid]!
+      : { ms: (sorted[mid - 1]!.ms + sorted[mid]!.ms) / 2, instructions: sorted[mid]!.instructions };
   return { best, median };
 }
 
@@ -81,7 +112,12 @@ export function ipsOf(s: Sample): number {
 }
 
 /** Run one variant `reps` times (or more, if the samples are too short) and summarise. */
-export function measureVariant(suiteId: string, caseName: string, variant: Variant, opts: MeasureOptions = {}): CaseResult {
+export function measureVariant(
+  suiteId: string,
+  caseName: string,
+  variant: Variant,
+  opts: MeasureOptions = {},
+): CaseResult {
   const reps = opts.reps ?? DEFAULT_REPS;
   const warmup = opts.warmup ?? DEFAULT_WARMUP;
   const minSampleMs = opts.minSampleMs ?? 0;

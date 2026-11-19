@@ -66,21 +66,34 @@ describe('statistics', () => {
   });
 
   it('keeps sampling until the best sample is long enough', () => {
-    const r = measureVariant('fake', 'case', fake('v', 2, 100), { reps: 2, warmup: 0, minSampleMs: 7, maxReps: 9 });
+    const r = measureVariant('fake', 'case', fake('v', 2, 100), {
+      reps: 2,
+      warmup: 0,
+      minSampleMs: 7,
+      maxReps: 9,
+    });
     // 2 ms samples can never reach 7 ms, so it stops at the cap.
     expect(r.samples.length).toBe(9);
   });
 
   it('stops early once a sample is long enough', () => {
-    const r = measureVariant('fake', 'case', fake('v', 50, 100), { reps: 1, warmup: 0, minSampleMs: 20, maxReps: 9 });
+    const r = measureVariant('fake', 'case', fake('v', 50, 100), {
+      reps: 1,
+      warmup: 0,
+      minSampleMs: 20,
+      maxReps: 9,
+    });
     expect(r.samples.length).toBe(1);
   });
 
   it('computes speedups against the first variant of each case', () => {
-    const report = runSuites([suiteOf([{ name: 'c', variants: [fake('interp', 100, 1000), fake('jit', 10, 1000)] }])], {
-      reps: 1,
-      warmup: 0,
-    });
+    const report = runSuites(
+      [suiteOf([{ name: 'c', variants: [fake('interp', 100, 1000), fake('jit', 10, 1000)] }])],
+      {
+        reps: 1,
+        warmup: 0,
+      },
+    );
     const sp = speedupsAgainstReference(report.results);
     expect(sp.get('fake/c/interp')).toBeCloseTo(1, 5);
     expect(sp.get('fake/c/jit')).toBeCloseTo(10, 1);
