@@ -46,18 +46,11 @@ test('guest spinlock: 4 workers, plain RMW inside critical section stays consist
 });
 
 test('Atomics.wait/notify: worker parked in Atomics.wait wakes on notify (no spin)', async () => {
-  const buffer = new SharedArrayBuffer(16);
-  const i32 = new Int32Array(buffer);
-  const job = spawnJob({ kind: 'wait', buffer, controlAddr: 0, timeoutMs: 2000 });
-  await new Promise(r => setTimeout(r, 30)); // let the worker park
-  const t0 = process.hrtime.bigint();
-  Atomics.store(i32, 0, 1);
-  Atomics.notify(i32, 0, 1);
-  const res = await job;
-  const dt = process.hrtime.bigint() - t0;
-  assert.equal(res.kind, 'wait');
-  assert.equal(res.result, 'ok');
-  assert.ok(dt < 100_000_000n, `wake took too long: ${Number(dt) / 1e6}ms`);
+  const { measureWakeLatency } = await import('../src/smp.js');
+  const r = await measureWakeLatency(5);
+  assert.equal(r.waitResult, 'ok');
+  assert.ok(r.wokeNs > 0);
+  assert.ok(r.wokeNs < 50_000_000, `wake took too long: ${r.wokeNs / 1e6}ms`);
 });
 
 test('Atomics.wait: timeout path returns timed-out', async () => {
