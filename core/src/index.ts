@@ -16,6 +16,30 @@ export { Interpreter, mulh, signExtend, type MachinePort } from './cpu/interp.ts
 export { GuestMemory, DEFAULT_RAM_BASE, MMIO, WASM_PAGE, type GuestMemoryOptions } from './machine/memory.ts';
 export { isElf, parseElf32, ElfError, ELF_MAGIC, PT_LOAD, type ElfImage } from './machine/elf.ts';
 
+// MMU (Sv32/Sv39) and page-table helpers.
+export {
+  Mmu,
+  PAGE_FAULT,
+  PTE_V,
+  PTE_R,
+  PTE_W,
+  PTE_X,
+  PTE_U,
+  PTE_A,
+  PTE_D,
+  type MmuMode,
+  type AccessKind,
+  type TranslateResult,
+} from './mmu/mmu.ts';
+export {
+  PTE_FLAGS,
+  sv32Leaf,
+  sv32Pointer,
+  sv39Leaf,
+  sv39Pointer,
+  writePte,
+} from './mmu/tables.ts';
+
 // JIT (Spike A).
 export {
   buildCfg,

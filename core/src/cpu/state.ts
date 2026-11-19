@@ -56,6 +56,7 @@ export const CSR = {
   misa: 0x301,
   mie: 0x304,
   mtvec: 0x305,
+  satp: 0x180,
   mscratch: 0x340,
   mepc: 0x341,
   mcause: 0x342,

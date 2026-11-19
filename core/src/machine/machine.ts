@@ -19,6 +19,7 @@ import { StringUartSink, Uart, UART_BASE, type UartSink } from '../devices/uart.
 import { Clint, Plic, TestFinisher, TEST_FAIL, TEST_PASS } from '../devices/clint.ts';
 import { DEFAULT_RAM_BASE, GuestMemory, MMIO } from './memory.ts';
 import { isElf, parseElf32 } from './elf.ts';
+import { Mmu, type AccessKind, type TranslateResult } from '../mmu/mmu.ts';
 
 export { TEST_PASS, TEST_FAIL };
 
@@ -64,6 +65,13 @@ export interface MachineOptions {
   tickInterval?: number;
   /** Attach an existing memory (vCPU workers share one). */
   memory?: WebAssembly.Memory;
+  /**
+   * Install the Sv32/Sv39 MMU. Off by default (M-mode identity). When paging is
+   * active the machine runs the interpreter tier: generated code assumes
+   * physical addresses, so the JIT is bypassed rather than producing a wrong
+   * translation. JIT + paging is a Phase 1 work item.
+   */
+  mmu?: boolean;
 }
 
 export interface BenchmarkReport {
@@ -105,6 +113,8 @@ export class Machine implements MachinePort {
   readonly finisher: TestFinisher;
   readonly engine: Engine;
   readonly interp: Interpreter;
+  /** Sv32/Sv39 MMU. Identity unless `opts.mmu` is set and `satp` is written. */
+  readonly mmu: Mmu;
   readonly reports: BenchmarkReport[] = [];
   readonly marks: Array<{ name: string; atInstruction: number }> = [];
 
@@ -116,6 +126,8 @@ export class Machine implements MachinePort {
   private mmioReads = 0;
   private mmioWrites = 0;
   private entry = 0;
+  /** Instructions retired by the interpreter while paging forced the JIT out. */
+  private directInterpInstructions = 0;
   /** Instructions between device/interrupt slices. */
   readonly tickInterval: number;
 
@@ -144,6 +156,7 @@ export class Machine implements MachinePort {
     // per-slice cost, measured in spike A) stays under a percent of runtime.
     this.tickInterval = opts.tickInterval ?? 65536;
     this.bus = new DeviceBus().add(this.uart).add(this.clint).add(this.plic).add(this.finisher);
+    this.mmu = new Mmu({ readPte: (pa, size) => this.readPte(pa, size) });
     this.interp = new Interpreter(this);
     const engineOpts: EngineOptions =
       typeof opts.jit === 'object' && opts.jit !== null ? opts.jit : { jit: opts.jit !== false };
@@ -200,6 +213,7 @@ export class Machine implements MachinePort {
     this.cpu.instret = 0;
     this.cpu.cycles = 0;
     this.cpu.lrValid = false;
+    this.directInterpInstructions = 0;
     this.cpu.setReg(2, (stackTop ?? this.heapBase) >>> 0); // sp
     this.cpu.setReg(4, 0); // tp (thread pointer; unused by the spike)
     this.engine.reset();
@@ -222,11 +236,13 @@ export class Machine implements MachinePort {
     const before = this.cpu.instret;
     let left = budget;
     let retired = 0;
+    const runner = this.runner();
     while (left > 0 && this.cpu.stop === 'running') {
       const chunk = Math.min(left, this.tickInterval);
       const at = this.cpu.instret;
-      this.engine.run(this.cpu, chunk);
+      runner.run(this.cpu, chunk);
       const n = this.cpu.instret - at;
+      if (runner === this.interp) this.directInterpInstructions += n;
       retired += n;
       left -= Math.max(n, 1); // a chunk that retired nothing must still make progress
       this.clint.tick(this.nowNs());
@@ -240,7 +256,20 @@ export class Machine implements MachinePort {
 
   /** Single-step, JIT or interpreter depending on what covers the pc. */
   step(): void {
-    this.engine.run(this.cpu, 1);
+    this.runner().run(this.cpu, 1);
+  }
+
+  /** True while guest virtual addresses must be translated. */
+  get mmuActive(): boolean {
+    return this.mmu.active;
+  }
+
+  /**
+   * The execution tier. Compiled code addresses guest RAM physically, so an
+   * active MMU forces the interpreter; the semantics stay exact.
+   */
+  private runner(): { run(cpu: CpuState, budget: number): StopReason } {
+    return this.mmuActive ? this.interp : this.engine;
   }
 
   private nowNs(): bigint {
@@ -293,6 +322,33 @@ export class Machine implements MachinePort {
   }
 
   // -- MachinePort ----------------------------------------------------------
+
+  translate(kind: AccessKind, va: number): TranslateResult {
+    return this.mmu.translate(va, kind);
+  }
+
+  onSatpWrite(value: number): void {
+    // `satp` is a 32-bit CSR on RV32; the MMU keeps the full BigInt form for
+    // the Sv39 expansion.
+    this.mmu.setSatp(BigInt(value) & 0xffff_ffffn);
+    this.engine.invalidateAll('satp');
+  }
+
+  onSfenceVma(rs1: number, rs2: number): void {
+    if (rs1 === 0 && rs2 === 0) this.mmu.invalidateAll();
+    else this.mmu.invalidateVpn(rs1 >>> 0);
+    this.engine.invalidateAll('sfence.vma');
+  }
+
+  /** Physical PTE read for the page-table walker. */
+  private readPte(pa: number, size: 4 | 8): bigint | null {
+    const off = this.mem.ramOffset(pa >>> 0);
+    if (off < 0 || off + size > this.mem.ramSize) return null;
+    if (size === 4) return BigInt(this.mem.view.getUint32(off, true));
+    const lo = BigInt(this.mem.view.getUint32(off, true));
+    const hi = BigInt(this.mem.view.getUint32(off + 4, true));
+    return lo | (hi << 32n);
+  }
 
   onSyscall(cpu: CpuState): void {
     const nr = cpu.reg(17) >>> 0; // a7
@@ -437,7 +493,7 @@ export class Machine implements MachinePort {
     return {
       instructions: this.cpu.instret,
       jitInstructions: jit.jitInstructions,
-      interpInstructions: jit.interpInstructions,
+      interpInstructions: jit.interpInstructions + this.directInterpInstructions,
       regionsCompiled: jit.regionsCompiled,
       blocksCompiled: jit.blocksCompiled,
       wasmBytes: jit.wasmBytes,

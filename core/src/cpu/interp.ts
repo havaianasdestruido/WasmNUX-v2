@@ -53,19 +53,36 @@ import {
 import { F12_EBREAK, F12_ECALL, F12_MRET, F12_WFI } from './encoding.ts';
 import { CAUSE, CSR, type CpuState, type StopReason } from './state.ts';
 import type { GuestMemory } from '../machine/memory.ts';
+import type { AccessKind, TranslateResult } from '../mmu/mmu.ts';
 
 /** What the interpreter needs from the machine. Implemented by `Machine`. */
 export interface MachinePort {
   readonly mem: GuestMemory;
+  /**
+   * Translate a guest virtual address for `kind`. Identity in M-mode/bare mode.
+   * A page fault is reported, not thrown, so the interpreter can raise the
+   * RISC-V trap with the faulting VA in `mtval`. Optional so lightweight test
+   * ports that never enable paging keep working; absence means identity.
+   */
+  translate?(kind: AccessKind, va: number): TranslateResult;
   onSyscall(cpu: CpuState): void;
   onMMIORead(cpu: CpuState, addr: number, size: number): number;
   onMMIOWrite(cpu: CpuState, addr: number, size: number, value: number): void;
   /** Called on WFI. Returns true when the vCPU should stop instead of idling. */
   onIdle(cpu: CpuState): boolean;
+  /** `satp` was written: translation state must be invalidated. */
+  onSatpWrite?(value: number): void;
+  /** `sfence.vma rs1, rs2` retired. */
+  onSfenceVma?(rs1: number, rs2: number): void;
 }
 
 export class Interpreter {
   constructor(private readonly port: MachinePort) {}
+
+  /** Identity when the port does not install an MMU. */
+  private translate(kind: AccessKind, va: number): TranslateResult {
+    return this.port.translate?.(kind, va) ?? { ok: true, pa: va >>> 0, tlbHit: false };
+  }
 
   /**
    * Execute exactly one instruction, updating `cpu`.
@@ -83,7 +100,15 @@ export class Interpreter {
   private execute(cpu: CpuState): void {
     const mem = this.port.mem;
     const pc = cpu.pc >>> 0;
-    const off = mem.ramOffset(pc);
+    // Instruction fetches go through the MMU exactly like loads and stores:
+    // with paging enabled a fetch from an unmapped or non-executable page is an
+    // instruction page fault, not a physical RAM read.
+    const fetchTr = this.translate('fetch', pc);
+    if (!fetchTr.ok) {
+      this.trap(cpu, fetchTr.cause, fetchTr.tval);
+      return;
+    }
+    const off = mem.ramOffset(fetchTr.pa);
     if (off < 0) {
       this.trap(cpu, CAUSE.INSTRUCTION_ACCESS_FAULT, pc);
       return;
@@ -151,13 +176,14 @@ export class Interpreter {
       case OP_LOAD: {
         const addr = ((regs[rs1]! + immI(instr)) | 0) >>> 0;
         const value = this.load(cpu, addr, f3, pc);
+        if (value === null) return; // trapped into a handler
         if (cpu.stop !== 'running') return;
         if (rd) regs[rd] = value;
         break;
       }
       case OP_STORE: {
         const addr = ((regs[rs1]! + immS(instr)) | 0) >>> 0;
-        this.store(cpu, addr, f3, regs[rs2]!, pc);
+        if (!this.store(cpu, addr, f3, regs[rs2]!, pc)) return;
         if (cpu.stop !== 'running') return;
         break;
       }
@@ -331,6 +357,15 @@ export class Interpreter {
       }
       case OP_SYSTEM: {
         if (f3 === 0) {
+          // sfence.vma: funct7=0x09, rd=0; rs1/rs2 select an address and ASID
+          // and are both legal. It is not an f12 match because rs2 occupies
+          // bits 24:20.
+          if (funct7(instr) === 0x09 && rd === 0) {
+            cpu.pc = next;
+            cpu.instret++;
+            this.port.onSfenceVma?.(rs1, rs2);
+            return;
+          }
           const f12 = (instr >>> 20) & 0xfff;
           switch (f12) {
             case F12_ECALL:
@@ -388,7 +423,10 @@ export class Interpreter {
           f3 === 0b101 ||
           ((f3 === 0b010 || f3 === 0b110) && src !== 0) ||
           ((f3 === 0b011 || f3 === 0b111) && src !== 0);
-        if (writes) cpu.writeCsr(addrCsr, value);
+        if (writes) {
+          cpu.writeCsr(addrCsr, value);
+          if (addrCsr === CSR.satp) this.port.onSatpWrite?.(value);
+        }
         if (rd) regs[rd] = old;
         break;
       }
@@ -413,10 +451,16 @@ export class Interpreter {
 
   // -- helpers --------------------------------------------------------------
 
-  private load(cpu: CpuState, addr: number, f3: number, pc: number): number {
+  /** Returns `null` when the access trapped into a handler. */
+  private load(cpu: CpuState, addr: number, f3: number, pc: number): number | null {
     const mem = this.port.mem;
     const size = f3 === 0 || f3 === 4 ? 1 : f3 === 1 || f3 === 5 ? 2 : 4;
-    const off = mem.ramOffset(addr);
+    const tr = this.translate('load', addr);
+    if (!tr.ok) {
+      this.trap(cpu, tr.cause, tr.tval);
+      return null;
+    }
+    const off = mem.ramOffset(tr.pa);
     if (off < 0 || off + size > mem.ramSize) {
       const value = this.port.onMMIORead(cpu, addr, size);
       if (cpu.stop !== 'running') return 0;
@@ -436,21 +480,27 @@ export class Interpreter {
           return mem.view.getUint16(off, true);
         default:
           this.illegal(cpu, 0, pc);
-          return 0;
+          return null;
       }
     } catch {
-      this.trap(cpu, CAUSE.LOAD_ACCESS_FAULT, addr);
-      return 0;
+      this.trap(cpu, CAUSE.LOAD_ACCESS_FAULT, tr.pa);
+      return null;
     }
   }
 
-  private store(cpu: CpuState, addr: number, f3: number, value: number, pc: number): void {
+  /** Returns false when the access trapped into a handler or stopped the machine. */
+  private store(cpu: CpuState, addr: number, f3: number, value: number, pc: number): boolean {
     const mem = this.port.mem;
     const size = f3 === 0 ? 1 : f3 === 1 ? 2 : 4;
-    const off = mem.ramOffset(addr);
+    const tr = this.translate('store', addr);
+    if (!tr.ok) {
+      this.trap(cpu, tr.cause, tr.tval);
+      return false;
+    }
+    const off = mem.ramOffset(tr.pa);
     if (off < 0 || off + size > mem.ramSize) {
       this.port.onMMIOWrite(cpu, addr, size, value);
-      return;
+      return cpu.stop === 'running';
     }
     try {
       switch (f3) {
@@ -465,10 +515,13 @@ export class Interpreter {
           break;
         default:
           this.illegal(cpu, 0, pc);
+          return false;
       }
     } catch {
-      this.trap(cpu, CAUSE.STORE_ACCESS_FAULT, addr);
+      this.trap(cpu, CAUSE.STORE_ACCESS_FAULT, tr.pa);
+      return false;
     }
+    return true;
   }
 
   /**
@@ -481,7 +534,12 @@ export class Interpreter {
       return false;
     }
     const mem = this.port.mem;
-    const off = mem.ramOffset(addr);
+    const tr = this.translate('amo', addr);
+    if (!tr.ok) {
+      this.trap(cpu, tr.cause, tr.tval);
+      return false;
+    }
+    const off = mem.ramOffset(tr.pa);
     if (off < 0 || off + 4 > mem.ramSize) {
       // Atomics on MMIO are not supported by the spike machine.
       this.trap(cpu, CAUSE.STORE_ACCESS_FAULT, addr);
@@ -567,7 +625,13 @@ export class Interpreter {
     return true;
   }
 
-  private trap(cpu: CpuState, cause: number, tval: number): void {
+  /**
+   * Raise a synchronous trap. Returns true when a handler was entered (mtvec
+   * nonzero) and false when the machine has no handler and stopped. `mepc` is
+   * the faulting instruction's own pc: `cpu.pc` is only advanced after the
+   * instruction body, so it still points at the instruction that trapped.
+   */
+  private trap(cpu: CpuState, cause: number, tval: number): boolean {
     const mtvec = cpu.readCsr(CSR.mtvec) >>> 0;
     cpu.cause = cause;
     cpu.tval = tval | 0;
@@ -577,9 +641,10 @@ export class Interpreter {
       cpu.writeCsr(CSR.mtval, tval | 0);
       cpu.pc = (mtvec & ~0x3) >>> 0;
       cpu.instret++;
-      return;
+      return true;
     }
     cpu.stop = 'trap';
+    return false;
   }
 
   private illegal(cpu: CpuState, instr: number, _pc: number): void {
