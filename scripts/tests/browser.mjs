@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import {withBrowser, probeIme, probeOriginLoss} from '../../benchmarks/browser.mjs';
+
+await withBrowser(async (page, cdp, browser) => {
+  assert.equal(await page.evaluate(() => crossOriginIsolated), true, 'COOP/COEP');
+  assert.deepEqual(await probeIme(page, cdp), {samples:[{preedit:'日', commits:[]}, {preedit:'日本', commits:[]}], commits:['日本']});
+  console.log(`${browser}: IME pre-edit and commit verified`);
+  const cpu = await page.evaluate(() => probes.cpu());
+  assert.equal(cpu.baseline.jitMs.length, 4);
+  console.log('RV64 interpreter, block JIT and v86 checksums verified', cpu);
+  const smp = await page.evaluate(() => probes.smp());
+  assert.ok(smp.some(run => run.harts.some(hart => hart.wake === 'ok')), 'a hart should park and be notified');
+  assert.ok(smp.every(run => run.totals.every(n => n === run.count * run.iterations)));
+  assert.ok(smp.find(run => run.count === 2).harts.every(hart => hart.scLitmusRounds === 256));
+  console.log('Shared Wasm atomics and worker wait/notify verified');
+  const storage = await page.evaluate(() => probes.storage());
+  assert.equal(storage.sweep.length, 4);
+  if (storage.bucket.available) assert.equal(storage.bucket.reopenVerified, true, storage.bucket.error);
+  const loss = await probeOriginLoss(page, cdp);
+  assert.equal(loss.originDataClearSimulation.after.present, false);
+  assert.ok(['not-induced', 'quota-exceeded'].includes(loss.quota.status));
+  if (loss.quota.status === 'quota-exceeded') assert.equal(loss.quota.previousSectorIntact, true);
+  console.log('OPFS sparse reads, flushed write/reopen and random reads verified');
+  const graphics = await page.evaluate(() => probes.graphics());
+  assert.equal(graphics.status, 'measured', graphics.reason);
+  assert.ok(graphics.atlas.inkByRow.every(n => n > 0));
+  console.log('WebGPU scanout and terminal atlas readback verified');
+  const net = await page.evaluate(() => probes.network());
+  assert.ok(net.packetCounts.every(p => p.sent > 1 && p.received > 1));
+  assert.equal(net.directSocketsExposed, false);
+  console.log('User-space TCP/IP echo across the WebSocket fixture verified');
+});

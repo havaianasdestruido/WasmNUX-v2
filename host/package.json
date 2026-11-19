@@ -1,0 +1,1 @@
+{"name":"@wasmnux/host","version":"0.0.0","private":true,"type":"module","license":"Apache-2.0","dependencies":{"@fontsource/fira-code":"5.3.0","@fontsource/noto-sans-jp":"5.3.1","tcpip":"0.4.0"}}

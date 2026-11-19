@@ -134,15 +134,17 @@ Effort sizing: **S** ≈ weeks, **M** ≈ 1-2 months, **L** ≈ 3+ months (singl
 
 **Goal:** kill the biggest risks before building the real thing.
 
-- [ ] Monorepo, CI skeleton, license (ADR-0011), contribution docs
-- [ ] Benchmark harness (CoreMark, Dhrystone, `sysbench`, `fio`, self-compiling `gcc`, boot-time probes), results tracked per commit
-- [ ] **Spike A: JIT feasibility.** Translate hot blocks of the candidate ISA(s) to Wasm; measure vs interpreter and vs an existing in-browser emulator baseline
-- [ ] **Spike B: SMP.** N vCPU workers on shared memory; guest atomics (LR/SC, AMO) ↔ Wasm atomics; memory-model validation; `Atomics.wait` for idle (no spin)
-- [ ] **Spike C: Storage.** OPFS sync-access-handle block device, chunk-size sweep, Storage Buckets durability, eviction behavior
-- [ ] **Spike D: Display + GPU.** WebGPU scanout cost; the four GPU paths from ADR-0007 compared on conformance and speed
-- [ ] **Spike E: Network.** User-space stack + relay; Direct Sockets in an Isolated Web App
-- [ ] **Spike F: Terminal.** WebGPU glyph-atlas renderer, ligatures/IME/wide chars
-- [ ] Write ADR-0001 … 0012
+See the [Phase 0 evidence and exit decision](docs/phase-0.md) for measurements and open validation gates.
+
+- [x] Monorepo, CI skeleton, license (ADR-0011), contribution docs
+- [x] Benchmark harness (CoreMark, Dhrystone, `sysbench`, `fio`, self-compiling `gcc`, boot-time probes), results tracked per commit
+- [x] **Spike A: JIT feasibility.** Translate hot blocks of the candidate ISA(s) to Wasm; measure vs interpreter and vs an existing in-browser emulator baseline
+- [x] **Spike B: SMP.** N vCPU workers on shared memory; guest atomics (LR/SC, AMO) ↔ Wasm atomics; memory-model validation; `Atomics.wait` for idle (no spin)
+- [ ] **Spike C: Storage.** OPFS sync-access-handle block device, chunk-size sweep, Storage Buckets durability, eviction behavior *(block device and origin-clear simulation implemented; automatic eviction and durability still unverified)*
+- [ ] **Spike D: Display + GPU.** WebGPU scanout cost; the four GPU paths from ADR-0007 compared on conformance and speed *(scanout probe implemented; guest GPU paths not provisioned)*
+- [ ] **Spike E: Network.** User-space stack + relay; Direct Sockets in an Isolated Web App *(relay measured; installed IWA run still required)*
+- [x] **Spike F: Terminal.** WebGPU glyph-atlas renderer, ligatures/IME/wide chars
+- [x] Write ADR-0001 … 0012
 
 **Exit criteria:** measured numbers for every KPI row, written ADRs, explicit go/no-go on the JIT design.
 
