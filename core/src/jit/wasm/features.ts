@@ -87,7 +87,16 @@ export function probeWasmFeatures(): WasmFeatureReport {
     b.importMemory('env', 'mem', { min: 1, max: 1 });
     const f = b.addFunc('probe', ['i32'], ['i32']);
     const v = f.addLocals(1, 'v128');
-    f.localGet(0).v128Load().localGet(0).v128Load().i32x4Add().localSet(v).localGet(0).localGet(v).v128Store().i32(0);
+    f.localGet(0)
+      .v128Load()
+      .localGet(0)
+      .v128Load()
+      .i32x4Add()
+      .localSet(v)
+      .localGet(0)
+      .localGet(v)
+      .v128Store()
+      .i32(0);
   });
 
   const bulkMemory = validate((b) => {
@@ -138,24 +147,20 @@ export function probeWasmFeatures(): WasmFeatureReport {
 
 /** Binary-search the largest memory we can reserve without actually touching it. */
 function probeMaxPages(shared: boolean): number {
+  // Probe `maximum` with `initial: 1`, i.e. what a guest could *reserve* and
+  // grow into. Probing `initial: pages` instead would measure how much the
+  // runtime is willing to commit right now, which is a different (and much
+  // smaller) number, and which used to make this report 1024 pages for shared
+  // memory while a 65536-page reservation succeeds in microseconds.
   const tryPages = (pages: number): boolean => {
     try {
-      if (shared) {
-        // Shared memory is committed eagerly, so cap the probe to stay cheap.
-        if (pages > 1024) return false;
-        new WebAssembly.Memory({ initial: pages, maximum: pages, shared: true });
-      } else {
-        new WebAssembly.Memory({ initial: pages, maximum: pages });
-      }
+      new WebAssembly.Memory({ initial: 1, maximum: pages, shared });
       return true;
     } catch {
       return false;
     }
   };
-  // V8 backs a 32-bit memory with a guard region and commits lazily, so even
-  // `initial` can be the whole 4 GiB; shared memories are the interesting case
-  // because they are committed eagerly, hence the lower cap.
-  const cap = shared ? 1024 : 65536;
+  const cap = 65536; // 4 GiB, the whole 32-bit address space
   let lo = 1;
   let hi = cap;
   if (tryPages(hi)) return hi;
