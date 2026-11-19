@@ -1,0 +1,14 @@
+{
+  "name": "@wasmnux/core",
+  "version": "0.0.0-phase0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "description": "WasmNUX emulator core: RV32 ISA, interpreter, Wasm binary encoder, block/region JIT (Spike A).",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}
