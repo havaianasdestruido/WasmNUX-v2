@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@wasmnux/core": ["core/src/index.ts"],
+      "@wasmnux/core/*": ["core/src/*"],
+      "@wasmnux/host": ["host/src/index.ts"],
+      "@wasmnux/host/*": ["host/src/*"],
+      "@wasmnux/relay": ["relay/src/index.ts"],
+      "@wasmnux/relay/*": ["relay/src/*"],
+      "@wasmnux/bench": ["benchmarks/src/index.ts"],
+      "@wasmnux/bench/*": ["benchmarks/src/*"]
+    }
+  },
+  "include": [
+    "core/**/*.ts",
+    "host/**/*.ts",
+    "relay/**/*.ts",
+    "benchmarks/**/*.ts",
+    "web/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["node_modules", "dist", "web/vendor"]
+}

@@ -1,0 +1,6005 @@
+{
+  "version": 1,
+  "env": {
+    "date": "2026-11-19T16:59:29.893Z",
+    "runtime": "node 22.22.3",
+    "platform": "linux",
+    "arch": "x64",
+    "cpus": 2,
+    "totalMemoryMB": 3940,
+    "wasm": {
+      "threads": true,
+      "sharedMemoryGrowable": true,
+      "atomics": true,
+      "atomicWait": true,
+      "simd": true,
+      "bulkMemory": true,
+      "memory64": true,
+      "tailCalls": true,
+      "exceptions": true,
+      "maxMemory32Pages": 65536,
+      "maxSharedMemoryPages": 65536,
+      "hardwareConcurrency": 2,
+      "crossOriginIsolated": null,
+      "isWorker": false,
+      "isNode": true,
+      "userAgent": "Node.js/22"
+    },
+    "git": {
+      "commit": "fdb7d928bb041ad652acbfb726414e70b9a1f277",
+      "branch": "arena/8368d687-wasmnux-v2",
+      "dirty": true,
+      "describe": "fdb7d92-dirty"
+    }
+  },
+  "results": [
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 164.5064299999999,
+          "instructions": 8000006
+        },
+        {
+          "ms": 159.9645330000003,
+          "instructions": 8000006
+        },
+        {
+          "ms": 163.9114410000002,
+          "instructions": 8000006
+        },
+        {
+          "ms": 156.50637400000005,
+          "instructions": 8000006
+        },
+        {
+          "ms": 162.0219229999998,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 156.50637400000005,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 162.0219229999998,
+        "instructions": 8000006
+      },
+      "ips": 51116167.31980512,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 8000006,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 49376071
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 4.273517999999967,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8327360000002955,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.742854999999963,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8803459999999177,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.028526000000056,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.883154000000104,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.570992999999817,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.261171999999988,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.329453999999714,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.365522999999939,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.602240000000165,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.552719000000252,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.898373999999876,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.448527000000013,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.69749899999988,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.581846000000041,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.445269999999709,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.9070709999996325,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.848097999999936,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.114559999999983,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.971041000000241,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.2202330000000075,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.324521000000004,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.634820000000218,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.026956000000155,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 3.742854999999963,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 4.602240000000165,
+        "instructions": 8000006
+      },
+      "ips": 2137407406.9126585,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 622,
+        "compileMs": 0.094,
+        "instantiateMs": 0.5,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1591421528
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 5.396582000000308,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.157619000000068,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.435520999999881,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7116989999999532,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8915859999997338,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8326560000000427,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.639118000000053,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.809422000000268,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.7705479999999625,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.247718000000077,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.027860000000146,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.488420000000133,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6756609999997636,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7898230000000694,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8519320000000334,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7287710000000516,
+          "instructions": 8000006
+        },
+        {
+          "ms": 7.593463000000156,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.560343000000103,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.459385000000111,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.782294000000093,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.670305999999982,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.469959000000017,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.187647000000197,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.463652999999795,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.802065999999741,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 3.639118000000053,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 4.488420000000133,
+        "instructions": 8000006
+      },
+      "ips": 2198336520.0028915,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 622,
+        "compileMs": 0.122,
+        "instantiateMs": 0.072,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1665950864
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 6.785335000000032,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.426741999999649,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.743388000000323,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.700311000000056,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.731406000000334,
+          "instructions": 8000006
+        },
+        {
+          "ms": 9.122213999999985,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.98240399999986,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.779230000000098,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.428789000000052,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.499460999999883,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.572044000000005,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.550736000000143,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.322580000000016,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.00883900000008,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.006119000000126,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.678585000000112,
+          "instructions": 8000006
+        },
+        {
+          "ms": 9.04558599999973,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.583410000000185,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.5564620000000104,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.384069000000181,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.475982000000386,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.393748999999843,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.476222000000234,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.880873999999949,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.532355999999709,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 3.678585000000112,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 4.572044000000005,
+        "instructions": 8000006
+      },
+      "ips": 2174750889.268498,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 633,
+        "compileMs": 0.172,
+        "instantiateMs": 0.097,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1765087738
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 3.3279959999999846,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7998609999999644,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.82172700000001,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.6949070000000575,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.746638999999959,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.859664000000066,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.688051000000087,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7588049999999384,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7418609999999717,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.2579960000002757,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.624514999999974,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.9489209999997,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.980674999999792,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.9822730000000774,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.616182000000208,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.420850999999857,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7111439999998765,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.0724239999999554,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7532029999997576,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7928310000002057,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7381179999997585,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.7667499999997744,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.75774199999978,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.0550100000000384,
+          "instructions": 8000006
+        },
+        {
+          "ms": 2.866892000000007,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 2.2579960000002757,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 2.82172700000001,
+        "instructions": 8000006
+      },
+      "ips": 3542967303.7503266,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 356,
+        "compileMs": 0.106,
+        "instantiateMs": 0.046,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 2790480423
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "arith-loop",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 4.42919400000028,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.276346000000103,
+          "instructions": 8000006
+        },
+        {
+          "ms": 9.262096000000383,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.8172709999998915,
+          "instructions": 8000006
+        },
+        {
+          "ms": 6.590253000000303,
+          "instructions": 8000006
+        },
+        {
+          "ms": 8.660436999999547,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.996015000000625,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.667999000000236,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.910474000000249,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.454857000000629,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.2299349999993865,
+          "instructions": 8000006
+        },
+        {
+          "ms": 5.57336899999973,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.742064999999457,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.869560000000092,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.8976349999993545,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.737235999999939,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6185700000005454,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.7273089999998774,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.268955999999889,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6615520000004835,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.5183429999997315,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.72749500000009,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.6608879999994315,
+          "instructions": 8000006
+        },
+        {
+          "ms": 3.783084000000599,
+          "instructions": 8000006
+        },
+        {
+          "ms": 4.3179750000008426,
+          "instructions": 8000006
+        }
+      ],
+      "best": {
+        "ms": 3.5183429999997315,
+        "instructions": 8000006
+      },
+      "median": {
+        "ms": 4.454857000000629,
+        "instructions": 8000006
+      },
+      "ips": 2273799342.474742,
+      "stats": {
+        "jitInstructions": 7999811,
+        "interpInstructions": 195,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 638,
+        "compileMs": 0.083,
+        "instantiateMs": 0.052,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1852721704
+      },
+      "meta": {
+        "result": -1188726464,
+        "imageBytes": 40,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 79.97451499999988,
+          "instructions": 4097509
+        },
+        {
+          "ms": 74.32401400000072,
+          "instructions": 4097509
+        },
+        {
+          "ms": 76.4803809999994,
+          "instructions": 4097509
+        },
+        {
+          "ms": 74.14137399999981,
+          "instructions": 4097509
+        },
+        {
+          "ms": 76.79873899999984,
+          "instructions": 4097509
+        }
+      ],
+      "best": {
+        "ms": 74.14137399999981,
+        "instructions": 4097509
+      },
+      "median": {
+        "ms": 76.4803809999994,
+        "instructions": 4097509
+      },
+      "ips": 55266159.48606523,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 4097509,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 53353858
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 3.6803939999999784,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.4954760000000533,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.0690459999996165,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.156108000000131,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.822834999999941,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.465160000000651,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.542887999999948,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.571958999999879,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.6106840000002194,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.541820000000371,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.671320000000378,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.609816999999566,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.468898000000081,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.580497999999352,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5270169999994323,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5597600000000966,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.748220000000401,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.458733999999822,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.6581420000002254,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.372250999999778,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.748507000000245,
+          "instructions": 4097571
+        },
+        {
+          "ms": 7.4066609999999855,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5382049999998344,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.54788600000029,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.460505999999441,
+          "instructions": 4097571
+        }
+      ],
+      "best": {
+        "ms": 2.0690459999996165,
+        "instructions": 4097571
+      },
+      "median": {
+        "ms": 2.580497999999352,
+        "instructions": 4097571
+      },
+      "ips": 1980415611.833067,
+      "stats": {
+        "jitInstructions": 4097244,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 4,
+        "wasmBytes": 844,
+        "compileMs": 0.12,
+        "instantiateMs": 0.07,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1665336723
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 2.4828040000002147,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.765588000000207,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.0292880000006335,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.9031420000001162,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.596707000000606,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.1266450000002806,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.0489129999996294,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.7005269999999655,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.410233999999946,
+          "instructions": 4097571
+        },
+        {
+          "ms": 6.125776999999289,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.4783070000003136,
+          "instructions": 4097571
+        },
+        {
+          "ms": 5.347001000000091,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.223985999999968,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.3044359999994413,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.156887000000097,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5991579999999885,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5054129999998622,
+          "instructions": 4097571
+        },
+        {
+          "ms": 5.533653999999842,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.536164000000099,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.77711299999919,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.919503000000077,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.6677700000000186,
+          "instructions": 4097571
+        },
+        {
+          "ms": 8.394294000000627,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.210344000000077,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.625981000000138,
+          "instructions": 4097571
+        }
+      ],
+      "best": {
+        "ms": 2.0292880000006335,
+        "instructions": 4097571
+      },
+      "median": {
+        "ms": 2.5991579999999885,
+        "instructions": 4097571
+      },
+      "ips": 2019216099.4391732,
+      "stats": {
+        "jitInstructions": 4097244,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 4,
+        "wasmBytes": 844,
+        "compileMs": 0.199,
+        "instantiateMs": 0.062,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1560396286
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 2.3450739999998405,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.3331920000000537,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.2267480000000432,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.3244740000000093,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.167352999999821,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.65835799999968,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5211189999999988,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.6396770000001197,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.861713999999665,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5906709999999293,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.7376070000000254,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.7604959999998755,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.1186360000001514,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.388119000000188,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5975570000000516,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.40065500000037,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.3040060000002995,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5213169999997262,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.9449809999996432,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.36266599999999,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.211085999999341,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.1816909999997733,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.8929989999996906,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.7888929999999164,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.849637999999686,
+          "instructions": 4097571
+        }
+      ],
+      "best": {
+        "ms": 2.1186360000001514,
+        "instructions": 4097571
+      },
+      "median": {
+        "ms": 2.5975570000000516,
+        "instructions": 4097571
+      },
+      "ips": 1934060876.903681,
+      "stats": {
+        "jitInstructions": 4097244,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 4,
+        "wasmBytes": 903,
+        "compileMs": 0.23,
+        "instantiateMs": 0.1,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1437926852
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 1.8938490000000456,
+          "instructions": 4097571
+        },
+        {
+          "ms": 5.25539099999969,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.8569440000001123,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.457231999999749,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.8121940000000905,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.8763449999996737,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.949333999999908,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.8617669999994177,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.900641999999607,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.8093140000000858,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.5065920000006372,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.470342999999957,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.4998089999999138,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.659150999999838,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.4409120000000257,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.612688000000162,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.6610510000000431,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.5238769999996293,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.4648940000006405,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.4881470000000263,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.4902380000003177,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.816794999999729,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.944601000000148,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.8792709999997896,
+          "instructions": 4097571
+        },
+        {
+          "ms": 1.7885879999994359,
+          "instructions": 4097571
+        }
+      ],
+      "best": {
+        "ms": 1.4409120000000257,
+        "instructions": 4097571
+      },
+      "median": {
+        "ms": 1.8093140000000858,
+        "instructions": 4097571
+      },
+      "ips": 2843734384.889519,
+      "stats": {
+        "jitInstructions": 4097244,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 4,
+        "wasmBytes": 892,
+        "compileMs": 0.131,
+        "instantiateMs": 0.041,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 2290952975
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "memory-copy",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 4.2542950000006385,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.194108000000597,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.586750000000393,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5697299999992538,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5465119999998933,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.6154719999994995,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5158449999998993,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.500912999999855,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.4605020000008153,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.44297700000061,
+          "instructions": 4097571
+        },
+        {
+          "ms": 5.583488999999645,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.5554299999994328,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.414230999999745,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.4781629999997676,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.3953480000000127,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.2328099999995175,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.4427910000003976,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.1292270000003555,
+          "instructions": 4097571
+        },
+        {
+          "ms": 6.215243999999984,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.4304830000000948,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.3610719999996945,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.47577100000035,
+          "instructions": 4097571
+        },
+        {
+          "ms": 3.490700999999717,
+          "instructions": 4097571
+        },
+        {
+          "ms": 2.5048440000000483,
+          "instructions": 4097571
+        },
+        {
+          "ms": 4.852250999999342,
+          "instructions": 4097571
+        }
+      ],
+      "best": {
+        "ms": 2.44297700000061,
+        "instructions": 4097571
+      },
+      "median": {
+        "ms": 3.3610719999996945,
+        "instructions": 4097571
+      },
+      "ips": 1677285950.706444,
+      "stats": {
+        "jitInstructions": 4097244,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 4,
+        "wasmBytes": 860,
+        "compileMs": 0.126,
+        "instantiateMs": 0.067,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 844468062
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 147.1598409999997,
+          "instructions": 8000010
+        },
+        {
+          "ms": 150.41545099999985,
+          "instructions": 8000010
+        },
+        {
+          "ms": 136.39536099999987,
+          "instructions": 8000010
+        },
+        {
+          "ms": 133.5107369999996,
+          "instructions": 8000010
+        },
+        {
+          "ms": 127.36520299999938,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 127.36520299999938,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 136.39536099999987,
+        "instructions": 8000010
+      },
+      "ips": 62811582.84653335,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 8000010,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 62811583
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 4.65501200000017,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.582053999999516,
+          "instructions": 8000010
+        },
+        {
+          "ms": 8.841370999999526,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.519608999999946,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.492992999999842,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.609776999999667,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.051958999999442,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4437419999994745,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.553109999999833,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.186814000000595,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.459467999999106,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.646990000000187,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.025877000000037,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.347878999999921,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.505272999999761,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.8448889999999665,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.523859999999331,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4665909999994255,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.604380000000674,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4570880000001125,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.427735999999641,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.834174999999959,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.592969999999696,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.500352000000021,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.61861399999998,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 4.347878999999921,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 4.592969999999696,
+        "instructions": 8000010
+      },
+      "ips": 1839979907.44456,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 682,
+        "compileMs": 0.125,
+        "instantiateMs": 0.085,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1423840470
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 4.568121000000247,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.450980999999956,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.475933000000623,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.731485000000248,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.441729999999552,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.555811999999605,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.515172000000348,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.554393999999775,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.458292999999685,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.048620999999912,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.271162999999433,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.1065510000007635,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.19856400000026,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.6060740000002625,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.291784000000007,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.120012999999744,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.524814999999762,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.610051999999996,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.716779000000315,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.412012999999206,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.723871999999574,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.460906999999679,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.309669999999642,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.574894000000313,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.6447189999998955,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 4.412012999999206,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 4.716779000000315,
+        "instructions": 8000010
+      },
+      "ips": 1813233551.216064,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 682,
+        "compileMs": 0.127,
+        "instantiateMs": 0.071,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1203965134
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 4.33085200000005,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.374956000000566,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.145190000000184,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.406479000000218,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.467671000000337,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.4827439999999115,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.323631999999634,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.305327000000034,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.549316999999974,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.303412000000208,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.412459000000126,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.6244959999994535,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.380521000000044,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.292335000000094,
+          "instructions": 8000010
+        },
+        {
+          "ms": 8.298847999999452,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.473447999999735,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.877730000000156,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.420219999999972,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.480768999999782,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.6906019999996715,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.497230999999374,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.8791360000004715,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.814221000000543,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.766501999999491,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.245387999999366,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 4.292335000000094,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 4.480768999999782,
+        "instructions": 8000010
+      },
+      "ips": 1863789755.4594004,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 693,
+        "compileMs": 0.598,
+        "instantiateMs": 0.082,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1525151238
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 4.217344000000594,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.078625000000102,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.483715999999731,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.198898999999983,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.278299999999945,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.247687000000042,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.220103999999992,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.189155000000028,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.178619000000253,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.204058000000259,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.776152999999795,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.5917899999994916,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.448301999999785,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.9781810000004043,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.63459899999998,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.626060000000507,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.605575999999928,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.27325699999983,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.6913729999996576,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.8051009999999224,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.7893050000002404,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.63015600000017,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.4788140000000567,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.5826499999993757,
+          "instructions": 8000010
+        },
+        {
+          "ms": 3.704381000000467,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 3.448301999999785,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 4.078625000000102,
+        "instructions": 8000010
+      },
+      "ips": 2319985314.511461,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 486,
+        "compileMs": 0.06,
+        "instantiateMs": 0.036,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 2159607773
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "divmod",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 5.0570459999999,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.470046999999795,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.1503249999996115,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.774459000000206,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.9672509999991235,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.8300740000004225,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.906702000000223,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.096708000000035,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.911336000000119,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.92908400000033,
+          "instructions": 8000010
+        },
+        {
+          "ms": 7.667443999999705,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.784139000000323,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.819083999999748,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.304116000000249,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.8188310000005,
+          "instructions": 8000010
+        },
+        {
+          "ms": 6.34957200000008,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.827103999999963,
+          "instructions": 8000010
+        },
+        {
+          "ms": 7.608997999999701,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.994826000000103,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.033934000000045,
+          "instructions": 8000010
+        },
+        {
+          "ms": 7.286937999999282,
+          "instructions": 8000010
+        },
+        {
+          "ms": 4.597630000000208,
+          "instructions": 8000010
+        },
+        {
+          "ms": 7.207931999999346,
+          "instructions": 8000010
+        },
+        {
+          "ms": 7.869644000000335,
+          "instructions": 8000010
+        },
+        {
+          "ms": 5.9052019999999175,
+          "instructions": 8000010
+        }
+      ],
+      "best": {
+        "ms": 4.1503249999996115,
+        "instructions": 8000010
+      },
+      "median": {
+        "ms": 5.0570459999999,
+        "instructions": 8000010
+      },
+      "ips": 1927562299.338184,
+      "stats": {
+        "jitInstructions": 7999683,
+        "interpInstructions": 327,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 698,
+        "compileMs": 0.17,
+        "instantiateMs": 0.089,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1354739431
+      },
+      "meta": {
+        "result": -960849228,
+        "imageBytes": 72,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 124.10400800000025,
+          "instructions": 5100215
+        },
+        {
+          "ms": 110.85239899999942,
+          "instructions": 5100215
+        },
+        {
+          "ms": 122.461953,
+          "instructions": 5100215
+        },
+        {
+          "ms": 118.04690899999969,
+          "instructions": 5100215
+        },
+        {
+          "ms": 115.7412060000006,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 110.85239899999942,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 118.04690899999969,
+        "instructions": 5100215
+      },
+      "ips": 46009062.91617583,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 5100215,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 44065680
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 5.849018999999316,
+          "instructions": 5100215
+        },
+        {
+          "ms": 12.047717000001285,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.2984400000004825,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.7946609999999055,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.97547399999894,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.637296000000788,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.722874999999476,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.346004999999423,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.360560999999507,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.3320069999990665,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.425263000000996,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.29075499999999,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.446250999999393,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.273762999999235,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.833569000000352,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.810797999998613,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.269070999998803,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.6670009999998,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.282234000000244,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.371650000000955,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.252430999998978,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.344076999999743,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.35319299999901,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.520539999999528,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.228575999999521,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 4.637296000000788,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 5.35319299999901,
+        "instructions": 5100215
+      },
+      "ips": 1099825199.8576612,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 701,
+        "compileMs": 0.101,
+        "instantiateMs": 0.065,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 975450103
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 4.4970180000000255,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.413281999999526,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.940466000000015,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.430898000000525,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.626432999999452,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.387779000000592,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.228363999998692,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.252402000000075,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.177009999999427,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.186787999999069,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.13512400000036,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.375669000000926,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.198330000001079,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.44970000000103,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.161469999999099,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.235653000001548,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.153091000000131,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.327439999999115,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.1811780000007275,
+          "instructions": 5100215
+        },
+        {
+          "ms": 8.512262999998711,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.093265999999858,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.295387000000119,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.0980440000003,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.204851000000417,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.266630000000077,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 4.413281999999526,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 5.186787999999069,
+        "instructions": 5100215
+      },
+      "ips": 1155651281.7446399,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 701,
+        "compileMs": 0.109,
+        "instantiateMs": 0.064,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 968401995
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 6.304396999999881,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.079815000000963,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.76384699999835,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.858951000000161,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.455014999999548,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.900924999999916,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.436023000000205,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.574282999999923,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.2254829999983485,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.398525999999038,
+          "instructions": 5100215
+        },
+        {
+          "ms": 20.677733999998964,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.20025700000042,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.41558299999997,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.084547000000384,
+          "instructions": 5100215
+        },
+        {
+          "ms": 8.712219000000914,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.360631000001376,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.678481999999349,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.18214899999839,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.173498000000109,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.910702000001038,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.297197999998389,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.5273940000006405,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.682062999998379,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.25010199999997,
+          "instructions": 5100215
+        },
+        {
+          "ms": 12.885576000000583,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 5.079815000000963,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 5.682062999998379,
+        "instructions": 5100215
+      },
+      "ips": 1004015894.2794242,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 712,
+        "compileMs": 0.306,
+        "instantiateMs": 0.101,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 395808073
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 4.342979000000923,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.798618000000715,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.524467000001096,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.36707799999931,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.322947000000568,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.369691999998395,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.479982999999265,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.329127000000881,
+          "instructions": 5100215
+        },
+        {
+          "ms": 8.604416000000128,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.326461000000563,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.330579999999827,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.422866999999314,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.354304000000411,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.5340460000006715,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.506003000000419,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.257546999999249,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.3553329999995185,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.480722000000242,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.446205000000191,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.374343999999837,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.682842999998684,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.295722000000751,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.3539209999999,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.39296800000011,
+          "instructions": 5100215
+        },
+        {
+          "ms": 4.457072999999582,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 4.257546999999249,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 4.374343999999837,
+        "instructions": 5100215
+      },
+      "ips": 1197923358.2156343,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 493,
+        "compileMs": 0.085,
+        "instantiateMs": 0.083,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1144296941
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "branchy",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 5.270144000000073,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.479975000000195,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.673456000000442,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.527231000000029,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.545261999999639,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.942372999999861,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.158364999999321,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.483931000000666,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.342854000000443,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.811617999999726,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.148457999999664,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.310477000000901,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.043047999999544,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.746943000000101,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.38800700000138,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.381854000001113,
+          "instructions": 5100215
+        },
+        {
+          "ms": 6.7870030000012775,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.442162999999709,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.39403399999901,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.355042999999569,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.069976000000679,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.375751000001401,
+          "instructions": 5100215
+        },
+        {
+          "ms": 7.045767999999953,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.390253000001394,
+          "instructions": 5100215
+        },
+        {
+          "ms": 5.731436000000031,
+          "instructions": 5100215
+        }
+      ],
+      "best": {
+        "ms": 5.043047999999544,
+        "instructions": 5100215
+      },
+      "median": {
+        "ms": 5.673456000000442,
+        "instructions": 5100215
+      },
+      "ips": 1011335803.2682737,
+      "stats": {
+        "jitInstructions": 5099889,
+        "interpInstructions": 326,
+        "regionsCompiled": 1,
+        "blocksCompiled": 5,
+        "wasmBytes": 717,
+        "compileMs": 0.173,
+        "instantiateMs": 0.071,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 889866868
+      },
+      "meta": {
+        "result": 600000,
+        "imageBytes": 80,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 62.75883299999987,
+          "instructions": 2400786
+        },
+        {
+          "ms": 57.94471499999963,
+          "instructions": 2400786
+        },
+        {
+          "ms": 61.965807999999015,
+          "instructions": 2400786
+        },
+        {
+          "ms": 59.6653899999983,
+          "instructions": 2400786
+        },
+        {
+          "ms": 69.28639599999951,
+          "instructions": 2400786
+        }
+      ],
+      "best": {
+        "ms": 57.94471499999963,
+        "instructions": 2400786
+      },
+      "median": {
+        "ms": 61.965807999999015,
+        "instructions": 2400786
+      },
+      "ips": 41432354.96110414,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 2400786,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 34650179
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 14.296426000000793,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.222365999999965,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.305155000000013,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.974041999999827,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.065076999999292,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.00300099999913,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.899846000000252,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.109290000000328,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.168601000001217,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.390679000000091,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.156825000000026,
+          "instructions": 2400947
+        },
+        {
+          "ms": 17.395188000000417,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.858036999999968,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.20100099999945,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.784116000000722,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.457752000000255,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.996476000000257,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.212972999999693,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.431306000000404,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.134963000000425,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.025880999999572,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.942268000000695,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.738961999999447,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.643378000000666,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.828707000000577,
+          "instructions": 2400947
+        }
+      ],
+      "best": {
+        "ms": 10.431306000000404,
+        "instructions": 2400947
+      },
+      "median": {
+        "ms": 12.784116000000722,
+        "instructions": 2400947
+      },
+      "ips": 230167440.20354757,
+      "stats": {
+        "jitInstructions": 2399597,
+        "interpInstructions": 1350,
+        "regionsCompiled": 4,
+        "blocksCompiled": 10,
+        "wasmBytes": 2870,
+        "compileMs": 0.208,
+        "instantiateMs": 0.129,
+        "cacheHits": 0,
+        "hostExits": 149980,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 221720562
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 12.721034000000145,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.837383000000045,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.589888999998948,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.308897000000798,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.146778000000268,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.348626000000877,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.657459000000017,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.65213699999913,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.025374000000738,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.529342000001634,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.354891000000862,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.144199000000299,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.40146199999981,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.521458999999595,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.217016999999032,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.042547999999442,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.917566000000079,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.560699999999997,
+          "instructions": 2400947
+        },
+        {
+          "ms": 18.265516999999818,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.186370999999781,
+          "instructions": 2400947
+        },
+        {
+          "ms": 17.970346000000063,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.106470999999146,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.439682000000175,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.422452000000703,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.410781000000497,
+          "instructions": 2400947
+        }
+      ],
+      "best": {
+        "ms": 10.348626000000877,
+        "instructions": 2400947
+      },
+      "median": {
+        "ms": 12.657459000000017,
+        "instructions": 2400947
+      },
+      "ips": 232006355.23979673,
+      "stats": {
+        "jitInstructions": 2399597,
+        "interpInstructions": 1350,
+        "regionsCompiled": 4,
+        "blocksCompiled": 10,
+        "wasmBytes": 2870,
+        "compileMs": 0.377,
+        "instantiateMs": 0.2,
+        "cacheHits": 0,
+        "hostExits": 149980,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 166607695
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 12.601152000001093,
+          "instructions": 2400947
+        },
+        {
+          "ms": 18.15324099999998,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.708271999999852,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.010197999999946,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.102872999999818,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.61746900000071,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.396694000000934,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.491115999999238,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.565095999998448,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.330190999999104,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.12724899999921,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.839042000001427,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.692422000000079,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.536801000000196,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.367460999999821,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.258772000001045,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.197384000000966,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.678675000001022,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.248716000000059,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.92087199999878,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.611299000000145,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.076205999999729,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.21137599999929,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.266843000001245,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.224199999998746,
+          "instructions": 2400947
+        }
+      ],
+      "best": {
+        "ms": 11.197384000000966,
+        "instructions": 2400947
+      },
+      "median": {
+        "ms": 13.224199999998746,
+        "instructions": 2400947
+      },
+      "ips": 214420350.3246645,
+      "stats": {
+        "jitInstructions": 2399597,
+        "interpInstructions": 1350,
+        "regionsCompiled": 4,
+        "blocksCompiled": 10,
+        "wasmBytes": 3130,
+        "compileMs": 0.25,
+        "instantiateMs": 0.182,
+        "cacheHits": 0,
+        "hostExits": 149980,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 181557070
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 10.839966999999888,
+          "instructions": 2400947
+        },
+        {
+          "ms": 9.140488999999434,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.661183000000165,
+          "instructions": 2400947
+        },
+        {
+          "ms": 9.657251000000542,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.807682999999088,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.883076000000074,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.002653999999893,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.090259000000515,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.493632000001526,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.10124900000119,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.653916000001118,
+          "instructions": 2400947
+        },
+        {
+          "ms": 9.683322999999291,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.039969999999812,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.193540000000212,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.22842700000001,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.700142000001506,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.24281499999961,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.105244000000312,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.719628999999259,
+          "instructions": 2400947
+        },
+        {
+          "ms": 9.784392999999909,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.776912999999695,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.062803999999232,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.178979000000254,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.520039000000907,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.608701999999539,
+          "instructions": 2400947
+        }
+      ],
+      "best": {
+        "ms": 9.140488999999434,
+        "instructions": 2400947
+      },
+      "median": {
+        "ms": 10.883076000000074,
+        "instructions": 2400947
+      },
+      "ips": 262671614.17733213,
+      "stats": {
+        "jitInstructions": 2399597,
+        "interpInstructions": 1350,
+        "regionsCompiled": 4,
+        "blocksCompiled": 10,
+        "wasmBytes": 2310,
+        "compileMs": 0.194,
+        "instantiateMs": 0.096,
+        "cacheHits": 0,
+        "hostExits": 149980,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 176427333
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "calls",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 12.567097999999532,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.641614000000118,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.139165999999022,
+          "instructions": 2400947
+        },
+        {
+          "ms": 17.163924000000407,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.383095999999568,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.009071000000404,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.951585000000705,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.584306999999171,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.127768000000287,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.665831000000253,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.231866000000082,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.884706000000733,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.840228999999454,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.49280699999872,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.71622699999898,
+          "instructions": 2400947
+        },
+        {
+          "ms": 14.030397999998968,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.60406200000034,
+          "instructions": 2400947
+        },
+        {
+          "ms": 16.216215000000375,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.254517000001215,
+          "instructions": 2400947
+        },
+        {
+          "ms": 13.561800999999832,
+          "instructions": 2400947
+        },
+        {
+          "ms": 11.451936999999816,
+          "instructions": 2400947
+        },
+        {
+          "ms": 15.257686000000831,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.68068200000016,
+          "instructions": 2400947
+        },
+        {
+          "ms": 12.672818999999436,
+          "instructions": 2400947
+        },
+        {
+          "ms": 10.851002000001245,
+          "instructions": 2400947
+        }
+      ],
+      "best": {
+        "ms": 10.68068200000016,
+        "instructions": 2400947
+      },
+      "median": {
+        "ms": 13.127768000000287,
+        "instructions": 2400947
+      },
+      "ips": 224793416.7499757,
+      "stats": {
+        "jitInstructions": 2399597,
+        "interpInstructions": 1350,
+        "regionsCompiled": 4,
+        "blocksCompiled": 10,
+        "wasmBytes": 2934,
+        "compileMs": 0.207,
+        "instantiateMs": 0.139,
+        "cacheHits": 0,
+        "hostExits": 149980,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 221265004
+      },
+      "meta": {
+        "result": 46368,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 99.427549,
+          "instructions": 5000008
+        },
+        {
+          "ms": 99.45039799999904,
+          "instructions": 5000008
+        },
+        {
+          "ms": 99.21033400000124,
+          "instructions": 5000008
+        },
+        {
+          "ms": 110.54815099999905,
+          "instructions": 5000008
+        },
+        {
+          "ms": 106.49215499999991,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 99.21033400000124,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 99.45039799999904,
+        "instructions": 5000008
+      },
+      "ips": 50398056.3153828,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 5000008,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 46951890
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 8.674270999999862,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.389851999998427,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.336680000000342,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.354081999999835,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.316003000001729,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.290071999999782,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.4253549999994,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.411184999999023,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.32369000000108,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.332397999998648,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.326116000000184,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.353995999999825,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.335567000000083,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.328304000000571,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.331009999999878,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.371361000001343,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.295360000000073,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.332400999999663,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.310208000000785,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.541441000001214,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.440112000000227,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.350399999999354,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.376670999999988,
+          "instructions": 5000008
+        },
+        {
+          "ms": 9.17468800000097,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.41073900000083,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 8.290071999999782,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 8.350399999999354,
+        "instructions": 5000008
+      },
+      "ips": 603132035.5239534,
+      "stats": {
+        "jitInstructions": 4999814,
+        "interpInstructions": 194,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 681,
+        "compileMs": 0.083,
+        "instantiateMs": 0.1,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 594479034
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 8.439860000000408,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.354537999999593,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.820170000000871,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.786003999999593,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.954575000001569,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.64883700000064,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.430781000000934,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.340651000000435,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.3568520000008,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.536736000000019,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.379441000000952,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.572132000001147,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.399208999999246,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.374906999999439,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.301326999999219,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.414201999999932,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.312347000000955,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.435789999999542,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.446453000000474,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.29651399999966,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.320369000000937,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.303696000000855,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.29117000000042,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.33663400000114,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.303482999999687,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 8.29117000000042,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 8.379441000000952,
+        "instructions": 5000008
+      },
+      "ips": 603052162.7224803,
+      "stats": {
+        "jitInstructions": 4999814,
+        "interpInstructions": 194,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 681,
+        "compileMs": 0.075,
+        "instantiateMs": 0.054,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 602157914
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 8.312219000001278,
+          "instructions": 5000008
+        },
+        {
+          "ms": 11.178024000000732,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.399099000000206,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.322395999999571,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.322308000000703,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.342763999999079,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.353203000000576,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.403791999999157,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.326788999998826,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.343652999999904,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.306715999999142,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.290328000000954,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.633567999999286,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.36878599999909,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.370222999999896,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.286454999999478,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.469601999999213,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.403211999999257,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.379124999999476,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.399429000000964,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.420281000000614,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.321175000000949,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.329093999998804,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.368064000000231,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.30755599999975,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 8.286454999999478,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 8.353203000000576,
+        "instructions": 5000008
+      },
+      "ips": 603395299.9202089,
+      "stats": {
+        "jitInstructions": 4999814,
+        "interpInstructions": 194,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 716,
+        "compileMs": 0.08,
+        "instantiateMs": 0.047,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 601862690
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 8.287169999999605,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.39690900000096,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.306774999999107,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.272620000001552,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.466812999999092,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.306581000000733,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.279043999998976,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.249695000000429,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.339104000000589,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.114112999999634,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.258906999999454,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.24864499999967,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.008277999999336,
+          "instructions": 5000008
+        },
+        {
+          "ms": 7.9994299999998475,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.216454999999769,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.28363999999965,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.29720499999894,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.171298000001116,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.053799999999683,
+          "instructions": 5000008
+        },
+        {
+          "ms": 7.979412000000593,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.008954000000813,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.038351999999577,
+          "instructions": 5000008
+        },
+        {
+          "ms": 7.96166600000106,
+          "instructions": 5000008
+        },
+        {
+          "ms": 7.98207100000036,
+          "instructions": 5000008
+        },
+        {
+          "ms": 9.088221999998495,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 7.96166600000106,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 8.249695000000429,
+        "instructions": 5000008
+      },
+      "ips": 628010268.2025765,
+      "stats": {
+        "jitInstructions": 4999814,
+        "interpInstructions": 194,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 471,
+        "compileMs": 0.14,
+        "instantiateMs": 0.07,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 550163497
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "atomics",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 7.967227999999523,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.018867999999202,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.01766299999872,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.16917199999989,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.389220000000932,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.33924400000069,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.323920000000726,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.45140899999933,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.438701999999466,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.396387999999206,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.516639999999825,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.530377000000954,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.451828000001115,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.40485500000068,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.39614100000108,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.354734000000462,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.325349000000642,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.42107600000054,
+          "instructions": 5000008
+        },
+        {
+          "ms": 9.553984000000128,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.738839999999982,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.658933000000616,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.429519999999684,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.489299000000756,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.472971999999572,
+          "instructions": 5000008
+        },
+        {
+          "ms": 8.980894999998782,
+          "instructions": 5000008
+        }
+      ],
+      "best": {
+        "ms": 7.967227999999523,
+        "instructions": 5000008
+      },
+      "median": {
+        "ms": 8.42107600000054,
+        "instructions": 5000008
+      },
+      "ips": 627571848.0756795,
+      "stats": {
+        "jitInstructions": 4999814,
+        "interpInstructions": 194,
+        "regionsCompiled": 1,
+        "blocksCompiled": 2,
+        "wasmBytes": 697,
+        "compileMs": 0.081,
+        "instantiateMs": 0.05,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 556738276
+      },
+      "meta": {
+        "result": 1784293664,
+        "imageBytes": 52,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 28.88988000000063,
+          "instructions": 1490047
+        },
+        {
+          "ms": 30.122981000000436,
+          "instructions": 1490047
+        },
+        {
+          "ms": 27.799110999998447,
+          "instructions": 1490047
+        },
+        {
+          "ms": 29.29947600000014,
+          "instructions": 1490047
+        },
+        {
+          "ms": 27.673265999999785,
+          "instructions": 1490047
+        }
+      ],
+      "best": {
+        "ms": 27.673265999999785,
+        "instructions": 1490047
+      },
+      "median": {
+        "ms": 28.88988000000063,
+        "instructions": 1490047
+      },
+      "ips": 53844277.00004804,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 1490047,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 53844277
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 1.2598789999992732,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2604870000013761,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.109719000000041,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0294570000005479,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0819100000007893,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.136248999999225,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.3866260000013426,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.9925810000004276,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2166460000007646,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.20770900000025,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3210380000000441,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2271079999991343,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3921360000003915,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1263159999998607,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0888109999996232,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1919199999992998,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.076915999999983,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0785740000010264,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1122269999996206,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0888059999997495,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.8003719999996974,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1055980000001,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0160169999999198,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.94887000000017,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.103267999998934,
+          "instructions": 1490157
+        }
+      ],
+      "best": {
+        "ms": 0.94887000000017,
+        "instructions": 1490157
+      },
+      "median": {
+        "ms": 1.1263159999998607,
+        "instructions": 1490157
+      },
+      "ips": 1570454329.8868477,
+      "stats": {
+        "jitInstructions": 1489833,
+        "interpInstructions": 324,
+        "regionsCompiled": 1,
+        "blocksCompiled": 6,
+        "wasmBytes": 1078,
+        "compileMs": 0.114,
+        "instantiateMs": 0.074,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1350675448
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 1.0977679999996326,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.9611949999998615,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1011840000010125,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.8887309999990975,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.071760999999242,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0866040000000794,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0970800000013696,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1121400000010908,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0117469999986497,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0826020000004064,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1243630000008125,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0925330000009126,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1207099999992352,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1834010000002309,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2112669999987702,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1364400000002206,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2394140000014886,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.289742999999362,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2408199999990757,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3612840000005235,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2275939999999537,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.183194999999614,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.233529000000999,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.4352550000003248,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.574982000000091,
+          "instructions": 1490157
+        }
+      ],
+      "best": {
+        "ms": 0.9611949999998615,
+        "instructions": 1490157
+      },
+      "median": {
+        "ms": 1.1364400000002206,
+        "instructions": 1490157
+      },
+      "ips": 1550317053.2516448,
+      "stats": {
+        "jitInstructions": 1489833,
+        "interpInstructions": 324,
+        "regionsCompiled": 1,
+        "blocksCompiled": 6,
+        "wasmBytes": 1078,
+        "compileMs": 0.131,
+        "instantiateMs": 0.069,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 416829232
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 1.246419999999489,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3773259999998118,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2783870000002935,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.590648000001238,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2533430000003136,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2618340000008175,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2768830000004527,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.8681350000006205,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2558220000009896,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1740559999998368,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1330539999999019,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3179399999989982,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2903989999995247,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2507779999996274,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.324189999999362,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2519350000002305,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.1150760000000446,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2882310000004509,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2974119999998948,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.272609999999986,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.8361969999987195,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3003519999983837,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1587089999993623,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1350079999992886,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.878515000000334,
+          "instructions": 1490157
+        }
+      ],
+      "best": {
+        "ms": 1.1330539999999019,
+        "instructions": 1490157
+      },
+      "median": {
+        "ms": 1.2783870000002935,
+        "instructions": 1490157
+      },
+      "ips": 1315168562.1339574,
+      "stats": {
+        "jitInstructions": 1489833,
+        "interpInstructions": 324,
+        "regionsCompiled": 1,
+        "blocksCompiled": 6,
+        "wasmBytes": 1161,
+        "compileMs": 1.634,
+        "instantiateMs": 0.097,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 517682555
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 0.7353540000003704,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8286860000007437,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8965420000004087,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8557719999989786,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8230059999987134,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.6865579999994225,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.6579209999999875,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8969039999992674,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8374060000005557,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.7853610000001936,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.8223299999990559,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.053314999999202,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.3537499999983993,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.7233410000008007,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.6233410000004369,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.5900039999996807,
+          "instructions": 1490157
+        },
+        {
+          "ms": 3.4612880000004225,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.718471000000136,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.7719539999998233,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.708093999999619,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.8650570000008884,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.6945180000002438,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.7207879999987199,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.6865660000003118,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.6164370000005874,
+          "instructions": 1490157
+        }
+      ],
+      "best": {
+        "ms": 0.5900039999996807,
+        "instructions": 1490157
+      },
+      "median": {
+        "ms": 0.8223299999990559,
+        "instructions": 1490157
+      },
+      "ips": 2525672707.305046,
+      "stats": {
+        "jitInstructions": 1489833,
+        "interpInstructions": 324,
+        "regionsCompiled": 1,
+        "blocksCompiled": 6,
+        "wasmBytes": 1516,
+        "compileMs": 1.95,
+        "instantiateMs": 0.051,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 569536740
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "matrix",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 1.3546659999992698,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0866170000008424,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.4330580000005284,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1035749999991822,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.305227000000741,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1870259999996051,
+          "instructions": 1490157
+        },
+        {
+          "ms": 2.191741999999067,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0620720000006258,
+          "instructions": 1490157
+        },
+        {
+          "ms": 0.9979210000001331,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1001469999991969,
+          "instructions": 1490157
+        },
+        {
+          "ms": 6.919893000000229,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0824140000004263,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.243785000000571,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.0430219999998371,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.280055999999604,
+          "instructions": 1490157
+        },
+        {
+          "ms": 4.466646999999284,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1622439999991911,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3396389999998064,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1817979999996169,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.3288139999986015,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.1601920000011887,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.212399000000005,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.2313830000002781,
+          "instructions": 1490157
+        },
+        {
+          "ms": 6.017545999999129,
+          "instructions": 1490157
+        },
+        {
+          "ms": 1.098030999999537,
+          "instructions": 1490157
+        }
+      ],
+      "best": {
+        "ms": 0.9979210000001331,
+        "instructions": 1490157
+      },
+      "median": {
+        "ms": 1.212399000000005,
+        "instructions": 1490157
+      },
+      "ips": 1493261490.6388395,
+      "stats": {
+        "jitInstructions": 1489833,
+        "interpInstructions": 324,
+        "regionsCompiled": 1,
+        "blocksCompiled": 6,
+        "wasmBytes": 1094,
+        "compileMs": 0.095,
+        "instantiateMs": 0.109,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 0,
+        "mmioWrites": 0,
+        "ips": 1357117422
+      },
+      "meta": {
+        "result": 870023168,
+        "imageBytes": 100,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "interpreter",
+      "samples": [
+        {
+          "ms": 2.621470000000045,
+          "instructions": 100007
+        },
+        {
+          "ms": 5.2412939999994705,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.4891219999990426,
+          "instructions": 100007
+        },
+        {
+          "ms": 3.987795000000915,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.594381999999314,
+          "instructions": 100007
+        },
+        {
+          "ms": 6.671816000000035,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.8724620000011782,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.9825569999993604,
+          "instructions": 100007
+        },
+        {
+          "ms": 3.7249160000010306,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.4462989999992715,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.500819999999294,
+          "instructions": 100007
+        },
+        {
+          "ms": 3.8403759999982867,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.3968020000011165,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.7104550000003655,
+          "instructions": 100007
+        },
+        {
+          "ms": 5.348805999999968,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.5074600000007194,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.57954399999835,
+          "instructions": 100007
+        },
+        {
+          "ms": 3.910996000000523,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.421325999999681,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.687287999999171,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.521633999998812,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.510958999999275,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.3555599999999686,
+          "instructions": 100007
+        },
+        {
+          "ms": 2.513727999999901,
+          "instructions": 100007
+        },
+        {
+          "ms": 3.6248880000002828,
+          "instructions": 100007
+        }
+      ],
+      "best": {
+        "ms": 2.3555599999999686,
+        "instructions": 100007
+      },
+      "median": {
+        "ms": 2.621470000000045,
+        "instructions": 100007
+      },
+      "ips": 42455721.78165758,
+      "stats": {
+        "jitInstructions": 0,
+        "interpInstructions": 100007,
+        "regionsCompiled": 0,
+        "blocksCompiled": 0,
+        "wasmBytes": 0,
+        "compileMs": 0,
+        "instantiateMs": 0,
+        "cacheHits": 0,
+        "hostExits": 0,
+        "traps": 0,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 27588990
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "jit globals/trap",
+      "samples": [
+        {
+          "ms": 5.928312000000005,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.207377000000633,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.737649999999121,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.956167999998797,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.091012999999293,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.811239000000569,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.187154000001101,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.989851000000272,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.08509999999842,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.734870000000228,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.632166999999754,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.101215999999113,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.6299569999991945,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.661269999998694,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.240587999998752,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.4883369999988645,
+          "instructions": 100010
+        },
+        {
+          "ms": 7.048545000001468,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.169323999998596,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.695042999999714,
+          "instructions": 100010
+        },
+        {
+          "ms": 8.260960000001432,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.91990799999985,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.220004999999219,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.916913000000932,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.836656999999832,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.871107000000848,
+          "instructions": 100010
+        }
+      ],
+      "best": {
+        "ms": 4.08509999999842,
+        "instructions": 100010
+      },
+      "median": {
+        "ms": 4.916913000000932,
+        "instructions": 100010
+      },
+      "ips": 24481652.83592536,
+      "stats": {
+        "jitInstructions": 137,
+        "interpInstructions": 99870,
+        "regionsCompiled": 2,
+        "blocksCompiled": 8,
+        "wasmBytes": 1424,
+        "compileMs": 0.171,
+        "instantiateMs": 0.103,
+        "cacheHits": 0,
+        "hostExits": 32,
+        "traps": 3,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 20531267
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "jit globals/trap +opt",
+      "samples": [
+        {
+          "ms": 4.870800999999119,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.9643379999997705,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.782330000000002,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.494387000000643,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.696669000000838,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.079878999998982,
+          "instructions": 100010
+        },
+        {
+          "ms": 8.60476000000017,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.1666669999995065,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.424125000001368,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.0738449999989825,
+          "instructions": 100010
+        },
+        {
+          "ms": 7.264836999998806,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.12735800000155,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.487261000000217,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.296484000000419,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.931451000000379,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.774885000000722,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.873271000000386,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.673961000000418,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.94625300000007,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.174007999999958,
+          "instructions": 100010
+        },
+        {
+          "ms": 8.799811999999292,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.763069000000542,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.222708999999668,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.743363999999929,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.63187199999993,
+          "instructions": 100010
+        }
+      ],
+      "best": {
+        "ms": 4.0738449999989825,
+        "instructions": 100010
+      },
+      "median": {
+        "ms": 4.782330000000002,
+        "instructions": 100010
+      },
+      "ips": 24549289.43050729,
+      "stats": {
+        "jitInstructions": 137,
+        "interpInstructions": 99870,
+        "regionsCompiled": 2,
+        "blocksCompiled": 8,
+        "wasmBytes": 1424,
+        "compileMs": 0.161,
+        "instantiateMs": 0.086,
+        "cacheHits": 0,
+        "hostExits": 32,
+        "traps": 3,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 21591702
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "jit globals/inline",
+      "samples": [
+        {
+          "ms": 4.607277999999496,
+          "instructions": 100016
+        },
+        {
+          "ms": 8.614208000000872,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.543598999998721,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.677718000000823,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.447115000000849,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.0950880000000325,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.29921000000104,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.516489999999976,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.89965200000006,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.5894809999990684,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.210631999998441,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.592564000000493,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.977990999999747,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.076436999999714,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.44360400000005,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.3078089999999065,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.002559000000474,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.4736140000004525,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.349785000000338,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.5593339999995806,
+          "instructions": 100016
+        },
+        {
+          "ms": 9.0064569999995,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.535468000000037,
+          "instructions": 100016
+        },
+        {
+          "ms": 7.448006999999052,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.545592999998917,
+          "instructions": 100016
+        },
+        {
+          "ms": 9.502026000000114,
+          "instructions": 100016
+        }
+      ],
+      "best": {
+        "ms": 4.44360400000005,
+        "instructions": 100016
+      },
+      "median": {
+        "ms": 5.0950880000000325,
+        "instructions": 100016
+      },
+      "ips": 22507856.2356139,
+      "stats": {
+        "jitInstructions": 143,
+        "interpInstructions": 99870,
+        "regionsCompiled": 2,
+        "blocksCompiled": 8,
+        "wasmBytes": 1482,
+        "compileMs": 0.172,
+        "instantiateMs": 0.094,
+        "cacheHits": 0,
+        "hostExits": 32,
+        "traps": 0,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 10525755
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "jit memory/inline",
+      "samples": [
+        {
+          "ms": 4.3205699999998615,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.866142999999283,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.4480750000002445,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.739935000001424,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.898764999999912,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.118865000000369,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.051596999999674,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.430034000000887,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.727358999998614,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.855467999999746,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.790215999999418,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.716531000000032,
+          "instructions": 100016
+        },
+        {
+          "ms": 6.710818999999901,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.711816000000908,
+          "instructions": 100016
+        },
+        {
+          "ms": 8.008926000000429,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.5772909999996045,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.348740000001271,
+          "instructions": 100016
+        },
+        {
+          "ms": 8.016633999999613,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.332275999999183,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.7473620000000665,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.86647400000038,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.356818000000203,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.764901000000464,
+          "instructions": 100016
+        },
+        {
+          "ms": 5.88010100000065,
+          "instructions": 100016
+        },
+        {
+          "ms": 4.3645290000004024,
+          "instructions": 100016
+        }
+      ],
+      "best": {
+        "ms": 4.118865000000369,
+        "instructions": 100016
+      },
+      "median": {
+        "ms": 4.7473620000000665,
+        "instructions": 100016
+      },
+      "ips": 24282417.607761126,
+      "stats": {
+        "jitInstructions": 143,
+        "interpInstructions": 99870,
+        "regionsCompiled": 2,
+        "blocksCompiled": 8,
+        "wasmBytes": 1020,
+        "compileMs": 0.087,
+        "instantiateMs": 0.048,
+        "cacheHits": 0,
+        "hostExits": 32,
+        "traps": 0,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 22915646
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    },
+    {
+      "suite": "jit",
+      "case": "device-poll",
+      "variant": "jit tail-chain",
+      "samples": [
+        {
+          "ms": 8.038656000000628,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.72749499999918,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.393796000000293,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.836930999999822,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.137466000000131,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.6986850000012055,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.796970000001238,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.4143089999997756,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.628770000001168,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.795186000001195,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.307666999999128,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.5507440000001225,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.770009999998365,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.394021000000066,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.374968000000081,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.79609199999868,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.619657000001098,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.796820999999909,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.892178000000058,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.087145000001328,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.101360000000568,
+          "instructions": 100010
+        },
+        {
+          "ms": 5.3536239999993995,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.692890000000261,
+          "instructions": 100010
+        },
+        {
+          "ms": 4.762103000000934,
+          "instructions": 100010
+        },
+        {
+          "ms": 6.675305999999182,
+          "instructions": 100010
+        }
+      ],
+      "best": {
+        "ms": 4.72749499999918,
+        "instructions": 100010
+      },
+      "median": {
+        "ms": 5.3536239999993995,
+        "instructions": 100010
+      },
+      "ips": 21154966.848197054,
+      "stats": {
+        "jitInstructions": 137,
+        "interpInstructions": 99870,
+        "regionsCompiled": 2,
+        "blocksCompiled": 8,
+        "wasmBytes": 1456,
+        "compileMs": 0.187,
+        "instantiateMs": 0.11,
+        "cacheHits": 0,
+        "hostExits": 32,
+        "traps": 3,
+        "mmioReads": 20000,
+        "mmioWrites": 0,
+        "ips": 14982085
+      },
+      "meta": {
+        "result": 0,
+        "imageBytes": 56,
+        "stop": "exit"
+      }
+    }
+  ]
+}

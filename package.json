@@ -1,0 +1,41 @@
+{
+  "name": "wasmnux",
+  "version": "0.0.0-phase0",
+  "private": true,
+  "description": "WasmNUX - a full Debian system in a browser tab. Phase 0: foundations, spikes, decisions.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "workspaces": [
+    "core",
+    "host",
+    "relay",
+    "benchmarks"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "npm run format:check && npm run typecheck",
+    "bench": "tsx benchmarks/src/cli.ts run",
+    "bench:record": "tsx benchmarks/src/cli.ts record",
+    "bench:gate": "tsx benchmarks/src/cli.ts gate",
+    "bench:browser": "tsx benchmarks/src/cli.ts browser",
+    "bench:all": "tsx benchmarks/src/cli.ts run --all",
+    "report": "tsx benchmarks/src/cli.ts report",
+    "spike": "tsx benchmarks/src/cli.ts spike",
+    "serve": "tsx web/dev-server.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "playwright-core": "1.55.1",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "vitest": "^5.1.1"
+  }
+}
