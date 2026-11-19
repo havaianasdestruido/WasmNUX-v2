@@ -120,3 +120,29 @@ describe("spike D — GPU path comparison (ADR-0007)", () => {
     );
   });
 });
+
+describe("spike D — damage accounting (Codex)", () => {
+  it("rowsCopied counts only rows actually staged", () => {
+    const frame = new Uint8Array(W * H * 4);
+    const prev = new Uint8Array(W * H * 4);
+    fillPattern(frame, W, H, 1);
+    prev.set(frame);
+    const staging = new Uint8Array(W * H * 4);
+
+    // full present (no previous): every row staged
+    const full = presentFrame(staging, frame, null, W, H);
+    expect(full.rowsCopied).toBe(H);
+
+    // change one row, present only that row: one staged
+    frame[5 * W * 4] ^= 0xff;
+    const partial = presentFrame(staging, frame, prev, W, H, [5]);
+    expect(partial.rowsCopied).toBe(1);
+    expect(partial.bytesChanged).toBe(1);
+
+    // present the same damage again with prev updated: nothing staged
+    prev.set(frame);
+    const noop = presentFrame(staging, frame, prev, W, H, [5, 6]);
+    expect(noop.rowsCopied).toBe(0);
+    expect(noop.bytesChanged).toBe(0);
+  });
+});

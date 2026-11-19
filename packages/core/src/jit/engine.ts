@@ -2,11 +2,14 @@
  * Spike A — JIT engine: block cache (region-per-module, ADR-0003) driving the
  * hot loop, with the interpreter as universal slow path.
  *
- * Host protocol: a block returns `next_pc ≥ 0` (jump/fallthrough) or a negative
- * sentinel `-(pc + 1)` meaning "interpret exactly one instruction at pc on the
- * interpreter, then continue" (traps, MMU, ecall, CSRs, atomics, div/rem,
- * mulh...). Cache is flushed when translation mode changes (satp/privilege),
- * so generated code never has to re-walk page tables in Phase 0.
+ * Host protocol: a block returns `next_pc` as a **RAM-relative offset**
+ * (≥ 0) or a negative sentinel `-(rel + 1)` meaning "interpret exactly one
+ * instruction at `base + rel` on the interpreter, then continue" (traps,
+ * MMU, ecall, CSRs, atomics, div/rem, mulh...). Offsets keep the i32 ABI
+ * valid for high RAM bases (QEMU virt = 0x8000_0000) without ever colliding
+ * with the sentinel. Cache is flushed when translation mode changes
+ * (satp/privilege), so generated code never has to re-walk page tables in
+ * Phase 0.
  */
 
 import { Cpu, CSR_MCAUSE, type CpuExit } from "../cpu.js";
@@ -114,45 +117,58 @@ export class JitEngine {
     while (steps < maxSteps && !cpu.halted) {
       if (cpu.mmu.mode !== 0n || cpu.mmu.privilege !== 3) {
         // Translated mode: interpreter-only (slow path covers page walks).
-        if (!cpu.step()) break;
+        const alive = cpu.step();
         steps++;
         this.stats.slowSteps++;
+        if (!alive) break;
         this.refreshMode(cpu);
         continue;
       }
 
       const offset = cpu.mem.physToOffset(cpu.pc);
       if (offset < 0 || offset + 4 > cpu.mem.ramBytes) {
-        if (!cpu.step()) break; // will raise an access fault
+        const alive = cpu.step(); // will raise an access fault
         steps++;
         this.stats.slowSteps++;
+        if (!alive) break;
         this.refreshMode(cpu);
         continue;
       }
 
       const block = this.getBlock(offset);
       if (!block) {
-        if (!cpu.step()) break;
+        const alive = cpu.step();
         steps++;
         this.stats.slowSteps++;
+        if (!alive) break;
         this.refreshMode(cpu);
         continue;
       }
 
+      const pc0 = cpu.pc;
       const ret = block.fn();
-      this.stats.fastSteps += block.insns;
-      cpu.instret += BigInt(block.insns);
-      cpu.cycles += BigInt(block.insns);
-      steps += block.insns;
-
       if (ret >= 0) {
-        cpu.pc = BigInt.asUintN(64, BigInt(ret));
+        // Normal exit: the block ran to its terminator — all insns executed.
+        cpu.pc = BigInt(cpu.mem.base + ret);
+        this.stats.fastSteps += block.insns;
+        cpu.instret += BigInt(block.insns);
+        cpu.cycles += BigInt(block.insns);
+        steps += block.insns;
       } else {
-        const slowPc = BigInt(-1 - ret);
+        // Slow exit: only the fast prefix ran; the interpreter executes the
+        // instruction at `slowPc` itself. Count exactly what ran — blocks
+        // that exit early must not inflate the step budget or throughput.
+        const slowPc = BigInt(cpu.mem.base + (-1 - ret));
+        const executed = Number((slowPc - pc0) / 4n);
         cpu.pc = slowPc;
-        if (!cpu.step()) break;
+        this.stats.fastSteps += executed;
+        cpu.instret += BigInt(executed);
+        cpu.cycles += BigInt(executed);
+        steps += executed;
+        const alive = cpu.step();
         steps += 1;
         this.stats.slowSteps += 1;
+        if (!alive) break; // count the halted instruction too (instret parity)
         this.refreshMode(cpu);
       }
     }

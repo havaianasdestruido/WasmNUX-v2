@@ -31,9 +31,20 @@ export interface GuestMemoryOptions {
 
 export const WASM_PAGE_SIZE = 64 * 1024;
 
-/** Footer layout inside the memory: [guest RAM pages][regfile][scratch]. */
+/**
+ * Footer layout inside the memory:
+ * [guest RAM pages][shared sync page][regfile page|scratch page] × hartCount
+ *
+ * The shared sync page holds cross-hart coordination used by the interpreter:
+ *   int32[0] — store epoch (bumped on every store; LR records it, SC requires
+ *              it unchanged → any store by any hart invalidates reservations,
+ *              ADR-0002)
+ *   int32[1] — AMO read-modify-write spin lock (harts serialise AMOs)
+ */
 export const REGFILE_BYTES = 32 * 8;
 export const SCRATCH_BYTES = 4096;
+export const SYNC_EPOCH_INT = 0;
+export const SYNC_AMOLOCK_INT = 1;
 
 export class GuestMemory {
   readonly memory: WebAssembly.Memory;
@@ -41,6 +52,8 @@ export class GuestMemory {
   readonly ramBytes: number;
   readonly totalBytes: number;
   readonly shared: boolean;
+  /** Byte offset of the shared sync page (epoch + AMO lock). */
+  readonly syncOffset: number;
   /** Byte offset of the 32×i64 register file inside the memory. */
   readonly regFileOffset: number;
   /** Byte offset of scratch (TLB mirror, block metadata, ...). */
@@ -48,6 +61,7 @@ export class GuestMemory {
 
   private _bytes: Uint8Array;
   private _regs: BigUint64Array;
+  private _sync: Int32Array;
 
   constructor(opts: GuestMemoryOptions) {
     const hartCount = Math.max(1, opts.hartCount ?? 1);
@@ -56,8 +70,8 @@ export class GuestMemory {
       throw new Error(`hart ${hartRaw} out of range (hartCount=${hartCount}) — pass matching hartCount when attaching`);
     }
     const hart = hartRaw;
-    // Per-hart footer: [regfile page | scratch page] × hartCount
-    const footerPages = hartCount * 2;
+    // Footer: 1 shared sync page + per-hart [regfile page | scratch page]
+    const footerPages = 1 + hartCount * 2;
     let ramPages: number;
     if (opts.attach) {
       ramPages = opts.attach.buffer.byteLength / WASM_PAGE_SIZE - footerPages;
@@ -79,10 +93,47 @@ export class GuestMemory {
     this.base = opts.base ?? 0;
     this.ramBytes = ramPages * WASM_PAGE_SIZE;
     this.totalBytes = initial * WASM_PAGE_SIZE;
-    this.regFileOffset = ramPages * WASM_PAGE_SIZE + hart * 2 * WASM_PAGE_SIZE;
+    this.syncOffset = this.ramBytes;
+    this.regFileOffset = this.ramBytes + WASM_PAGE_SIZE + hart * 2 * WASM_PAGE_SIZE;
     this.scratchOffset = this.regFileOffset + WASM_PAGE_SIZE;
     this._bytes = new Uint8Array(this.memory.buffer, 0, this.totalBytes);
     this._regs = new BigUint64Array(this.memory.buffer, this.regFileOffset, 32);
+    this._sync = new Int32Array(this.memory.buffer, this.syncOffset, 4);
+  }
+
+  // ---- cross-hart coordination (ADR-0002) ----
+
+  /** Current store epoch — changes on every store by any hart. */
+  get storeEpoch(): number {
+    return this.shared ? Atomics.load(this._sync, SYNC_EPOCH_INT) : this._sync[SYNC_EPOCH_INT]!;
+  }
+
+  /** Invalidate all LR/SC reservations (called after each successful store). */
+  bumpStoreEpoch(): void {
+    if (this.shared) {
+      Atomics.add(this._sync, SYNC_EPOCH_INT, 1);
+    } else {
+      this._sync[SYNC_EPOCH_INT] = this._sync[SYNC_EPOCH_INT]! + 1;
+    }
+  }
+
+  /**
+   * Acquire the AMO read-modify-write lock (shared memories only).
+   * Returns true when the caller must release it. Single-threaded memories
+   * need no lock; the critical section is a few JS operations, so a short
+   * test-and-set spin is sufficient in Phase 0.
+   */
+  lockAmo(): boolean {
+    if (!this.shared) return false;
+    while (Atomics.compareExchange(this._sync, SYNC_AMOLOCK_INT, 0, 1) !== 0) {
+      /* spin — critical section is O(few JS ops) */
+    }
+    return true;
+  }
+
+  releaseAmo(): void {
+    if (!this.shared) return;
+    Atomics.store(this._sync, SYNC_AMOLOCK_INT, 0);
   }
 
   get bytes(): Uint8Array {
@@ -97,6 +148,7 @@ export class GuestMemory {
   refreshViews(): void {
     this._bytes = new Uint8Array(this.memory.buffer, 0, this.totalBytes);
     this._regs = new BigUint64Array(this.memory.buffer, this.regFileOffset, 32);
+    this._sync = new Int32Array(this.memory.buffer, this.syncOffset, 4);
   }
 
   /** Translate a physical address to a host offset, or -1 if out of RAM. */

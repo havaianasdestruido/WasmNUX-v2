@@ -52,32 +52,48 @@ describe("spike B — idle gate (Atomics.wait, no spin)", () => {
   it("worker thread parks and wakes via the gate", async () => {
     const { Worker } = await import("node:worker_threads");
     const buf = IdleGate.createShared();
+    // Handshake: worker announces it is about to park, main kicks only then.
+    // (A bare sleep raced worker startup — kick could land before the worker
+    // read the initial value, leaving it waiting for a change that already
+    // happened.) The wait loop also treats "not-equal" as success, so an
+    // early kick is never missed.
     const code = `
       const { workerData, parentPort } = require("node:worker_threads");
       const ctrl = new Int32Array(workerData, 0, 1);
       const start = Atomics.load(ctrl, 0);
+      parentPort.postMessage("parked");
       let result = "timed-out";
       for (;;) {
         const v = Atomics.load(ctrl, 0);
         if (v !== start) { result = "ok"; break; }
-        const r = Atomics.wait(ctrl, 0, v, 3000);
+        const r = Atomics.wait(ctrl, 0, v, 9000);
+        if (r === "not-equal") continue;
         if (r === "timed-out" && Atomics.load(ctrl, 0) === start) break;
       }
       parentPort.postMessage([result, Atomics.load(ctrl, 0)]);
     `;
     const w = new Worker(code, { eval: true, workerData: buf });
+    const messages: unknown[] = [];
     const got = new Promise((resolve, reject) => {
-      w.on("message", resolve);
+      w.on("message", (m) => {
+        messages.push(m);
+        if (Array.isArray(m)) resolve(m);
+      });
       w.on("error", reject);
     });
-    await new Promise((r) => setTimeout(r, 50));
+    // Wait until the worker announced it is about to park, then kick.
+    await new Promise<void>((resolve, reject) => {
+      w.on("message", (m) => { if (m === "parked") resolve(); });
+      w.on("error", reject);
+      setTimeout(() => reject(new Error("worker never parked")), 8000);
+    });
     const gate = new IdleGate(buf);
     gate.kick();
     const [result, value] = (await got) as ["ok", number];
     await w.terminate();
     expect(result).toBe("ok");
     expect(value).toBe(1);
-  }, 10_000);
+  }, 15_000);
 });
 
 /**

@@ -155,3 +155,49 @@ describe("spike E — relay routing & streams", () => {
     expect(iwa.degradeReason()).toBeNull();
   });
 });
+
+describe("spike E — checksum verification (Codex)", () => {
+  const udpEcho = (): Uint8Array => buildIpv4({
+    src: ipToBytes("10.0.0.2"),
+    dst: ipToBytes("10.0.0.1"),
+    protocol: 17,
+    payload: buildUdp({ srcPort: 40000, dstPort: 7, payload: Uint8Array.of(1, 2, 3) }, ipToBytes("10.0.0.2"), ipToBytes("10.0.0.1")),
+  });
+
+  it("drops IP packets with a bad header checksum", () => {
+    const stack = new EchoStack(ipToBytes("10.0.0.1"));
+    const bad = udpEcho();
+    bad[10] ^= 0xff; // corrupt the IP header checksum
+    stack.handle(bad);
+    expect(stack.udpReplies).toHaveLength(0); // dropped
+
+    stack.handle(udpEcho()); // control: untouched packet answers
+    expect(stack.udpReplies).toHaveLength(1);
+  });
+
+  it("drops UDP datagrams with a bad checksum (when a checksum is present)", () => {
+    const stack = new EchoStack(ipToBytes("10.0.0.1"));
+    const bad = udpEcho();
+    bad[20 + 6] ^= 0xff; // corrupt the UDP checksum (payload offset 6)
+    stack.handle(bad);
+    expect(stack.udpReplies).toHaveLength(0); // dropped — no echo reply
+
+    stack.handle(udpEcho()); // control
+    expect(stack.udpReplies).toHaveLength(1);
+  });
+
+  it("still accepts a valid zero UDP checksum (RFC 768)", () => {
+    const stack = new EchoStack(ipToBytes("10.0.0.1"));
+    const pkt = buildIpv4({
+      src: ipToBytes("10.0.0.2"),
+      dst: ipToBytes("10.0.0.1"),
+      protocol: 17,
+      payload: buildUdp({ srcPort: 40000, dstPort: 7, payload: Uint8Array.of(4, 5) }, ipToBytes("10.0.0.2"), ipToBytes("10.0.0.1")),
+    });
+    // zero the UDP checksum field: legal and must still be echoed
+    pkt[20 + 6] = 0;
+    pkt[20 + 7] = 0;
+    stack.handle(pkt);
+    expect(stack.udpReplies).toHaveLength(1);
+  });
+});

@@ -1,13 +1,13 @@
 {
-  "date": "2026-11-19T02:39:47.528Z",
+  "date": "2026-11-19T17:55:18.573Z",
   "rows": [
     {
       "id": "a1.interpreter-throughput",
       "kpi": "Spike A — interpreter throughput",
       "status": "ok",
-      "value": 3499254,
+      "value": 3615896,
       "unit": "steps/s",
-      "detail": "400000 steps in 114.3 ms",
+      "detail": "400000 steps in 110.6 ms",
       "meta": {
         "halted": false,
         "exitCode": 0,
@@ -19,20 +19,20 @@
       "id": "a2.jit-throughput",
       "kpi": "Spike A — JIT block execution throughput",
       "status": "ok",
-      "value": 22823692,
+      "value": 20749546,
       "unit": "steps/s",
-      "detail": "400000 steps in 17.5 ms (compiles=2, fast=400000, slow=0, halted=false)",
+      "detail": "400000 steps in 19.3 ms (compiles=2, fast=400000, slow=0, halted=false)",
       "meta": {
-        "speedup": 6.52
+        "speedup": 5.74
       }
     },
     {
       "id": "a3.jit-speedup",
       "kpi": "Spike A — JIT vs interpreter speedup (KPI: ≥2×; Phase 1 target ≥5×)",
       "status": "ok",
-      "value": 6.52,
+      "value": 5.74,
       "unit": "×",
-      "detail": "114.3 ms interp → 17.5 ms jit"
+      "detail": "110.6 ms interp → 19.3 ms jit"
     },
     {
       "id": "a4.jit-equivalence",
@@ -52,9 +52,9 @@
       "id": "b1.pingpong-latency",
       "kpi": "Spike B — cross-thread ping-pong latency (LR/SC-style shared memory)",
       "status": "ok",
-      "value": 46.17,
+      "value": 58.38,
       "unit": "µs/RTT",
-      "detail": "2000 round-trips in 92.3 ms via SPSC rings over shared Wasm memory",
+      "detail": "2000 round-trips in 116.8 ms via SPSC rings over shared Wasm memory",
       "meta": {
         "threads": 2,
         "bytesPerRTT": 16
@@ -64,11 +64,12 @@
       "id": "b2.ring-throughput",
       "kpi": "Spike B — SPSC ring throughput (producer → vCPU worker)",
       "status": "ok",
-      "value": 18851,
+      "value": 6423,
       "unit": "KB/s",
-      "detail": "20000 × 8-byte messages in 8.5 ms",
+      "detail": "20000 × 8-byte messages in 24.9 ms (consumer verified 2500/2500 batches)",
       "meta": {
-        "messages": 20000
+        "messages": 20000,
+        "batches": 2500
       }
     },
     {
@@ -101,52 +102,52 @@
       "id": "c4096.rw",
       "kpi": "Spike C — chunk 4 KiB COW write/read",
       "status": "ok",
-      "value": 3987,
+      "value": 4300,
       "unit": "KB/s write",
-      "detail": "write 32.9 ms, read 5.8 ms (22629 KB/s), recover 6.6 ms; sink=2880",
+      "detail": "write 30.5 ms, read 7.9 ms (16679 KB/s), recover 8.0 ms; sink=2880",
       "meta": {
         "chunkBytes": 4096,
         "chunks": 32,
-        "recoverMs": 6.63
+        "recoverMs": 7.98
       }
     },
     {
       "id": "c65536.rw",
       "kpi": "Spike C — chunk 64 KiB COW write/read",
       "status": "ok",
-      "value": 48195,
+      "value": 51107,
       "unit": "KB/s write",
-      "detail": "write 43.5 ms, read 7.8 ms (269769 KB/s), recover 20.0 ms; sink=2880",
+      "detail": "write 41.0 ms, read 8.3 ms (251959 KB/s), recover 20.5 ms; sink=2880",
       "meta": {
         "chunkBytes": 65536,
         "chunks": 32,
-        "recoverMs": 19.95
+        "recoverMs": 20.5
       }
     },
     {
       "id": "c262144.rw",
       "kpi": "Spike C — chunk 256 KiB COW write/read",
       "status": "ok",
-      "value": 107906,
+      "value": 106181,
       "unit": "KB/s write",
-      "detail": "write 77.7 ms, read 14.2 ms (591930 KB/s), recover 57.9 ms; sink=2880",
+      "detail": "write 79.0 ms, read 10.0 ms (836202 KB/s), recover 58.8 ms; sink=2880",
       "meta": {
         "chunkBytes": 262144,
         "chunks": 32,
-        "recoverMs": 57.93
+        "recoverMs": 58.84
       }
     },
     {
       "id": "c1048576.rw",
       "kpi": "Spike C — chunk 1024 KiB COW write/read",
       "status": "ok",
-      "value": 171176,
+      "value": 168743,
       "unit": "KB/s write",
-      "detail": "write 196.0 ms, read 21.8 ms (1539209 KB/s), recover 216.0 ms; sink=2880",
+      "detail": "write 198.8 ms, read 25.0 ms (1344511 KB/s), recover 231.3 ms; sink=2880",
       "meta": {
         "chunkBytes": 1048576,
         "chunks": 32,
-        "recoverMs": 215.98
+        "recoverMs": 231.34
       }
     },
     {
@@ -167,9 +168,9 @@
       "id": "c9b.journal-mem",
       "kpi": "Spike C — journal+overlay fast path (in-memory backend)",
       "status": "ok",
-      "value": 22976,
+      "value": 20818,
       "unit": "KB/s",
-      "detail": "256 × 64 KiB in 730.2 ms"
+      "detail": "256 × 64 KiB in 805.9 ms"
     },
     {
       "id": "c9c.cow-copyoverhead",
@@ -181,7 +182,7 @@
       "id": "d1.present-full",
       "kpi": "D — full-frame present (1080p RGBA → staging)",
       "status": "ok",
-      "value": 0.77,
+      "value": 0.81,
       "unit": "ms/frame",
       "detail": "7.9 MiB per frame; target ≤ 8.3 ms (120 Hz)",
       "meta": {
@@ -193,7 +194,7 @@
       "id": "d2.present-dirty10",
       "kpi": "D — damage present (10 dirty rows)",
       "status": "ok",
-      "value": 1.94,
+      "value": 2.73,
       "unit": "ms",
       "detail": "byte-diff skip on unchanged rows — keystroke→pixel path"
     },
@@ -201,7 +202,7 @@
       "id": "d3.damage-tracking",
       "kpi": "D — damage mark+take per row",
       "status": "ok",
-      "value": 1752,
+      "value": 1999,
       "unit": "ns/op",
       "detail": "row-bitset mark + full-row scan for 1080 rows (avg over 10k cycles)"
     },
@@ -275,25 +276,25 @@
       "id": "f1.width-table",
       "kpi": "F — Unicode cluster width (mixed corpus)",
       "status": "ok",
-      "value": 2394816,
+      "value": 2334617,
       "unit": "chars/s",
-      "detail": "125.3 ms for 300000 clusters (sink=3840000)"
+      "detail": "128.5 ms for 300000 clusters (sink=3840000)"
     },
     {
       "id": "f2.ligature-scan",
       "kpi": "F — ligature scan per row",
       "status": "ok",
-      "value": 196344,
+      "value": 140104,
       "unit": "rows/s",
-      "detail": "20k scans in 101.9 ms (lig=100000)"
+      "detail": "20k scans in 142.8 ms (lig=100000)"
     },
     {
       "id": "f3.atlas-lookup",
       "kpi": "F — glyph atlas lookup (1024², 16×32 cells, LRU)",
       "status": "ok",
-      "value": 53140,
+      "value": 49894,
       "unit": "lookups/s",
-      "detail": "100k lookups in 1881.8 ms; hits=67231 misses=32769 evictions=30721",
+      "detail": "100k lookups in 2004.2 ms; hits=67231 misses=32769 evictions=30721",
       "meta": {
         "capacity": 2048
       }
@@ -308,9 +309,9 @@
       "id": "mix.synthetic",
       "kpi": "wnx-mix — synthetic mix (ALU+mul+branch loop, 400k steps)",
       "status": "ok",
-      "value": 4231700,
+      "value": 3164551,
       "unit": "steps/s",
-      "detail": "94.5 ms in Node v22.22.3; real CoreMark/Dhrystone rows below"
+      "detail": "126.4 ms in Node v22.22.3; real CoreMark/Dhrystone rows below"
     },
     {
       "id": "mix.coremark",

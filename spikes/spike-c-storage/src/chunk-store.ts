@@ -79,6 +79,14 @@ export class ChunkedCowStore {
     writes: 0, journalBytes: 0, recoveredRecords: 0, discardedTornRecords: 0,
   };
 
+  /**
+   * Journal transactions must be strictly serialised: interleaved
+   * BEGIN/COMMIT pairs from concurrent writeChunk calls would break
+   * `recover()`'s "COMMIT follows its BEGIN" scanning rule and could
+   * discard a committed payload on crash replay.
+   */
+  private txChain: Promise<unknown> = Promise.resolve();
+
   constructor(
     private readonly backend: ChunkBackend,
     private readonly base: BaseImage,
@@ -86,7 +94,14 @@ export class ChunkedCowStore {
   ) {}
 
   /** Journal + overlay write for one chunk (durability: journal BEFORE data). */
-  async writeChunk(id: number, bytes: Uint8Array): Promise<void> {
+  writeChunk(id: number, bytes: Uint8Array): Promise<void> {
+    const run = this.txChain.then(() => this.writeChunkTx(id, bytes));
+    // Keep the chain alive even when a write fails.
+    this.txChain = run.catch(() => undefined);
+    return run;
+  }
+
+  private async writeChunkTx(id: number, bytes: Uint8Array): Promise<void> {
     if (bytes.byteLength !== this.chunkSize) {
       throw new Error(`chunk ${id}: expected ${this.chunkSize} bytes, got ${bytes.byteLength}`);
     }

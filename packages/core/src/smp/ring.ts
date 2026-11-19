@@ -53,7 +53,13 @@ export class SpscRing {
 
   get free(): number { return this.capacity - this.used; }
 
-  close(): void { Atomics.or(this.ctrl, 3, 1); }
+  close(): void {
+    Atomics.or(this.ctrl, 3, 1);
+    // Wake a consumer parked in waitForData() — it sleeps on head, so notify
+    // that word or shutdown hangs until its timeout.
+    Atomics.notify(this.ctrl, 0, 1);
+    Atomics.notify(this.ctrl, 1, 1);
+  }
   get closed(): boolean { return (Atomics.load(this.ctrl, 3) & 1) !== 0; }
 
   /**

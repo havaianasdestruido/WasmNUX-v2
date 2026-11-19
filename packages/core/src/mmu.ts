@@ -137,10 +137,16 @@ export class Mmu {
           return { ok: false, kind: "page-fault", cause: faultCause(kind), address: va };
         }
         const ppn = (pte >> 10n) & 0xfff_ffff_fffffn;
+        // Superpage splice: for L2 (1 GiB) / L1 (2 MiB) leaves the low PPN
+        // bits come from the corresponding VPN fields of `va`, not the PTE.
+        const lowBits = i * 9n;
+        const lowMask = (1n << lowBits) - 1n;
+        const vpnLow = (va >> 12n) & lowMask;
+        const ppnEff = (ppn & ~lowMask) | vpnLow;
         const pageOff = va & 0xfffn;
-        const pa = (ppn << 12n) | pageOff;
+        const pa = (ppnEff << 12n) | pageOff;
         const idx = tlbIndex(va >> 12n);
-        this.entries[idx] = { valid: true, vpn: va >> 12n, ppn, pte };
+        this.entries[idx] = { valid: true, vpn: va >> 12n, ppn: ppnEff, pte };
         return { ok: true, pa, tlbHit: false };
       }
       // Pointer PTE → next level.

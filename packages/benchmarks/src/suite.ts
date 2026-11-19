@@ -133,7 +133,7 @@ async function benchSpikeA(ctx: BenchContext): Promise<BenchRow[]> {
 
 const RING_WORKER_SRC = `
 const { workerData } = require("node:worker_threads");
-const { memBuf, ctrlOff, aOff, aHeadOff, aTailOff, bOff, bHeadOff, bTailOff, count } = workerData;
+const { memBuf, ctrlOff, aOff, aHeadOff, aTailOff, bOff, bHeadOff, bTailOff, count, cap } = workerData;
 const ctrl = new Int32Array(memBuf, ctrlOff, 4);
 const A = new Uint8Array(memBuf, aOff, 64);
 const aHead = new Int32Array(memBuf, aHeadOff, 1);
@@ -141,24 +141,24 @@ const aTail = new Int32Array(memBuf, aTailOff, 1);
 const B = new Uint8Array(memBuf, bOff, 64);
 const bHead = new Int32Array(memBuf, bHeadOff, 1);
 const bTail = new Int32Array(memBuf, bTailOff, 1);
-const mask = 31;
+const mask = 31; // buffer index wrap only — occupancy uses monotonic counters
 function push(bytes) {
   for (;;) {
     const h = Atomics.load(aHead, 0), t = Atomics.load(aTail, 0);
-    const free = mask + 1 - ((h - t) & mask);
+    const free = cap - (h - t);
     if (free >= bytes.length) {
       for (let i = 0; i < bytes.length; i++) A[(h + i) & mask] = bytes[i];
       Atomics.store(aHead, 0, h + bytes.length);
       Atomics.notify(aHead, 0);
       return;
     }
-    Atomics.wait(aHead, 0, h, 10);
+    Atomics.wait(aTail, 0, t, 10);
   }
 }
 function pop8(out) {
   for (;;) {
     const h = Atomics.load(aHead, 0), t = Atomics.load(aTail, 0);
-    const used = (h - t) & mask;
+    const used = h - t;
     if (used >= 8) {
       for (let i = 0; i < 8; i++) out[i] = A[(t + i) & mask];
       Atomics.store(aTail, 0, t + 8);
@@ -171,7 +171,7 @@ function pop8(out) {
 function reply8(buf) {
   for (;;) {
     const h = Atomics.load(bHead, 0), t = Atomics.load(bTail, 0);
-    const free = mask + 1 - ((h - t) & mask);
+    const free = cap - (h - t);
     if (free >= 8) {
       for (let i = 0; i < 8; i++) B[(h + i) & mask] = buf[i];
       Atomics.store(bHead, 0, h + 8);
@@ -186,21 +186,23 @@ for (let i = 0; i < count; i++) {
   pop8(scratch);
   reply8(scratch);
 }
-// Phase 2: consume a one-way burst until main sets ctrl[0] = 2 and the ring
-// drains; then signal ctrl[1].
+// Phase 2: one-way burst. The producer sets ctrl[0] = 2 ONLY after all
+// messages are published; we then drain until the ring is empty AND the
+// producer is done, count what we consumed, and signal ctrl[1].
 let counted = 0;
 for (;;) {
   const h = Atomics.load(aHead, 0), t = Atomics.load(aTail, 0);
-  const used = (h - t) & mask;
+  const used = h - t;
   if (used >= 8) {
     Atomics.store(aTail, 0, t + 8);
     Atomics.notify(aTail, 0);
     counted++;
     continue;
   }
-  if (Atomics.load(ctrl, 0) === 2) break;
+  if (Atomics.load(ctrl, 0) === 2) break; // producer done and ring drained
   Atomics.wait(aHead, 0, h, 10); // wake when the producer pushes
 }
+Atomics.store(ctrl, 2, counted); // consumed-message count for verification
 Atomics.store(ctrl, 1, 1);
 Atomics.notify(ctrl, 1);
 `;
@@ -228,7 +230,7 @@ async function benchSpikeB(ctx: BenchContext): Promise<BenchRow[]> {
     workerData: {
       memBuf: mem.memory.buffer,
       ctrlOff, aOff, aHeadOff, aTailOff, bOff, bHeadOff, bTailOff,
-      count: ROUNDS,
+      count: ROUNDS, cap: 32,
     },
   });
 
@@ -238,10 +240,10 @@ async function benchSpikeB(ctx: BenchContext): Promise<BenchRow[]> {
     const pong = new Uint8Array(8);
     const t0 = now();
     for (let r = 0; r < ROUNDS; r++) {
-      // main → worker
+      // main → worker (occupancy = monotonic head−tail; mask wraps bytes only)
       for (;;) {
         const h = Atomics.load(aHead, 0), t = Atomics.load(aTail, 0);
-        const free = mask + 1 - ((h - t) & mask);
+        const free = 32 - (h - t);
         if (free >= 8) {
           for (let i = 0; i < 8; i++) A[(h + i) & mask] = ping[i]!;
           Atomics.store(aHead, 0, h + 8);
@@ -253,7 +255,7 @@ async function benchSpikeB(ctx: BenchContext): Promise<BenchRow[]> {
       // worker → main
       for (;;) {
         const h = Atomics.load(bHead, 0), t = Atomics.load(bTail, 0);
-        const used = (h - t) & mask;
+        const used = h - t;
         if (used >= 8) {
           for (let i = 0; i < 8; i++) pong[i] = B[(t + i) & mask]!;
           Atomics.store(bTail, 0, t + 8);
@@ -275,16 +277,16 @@ async function benchSpikeB(ctx: BenchContext): Promise<BenchRow[]> {
       meta: { threads: 2, bytesPerRTT: 16 },
     });
 
-    // unidirectional throughput: worker switched to pure-consume mode
-    // (ctrl[0] = 2); main floods and times the pushes.
-    const BURST = 20_000;
-    Atomics.store(ctrl, 0, 2);
-    Atomics.notify(ctrl, 0);
+    // Unidirectional throughput: publish the whole burst first, THEN set
+    // ctrl[0] = 2 so the consumer only stops after draining everything the
+    // producer finished publishing (no early-exit race).
+    const BURST = 20_000; // total 8-byte messages (in 8-message batches)
+    const BATCHES = BURST / 8;
     const t1 = now();
-    for (let i = 0; i < BURST; i++) {
+    for (let i = 0; i < BATCHES; i++) {
       for (;;) {
         const h = Atomics.load(aHead, 0), t = Atomics.load(aTail, 0);
-        const free = mask + 1 - ((h - t) & mask);
+        const free = 32 - (h - t);
         if (free >= 8) {
           for (let k = 0; k < 8; k++) A[(h + k) & mask] = ping[k]!;
           Atomics.store(aHead, 0, h + 8);
@@ -295,19 +297,25 @@ async function benchSpikeB(ctx: BenchContext): Promise<BenchRow[]> {
       }
     }
     const burstMs = now() - t1;
+    Atomics.store(ctrl, 0, 2); // producer finished publishing
+    Atomics.notify(aHead, 0);
     // wait for the consumer to drain & signal
     for (;;) {
       if (Atomics.load(ctrl, 1) === 1) break;
       Atomics.wait(ctrl, 1, Atomics.load(ctrl, 1), 50);
     }
+    const consumed = Atomics.load(ctrl, 2); // 8-message batches drained
+    if (consumed !== BATCHES) {
+      throw new Error(`burst verification failed: consumed ${consumed} of ${BATCHES} batches (${BATCHES * 8} messages)`);
+    }
     rows.push({
       id: "b2.ring-throughput",
       kpi: "Spike B — SPSC ring throughput (producer → vCPU worker)",
       status: "ok",
-      value: Math.round((BURST * 8) / burstMs), // bytes → KB/s? bytes/ms = KB/s
+      value: Math.round((BURST * 8) / burstMs), // bytes/ms = KB/s
       unit: "KB/s",
-      detail: `${BURST} × 8-byte messages in ${burstMs.toFixed(1)} ms`,
-      meta: { messages: BURST },
+      detail: `${BURST} × 8-byte messages in ${burstMs.toFixed(1)} ms (consumer verified ${consumed}/${BATCHES} batches)`,
+      meta: { messages: BURST, batches: consumed },
     });
   } finally {
     await worker.terminate();
@@ -428,7 +436,9 @@ async function benchSpikeD(ctx: BenchContext): Promise<BenchRow[]> {
   fillPattern(frame, W, H, 7);
   presentFrame(staging, frame, null, W, H);
   prev.set(frame);
-  frame[100 * W * 4 + 4] ^= 0xff; // change one pixel in row 100
+  // Dirty rows 500–509 (one pixel each) so the KPI measures ten rows that
+  // are ACTUALLY changed — clean rows would be skipped by presentFrame.
+  for (let r = 500; r < 510; r++) frame[r * W * 4 + 4] ^= 0xff;
 
   let t0 = now();
   presentFrame(staging, frame, prev, W, H, Array.from({ length: 10 }, (_, i) => 500 + i));

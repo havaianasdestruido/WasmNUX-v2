@@ -127,8 +127,21 @@
     }
 
     async function probeScanout() {
+      if (typeof OffscreenCanvas === "undefined") {
+        // Unsupported browser: record what we know and keep emitting results.
+        results.canvas2dPutMs = null;
+        results.webgpuScanoutPath = results.webgpu ? "webgpu" : "none";
+        results.scanoutNote = "OffscreenCanvas unavailable — scanout probe skipped";
+        return;
+      }
       const canvas = new OffscreenCanvas(64, 64);
       const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        results.canvas2dPutMs = null;
+        results.webgpuScanoutPath = results.webgpu ? "webgpu" : "none";
+        results.scanoutNote = "2d context unavailable — scanout probe skipped";
+        return;
+      }
       const frame = new Uint8ClampedArray(64 * 64 * 4).fill(200);
       const img = new ImageData(frame, 64, 64);
       const t0 = performance.now();

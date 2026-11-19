@@ -157,3 +157,45 @@ describe("spike C — Node backend (real fsync path)", () => {
     }
   });
 });
+
+describe("spike C — concurrent writeChunk serialization (Codex)", () => {
+  const dirs: string[] = [];
+  afterEach(async () => {
+    for (const d of dirs.splice(0)) await rm(d, { recursive: true, force: true });
+  });
+
+  it("serializes concurrent writeChunk calls (no torn chunk records)", async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), "wnx-store-cc-"));
+    dirs.push(dir);
+    const backend = new NodeBackend(dir);
+    await backend.init();
+    const store = new ChunkedCowStore(backend, base({}), CS);
+
+    const c1 = chunk(0x01);
+    const c2 = chunk(0x02);
+    const c3 = chunk(0x03);
+    // Fire all three without awaiting: the txChain must serialize the
+    // BEGIN/COMMIT journal pairs (concurrent BEGINs would break replay).
+    await Promise.all([
+      store.writeChunk(1, c1),
+      store.writeChunk(2, c2),
+      store.writeChunk(3, c3),
+    ]);
+
+    const r1 = await store.readChunk(1);
+    const r2 = await store.readChunk(2);
+    const r3 = await store.readChunk(3);
+    expect(r1[0]).toBe(0x01);
+    expect(r2[0]).toBe(0x02);
+    expect(r3[0]).toBe(0x03);
+    expect(r2[CS - 1]).toBe(0x02);
+
+    // journal replay after a fresh open sees a consistent state
+    await backend.close();
+    const backend2 = new NodeBackend(dir);
+    await backend2.init();
+    const store2 = new ChunkedCowStore(backend2, base({}), CS);
+    expect((await store2.readChunk(2))[0]).toBe(0x02);
+    await backend2.close();
+  });
+});

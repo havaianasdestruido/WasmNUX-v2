@@ -78,6 +78,7 @@ export function presentFrame(
   const stride = width * 4;
   const rows = damageRows ?? Array.from({ length: height }, (_, i) => i);
   let bytesChanged = 0;
+  let rowsCopied = 0;
   for (const y of rows) {
     const off = y * stride;
     const a = frame.subarray(off, off + stride);
@@ -87,7 +88,7 @@ export function presentFrame(
       for (let i = 0; i < stride; i++) {
         if (a[i] !== b[i]) { same = false; break; }
       }
-      if (same) continue;
+      if (same) continue; // identical row — nothing copied
       let changed = 0;
       for (let i = 0; i < stride; i++) if (a[i] !== b[i]) changed++;
       bytesChanged += changed;
@@ -95,9 +96,10 @@ export function presentFrame(
       bytesChanged += stride;
     }
     staging.set(a, off);
+    rowsCopied++;
   }
   return {
-    rowsCopied: rows.length,
+    rowsCopied,
     bytesChanged,
     partial: damageRows !== undefined && damageRows.length < height,
   };

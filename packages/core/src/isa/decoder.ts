@@ -192,15 +192,20 @@ function decodeAmo(raw: number, f3: number): Op {
 function decodeSystem(raw: number): Op {
   const f3 = (raw >>> 12) & 7;
   if (f3 !== 0) return CSR_F3[f3] ?? "illegal";
+  const rd = (raw >>> 7) & 0x1f;
+  const funct7 = (raw >>> 25) & 0x7f;
+  // sfence.vma: funct7 = 0001001, rd must be zero; rs1 (address) and rs2
+  // (ASID) are legal operands and simply widen the flush.
+  if (funct7 === 0x09) return rd === 0 ? "sfence_vma" : "illegal";
   const imm = raw >>> 20;
-  const isPrivEncoding = ((raw >>> 7) & 0x1f) === 0 && ((raw >>> 15) & 0x1f) === 0;
+  const isPrivEncoding = rd === 0 && ((raw >>> 15) & 0x1f) === 0;
   if (!isPrivEncoding) return "illegal";
   if (imm === 0x000) return "ecall";
   if (imm === 0x001) return "ebreak";
   if (imm === 0x102) return "sret";
   if (imm === 0x302) return "mret";
   if (imm === 0x105) return "wfi";
-  if (imm === 0x120) return "sfence_vma"; // funct7=0001001 checked below
+  if (imm === 0x120) return "sfence_vma";
   return "illegal";
 }
 

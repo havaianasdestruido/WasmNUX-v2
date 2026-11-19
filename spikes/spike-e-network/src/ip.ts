@@ -162,6 +162,8 @@ export class EchoStack {
 
   handle(raw: Uint8Array): void {
     const ip = parseIpv4(raw);
+    // Never reply using fields from a corrupted header.
+    if (!ip.headerChecksumOk) return;
     if (ip.protocol === 1) {
       const icmp = parseIcmpEcho(ip.payload);
       if (icmp.type === 8 && icmp.checksumOk) {
@@ -179,6 +181,9 @@ export class EchoStack {
       }
     } else if (ip.protocol === 17) {
       const udp = parseUdp(ip.payload);
+      // Drop datagrams whose pseudo-header checksum is nonzero-but-bad
+      // (checksumOk treats a valid zero checksum as acceptable per RFC 768).
+      if (!udp.checksumOk(ip.src, ip.dst)) return;
       if (udp.dstPort === 7) {
         const resp = buildUdp(
           { srcPort: 7, dstPort: udp.srcPort, payload: udp.payload },

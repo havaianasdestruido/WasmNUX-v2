@@ -13,10 +13,10 @@ interface RunResult {
   stats: unknown;
 }
 
-function runWith(mode: "interp" | "jit", src: string, maxSteps = 5_000_000): RunResult {
-  const mem = new GuestMemory({ sizeBytes: 1 << 20, base: 0 });
-  const prog = assemble(src, { base: 0 });
-  mem.loadImage(0, prog.image);
+function runWith(mode: "interp" | "jit", src: string, maxSteps = 5_000_000, base = 0): RunResult {
+  const mem = new GuestMemory({ sizeBytes: 1 << 20, base });
+  const prog = assemble(src, { base });
+  mem.loadImage(base, prog.image);
   const cpu = new Cpu({ memory: mem, pc: BigInt(prog.entry), captureOutput: true });
   let exit;
   let stats: unknown = null;
@@ -32,9 +32,9 @@ function runWith(mode: "interp" | "jit", src: string, maxSteps = 5_000_000): Run
   return { exit, regs, output: cpu.output, stats };
 }
 
-function expectEquivalent(src: string): RunResult {
-  const a = runWith("interp", src);
-  const b = runWith("jit", src);
+function expectEquivalent(src: string, base = 0): RunResult {
+  const a = runWith("interp", src, 5_000_000, base);
+  const b = runWith("jit", src, 5_000_000, base);
   expect(b.exit).toEqual(a.exit);
   expect(b.regs).toEqual(a.regs);
   expect(b.output).toBe(a.output);
@@ -304,5 +304,81 @@ describe("spike A — JIT vs interpreter equivalence", () => {
     cpu.mmu.satp = (8n << 60n) | 1n;
     engine.run(cpu, 1);
     expect(engine.stats.flushes).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("spike A — Codex review regressions", () => {
+  it("equivalence with a nonzero RAM base (QEMU virt 0x8000_0000)", () => {
+    // Covers: interpreter PA/offset mixups, JIT range-probe offset conversion,
+    // and the i32 return ABI for PCs ≥ 0x8000_0000.
+    const r = expectEquivalent(
+      `
+      start:
+        li t0, 0
+        li t1, 20
+      loop:
+        addi t0, t0, 3
+        blt t0, t1, loop
+        la t2, slot
+        sd t0, 0(t2)
+        ld t3, 0(t2)
+        mv a0, t3
+        li a7, 93
+        ecall
+      .align 3
+      slot: .dword 0
+    `,
+      0x80000000,
+    );
+    expect(r.exit).toEqual({ kind: "exit", code: 21 });
+    expect(r.regs[5]).toBe(21n); // t0
+    expect(r.regs[28]).toBe(21n); // t3
+  });
+
+  it("stores crossing the end of RAM trap identically on both tiers", () => {
+    const r = expectEquivalent(`
+      start:
+        la t0, handler
+        csrw mtvec, t0
+        li t0, 1048572        # ramBytes - 4 (1 MiB RAM)
+        li t1, -1
+        sd t1, 0(t0)          # width crosses into the footer → store fault
+        li a7, 93
+        li a0, 2              # unreachable if the fault fired
+        ecall
+      handler:
+        csrr a0, mcause       # 15 = store/AMO fault
+        li a7, 93
+        ecall
+    `);
+    expect(r.exit).toEqual({ kind: "exit", code: 15 });
+  });
+
+  it("counts only instructions actually executed when a block exits early", () => {
+    // A block whose trailing instruction takes the slow path must count the
+    // fast prefix + the slow op — not the whole compiled block twice.
+    const mem = new GuestMemory({ sizeBytes: 1 << 20, base: 0 });
+    const prog = assemble(`
+      start:
+        li t0, 0
+        li t1, 5
+      loop:
+        addi t0, t0, 1
+        mul t2, t0, t1       # mul is fast
+        div t3, t0, t1       # trailing slow op ends the block
+        blt t0, t1, loop
+        li a7, 93
+        li a0, 0
+        ecall
+    `, { base: 0 });
+    mem.loadImage(0, prog.image);
+    const cpu = new Cpu({ memory: mem, captureOutput: true });
+    const engine = new JitEngine(mem);
+    const exit = engine.run(cpu, 10_000);
+    expect(exit).toEqual({ kind: "exit", code: 0 });
+    // instret must equal fast + slow counts exactly (no over-counting)
+    expect(cpu.instret).toBe(BigInt(engine.stats.fastSteps + engine.stats.slowSteps));
+    // and the budget was actually consumed by real instructions
+    expect(engine.stats.fastSteps + engine.stats.slowSteps).toBeGreaterThan(20);
   });
 });

@@ -81,3 +81,21 @@ describe("decoder", () => {
     expect(decode(0x0000007f).op).toBe("illegal"); // opcode 0x7f unknown
   });
 });
+
+describe("decoder — sfence.vma operand forms (Codex)", () => {
+  const SFENCE = 0x12000073; // funct7=0001001, rd=rs1=rs2=0
+  it("accepts nonzero rs1 (address) and rs2 (ASID)", () => {
+    const withOps = (SFENCE | (5 << 15) | (3 << 20)) >>> 0; // rs1=5, rs2=3, rd=0
+    const insn = decode(withOps);
+    expect(insn.op).toBe("sfence_vma");
+    expect(insn.rs1).toBe(5);
+    expect(insn.rs2).toBe(3);
+  });
+  it("still accepts the all-zero form", () => {
+    expect(decode(SFENCE).op).toBe("sfence_vma");
+  });
+  it("rejects a nonzero rd", () => {
+    const bad = SFENCE | (7 << 7);
+    expect(decode(bad).op).toBe("illegal");
+  });
+});

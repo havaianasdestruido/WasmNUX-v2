@@ -309,16 +309,16 @@ export function assemble(source: string, opts?: { base?: number }): AssembleResu
         emitHole(); continue;
       case "call": fixups.push({ pc: at, kind: "call", label: ops[0]!, rd: 1 }); emitHole(); continue;
       case "beqz": case "bnez": case "bltz": case "bgez": case "bgtz": case "blez": {
-        const map: Record<string, [Op, boolean]> = {
-          beqz: ["beq", true], bnez: ["bne", true],
-          bltz: ["blt", true], bgez: ["bge", true],
-          bgtz: ["bge", false], blez: ["blt", false],
-        };
-        const [op, rs1First] = map[mnem]!;
+        // beqz/bnez/bltz/bgez: compare reg against zero (reg first).
+        // bgtz rs  ⇔  blt zero, rs   (strictly greater: 0 < rs)
+        // blez rs  ⇔  bge zero, rs   (less-or-equal: 0 ≥ rs)
+        const op: Op = mnem === "bgtz" || mnem === "blez"
+          ? (mnem === "bgtz" ? "blt" : "bge")
+          : ({ beqz: "beq", bnez: "bne", bltz: "blt", bgez: "bge" } as Record<string, Op>)[mnem]!;
+        const rs = reg(ops[0]!);
+        const zeroFirst = mnem === "bgtz" || mnem === "blez";
         fixups.push({ pc: at, kind: "b", label: ops[1]!, rd: 0 });
-        brInfo.set(at, { op, rs1: reg(ops[0]!), rs2: rs1First ? 0 : reg(ops[0]!) });
-        // For bgtz/blez semantics with single reg: bge rs1, zero / blt rs1, zero — fixed below.
-        if (!rs1First) brInfo.set(at, { op, rs1: reg(ops[0]!), rs2: 0 });
+        brInfo.set(at, { op, rs1: zeroFirst ? 0 : rs, rs2: zeroFirst ? rs : 0 });
         emitHole(); continue;
       }
       case "li": {

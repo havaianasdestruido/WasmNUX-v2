@@ -7,11 +7,15 @@
  *  - Registers live in the memory footer (regfile), so the host and the
  *    module share state with zero marshalling.
  *  - Wasm has no guard pages: every memory access gets an explicit inline
- *    range/TLB probe; failures return a slow-path sentinel to the host,
- *    which re-executes the instruction on the interpreter (traps, MMU,
- *    atomics, CSRs, ecall...). This is the "explicit TLB check in generated
- *    code" from ADR-0004 and the cost spike A measures.
- *  - Return value: `next_pc` (≥ 0), or `-(pc + 1)` for slow path.
+ *    range/TLB probe (full access width, RAM-relative); failures return a
+ *    slow-path sentinel to the host, which re-executes the instruction on
+ *    the interpreter (traps, MMU, atomics, CSRs, ecall...). This is the
+ *    "explicit TLB check in generated code" from ADR-0004 and the cost
+ *    spike A measures.
+ *  - Return value: `next_pc` as a **RAM-relative offset** (0 … 0x7fffffff),
+ *    or `-(rel + 1)` for the slow path. Offsets (not absolute PCs) keep the
+ *    i32 ABI valid for high RAM bases like QEMU virt's 0x8000_0000 and can
+ *    never collide with the negative sentinel.
  */
 
 import { decodeAt, isTerminator, type Insn, type Op } from "../isa/decoder.js";
@@ -91,28 +95,55 @@ class Emitter {
     this.push(OP.i32_const, ...sleb(BigInt(v)));
   }
 
-  /** Return the slow-path sentinel for `pc`. */
-  slowReturn(pc: number): void {
-    this.i32const(-(pc + 1));
+  /** Return the slow-path sentinel for a RAM-relative pc (`rel`). */
+  slowReturn(rel: number): void {
+    if (rel < 0 || rel > 0x7fffffff) {
+      throw new BlockCompileError(`slow-path pc out of i32 range (rel=${rel})`);
+    }
+    this.i32const(-(rel + 1));
+    this.push(OP.return);
+  }
+
+  /** Return a normal `next_pc` as a RAM-relative offset. */
+  normalReturn(rel: number): void {
+    if (rel < 0 || rel > 0x7fffffff) {
+      // Unrepresentable in the i32 ABI — hand the edge to the interpreter.
+      throw new BlockCompileError(`next pc out of i32 range (rel=${rel})`);
+    }
+    this.i32const(rel);
     this.push(OP.return);
   }
 
   /**
-   * Inline range probe for the address on the stack.
-   * Keeps the address (via local 0) when in range, else returns slow(pc).
-   * This is the ADR-0004 explicit bounds/TLB check.
+   * Inline range probe for the address on the stack (any width `size`).
+   * Replaces it with `rel = addr - base` when
+   * `rel + size ≤ ramBytes` (the full access must stay inside guest RAM —
+   * never the footer), else returns slow(pc). This is the ADR-0004 explicit
+   * bounds/TLB check; the returned value is what Wasm loads/stores consume
+   * as their linear-memory offset.
    */
-  rangeProbe(mem: GuestMemory, pc: number): void {
-    this.push(OP.local_tee, 0); // addr → local0, keep on stack
+  rangeProbe(mem: GuestMemory, pc: number, size: number): void {
     this.i64const(BigInt(mem.base));
     this.push(OP.i64_sub);          // rel = addr - base (unsigned wrap covers addr<base)
-    this.i64const(BigInt(mem.ramBytes));
+    // rel < ramBytes - size + 1  (and rel must fit the positive i32 ABI)
+    const limit = Math.min(mem.ramBytes - size + 1, 0x80000000);
+    this.i64const(BigInt(limit));
     this.push(OP.i64_lt_u);
     this.push(OP.i32_eqz);
     this.push(OP.if, 0x40);         // void block
-    this.slowReturn(pc);
+    this.slowReturn(pc - mem.base);
     this.push(OP.end);
-    // address still on stack? local_tee kept it; slow branch returned; here stack has addr
+    // stack: [rel] — the RAM-relative offset for the memory instruction
+  }
+
+  /** Bump the shared store epoch after a guest store (ADR-0002, shared RAM only). */
+  epochBump(mem: GuestMemory): void {
+    if (!mem.shared) return;
+    this.push(OP.i32_const, ...sleb(BigInt(mem.syncOffset)));
+    this.push(OP.i32_const, ...sleb(1n));
+    // i32.atomic.rmw.add align=2 offset=0 (threads opcode: 0xFE 0x1E)
+    this.push(0xfe, 0x1e, 0x02, 0x00);
+    this.push(OP.drop);
   }
 }
 
@@ -140,7 +171,7 @@ export function compileBlock(opts: CompileOptions): CompiledBlock {
   for (;;) {
     if (pc + 4 > maxOffset) {
       // Fell off the end of RAM: hand back a sentinel the host treats as step.
-      em.slowReturn(mem.base + pc);
+      em.slowReturn(pc);
       endPc = mem.base + pc;
       break;
     }
@@ -149,7 +180,7 @@ export function compileBlock(opts: CompileOptions): CompiledBlock {
     const pcBig = BigInt(insnPc);
 
     if (!isFastOp(insn.op)) {
-      em.slowReturn(insnPc);
+      em.slowReturn(pc);
       slowPc = insnPc;
       endPc = insnPc;
       break;
@@ -163,14 +194,12 @@ export function compileBlock(opts: CompileOptions): CompiledBlock {
     const endsBlock = insn.op === "jal" || insn.op === "jalr";
     if (endsBlock) break;
     if (insns >= MAX_BLOCK_INSNS) {
-      em.i32const(endPc);
-      em.push(OP.return);
+      em.normalReturn(pc); // pc = RAM-relative offset of endPc
       break;
     }
     // If the next word isn't decodable code we stop at a fallthrough return.
     if (pc + 4 > maxOffset) {
-      em.i32const(endPc);
-      em.push(OP.return);
+      em.normalReturn(pc);
       break;
     }
   }
@@ -250,6 +279,11 @@ const STORE_SIZE: Partial<Record<Op, number>> = {
   sb: OP.i64_store8, sh: OP.i64_store16, sw: OP.i64_store32, sd: OP.i64_store,
 };
 const STORE_ALIGN: Partial<Record<Op, number>> = { sb: 0, sh: 1, sw: 2, sd: 3 };
+/** Access widths for the full-range probe (must stay inside guest RAM). */
+const LOAD_BYTES: Partial<Record<Op, number>> = {
+  lb: 1, lbu: 1, lh: 2, lhu: 2, lw: 4, lwu: 4, ld: 8,
+};
+const STORE_BYTES: Partial<Record<Op, number>> = { sb: 1, sh: 2, sw: 4, sd: 8 };
 
 const ALU2: Partial<Record<Op, number>> = {
   add: OP.i64_add, sub: OP.i64_sub, sll: OP.i64_shl, slt: OP.i64_lt_s,
@@ -277,33 +311,22 @@ function emitInsn(em: Emitter, mem: GuestMemory, insn: Insn, insnPc: number, pcB
         em.i64const(BigInt.asUintN(64, pcBig + 4n));
         em.setReg(mem, insn.rd);
       }
-      em.i32const(Number(BigInt.asUintN(64, pcBig + insn.imm)));
-      em.push(OP.return);
+      em.normalReturn(Number(BigInt.asUintN(64, pcBig + insn.imm)) - mem.base);
       return;
     case "jalr": {
-      const target = em.code; void target;
       // rd = pc + 4
       if (insn.rd !== 0) {
         em.i64const(BigInt.asUintN(64, pcBig + 4n));
         em.setReg(mem, insn.rd);
       }
-      // target = (rs1 + imm) & ~1
+      // target = (rs1 + imm) & ~1 — probe width 4 (a fetch will happen there)
       em.getReg(mem, insn.rs1);
       em.i64const(insn.imm);
       em.push(OP.i64_add);
       em.i64const(-2n);
       em.push(OP.i64_and);
-      em.push(OP.local_tee, 0);
-      // probe [base, base+ram)
-      em.i64const(BigInt(mem.base));
-      em.push(OP.i64_sub);
-      em.i64const(BigInt(mem.ramBytes));
-      em.push(OP.i64_lt_u);
-      em.push(OP.i32_eqz);
-      em.push(OP.if, 0x40);
-      em.slowReturn(insnPc);
-      em.push(OP.end);
-      em.push(OP.local_get, 0, OP.i32_wrap_i64);
+      em.rangeProbe(mem, insnPc, 4); // stack: [rel]
+      em.push(OP.i32_wrap_i64);
       em.push(OP.return);
       return;
     }
@@ -313,8 +336,7 @@ function emitInsn(em: Emitter, mem: GuestMemory, insn: Insn, insnPc: number, pcB
       em.getReg(mem, insn.rs2);
       em.push(BRANCH_CMP[insn.op]!);
       em.push(OP.if, 0x40);
-      em.i32const(Number(BigInt.asUintN(64, pcBig + insn.imm)));
-      em.push(OP.return);
+      em.normalReturn(Number(BigInt.asUintN(64, pcBig + insn.imm)) - mem.base);
       em.push(OP.end);
       return;
     }
@@ -324,24 +346,25 @@ function emitInsn(em: Emitter, mem: GuestMemory, insn: Insn, insnPc: number, pcB
       em.getReg(mem, insn.rs1);
       em.i64const(insn.imm);
       em.push(OP.i64_add);
-      em.rangeProbe(mem, insnPc);
-      // stack: addr (kept)
-      em.push(OP.local_get, 0, OP.i32_wrap_i64);
+      em.rangeProbe(mem, insnPc, LOAD_BYTES[insn.op]!);
+      // stack: [rel]
+      em.push(OP.i32_wrap_i64);
       em.push(LOAD_EXT[insn.op]!, ...memarg(LOAD_ALIGN[insn.op]!));
       em.setReg(mem, insn.rd);
       return;
     }
 
     case "sb": case "sh": case "sw": case "sd": {
-      // Wasm stores take [addr, value] with value on TOP: compute/probe the
-      // address into local 0 first, then push addr and value in that order.
+      // Wasm stores take [addr, value] with value on TOP: probe the address
+      // to a RAM-relative offset first, then push addr and value in order.
       em.getReg(mem, insn.rs1);
       em.i64const(insn.imm);
       em.push(OP.i64_add);
-      em.rangeProbe(mem, insnPc); // addr → local 0, stack empty
-      em.push(OP.local_get, 0, OP.i32_wrap_i64); // [addr]
-      em.getReg(mem, insn.rs2);                  // [addr, value]
+      em.rangeProbe(mem, insnPc, STORE_BYTES[insn.op]!); // stack: [rel]
+      em.push(OP.i32_wrap_i64);                          // [addr]
+      em.getReg(mem, insn.rs2);                          // [addr, value]
       em.push(STORE_SIZE[insn.op]!, ...memarg(STORE_ALIGN[insn.op]!));
+      em.epochBump(mem); // cross-hart LR/SC invalidation (ADR-0002)
       return;
     }
 

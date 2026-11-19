@@ -103,3 +103,73 @@ describe("assembler", () => {
     expect([...a.image]).toEqual([...b.image]);
   });
 });
+
+describe("bgtz/blez zero-case encodings (Codex)", () => {
+  it("bgtz rs ⇔ blt zero,rs and blez rs ⇔ bge zero,rs", () => {
+    const a = assemble("start:\n bgtz a0, target\n target: nop\n");
+    const b = assemble("start:\n blt zero, a0, target\n target: nop\n");
+    expect(a.image).toEqual(b.image);
+
+    const c = assemble("start:\n blez a0, target\n target: nop\n");
+    const d = assemble("start:\n bge zero, a0, target\n target: nop\n");
+    expect(c.image).toEqual(d.image);
+  });
+
+  it("executes the strict zero cases correctly", () => {
+    // t0 = 0: bgtz must NOT be taken; blez MUST be taken.
+    const notTaken = assemble(`
+      start:
+        li t0, 0
+        li a0, 0
+        bgtz t0, fail
+        li a0, 1
+        li a7, 93
+        ecall
+      fail:
+        li a0, 66
+        li a7, 93
+        ecall
+    `);
+    const mem = new GuestMemory({ sizeBytes: 1 << 16, base: 0 });
+    mem.loadImage(0, notTaken.image);
+    const cpu = new Cpu({ memory: mem, captureOutput: true });
+    expect(cpu.run(1000)).toEqual({ kind: "exit", code: 1 });
+
+    const taken = assemble(`
+      start:
+        li t0, 0
+        li a0, 0
+        blez t0, yes
+        li a0, 66
+        li a7, 93
+        ecall
+      yes:
+        li a0, 1
+        li a7, 93
+        ecall
+    `);
+    const mem2 = new GuestMemory({ sizeBytes: 1 << 16, base: 0 });
+    mem2.loadImage(0, taken.image);
+    const cpu2 = new Cpu({ memory: mem2, captureOutput: true });
+    expect(cpu2.run(1000)).toEqual({ kind: "exit", code: 1 });
+
+    // positive t0: bgtz taken, blez not taken
+    const pos = assemble(`
+      start:
+        li t0, 5
+        li a0, 0
+        bgtz t0, yes
+        li a0, 66
+        li a7, 93
+        ecall
+      yes:
+        li a0, 1
+        li a7, 93
+        ecall
+    `);
+    const mem3 = new GuestMemory({ sizeBytes: 1 << 16, base: 0 });
+    mem3.loadImage(0, pos.image);
+    const cpu3 = new Cpu({ memory: mem3, captureOutput: true });
+    expect(cpu3.run(1000)).toEqual({ kind: "exit", code: 1 });
+  });
+});

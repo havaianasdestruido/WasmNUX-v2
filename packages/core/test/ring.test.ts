@@ -147,3 +147,41 @@ describe("spike B — SPSC ring", () => {
     expect(total).toBe(expected);
   }, 20_000);
 });
+
+describe("ring — close wakes blocked consumers (Codex)", () => {
+  it("close() notifies a consumer parked in waitForData()", async () => {
+    const buf = SpscRing.createShared(64);
+    const ring = new SpscRing(buf, 64);
+    expect(ring.waitForData(0)).toBe(false); // nothing buffered
+
+    const { Worker } = await import("node:worker_threads");
+    // A same-thread call cannot park (main thread must not block); use a worker
+    // that replicates waitForData()'s wait loop on the raw control header.
+    const wcode = `
+      const { workerData, parentPort } = require("node:worker_threads");
+      const ctrl = new Int32Array(workerData, 0, 8);
+      // replicate waitForData: park on head until closed or data
+      let result = "timeout";
+      const deadline = Date.now() + 8000;
+      for (;;) {
+        const h = Atomics.load(ctrl, 0), t = Atomics.load(ctrl, 1);
+        if (h !== t) { result = "data"; break; }
+        if (Atomics.load(ctrl, 3) & 1) { result = "closed"; break; }
+        if (Date.now() > deadline) break;
+        Atomics.wait(ctrl, 0, h, 500);
+      }
+      parentPort.postMessage(result);
+    `;
+    const w = new Worker(wcode, { eval: true, workerData: buf });
+    const got = new Promise((resolve, reject) => {
+      w.on("message", resolve);
+      w.on("error", reject);
+    });
+    await new Promise((r) => setTimeout(r, 100));
+    ring.close();
+    const result = await got;
+    await w.terminate();
+    expect(result).toBe("closed");
+    expect(ring.closed).toBe(true);
+  }, 15_000);
+});

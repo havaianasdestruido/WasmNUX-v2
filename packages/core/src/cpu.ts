@@ -80,9 +80,13 @@ export class Cpu {
   instret = 0n;
 
   private csrs = new Map<number, bigint>();
-  // LR/SC reservation
+  // LR/SC reservation (epoch = mem.storeEpoch at LR time; SC succeeds only
+  // while unchanged — see ADR-0002)
   resValid = false;
   resAddr = 0n;
+  resEpoch = -1;
+  /** PC of the instruction currently executing / that faulted (mepc source). */
+  private trapPc = 0n;
 
   private readonly onSyscall?: CpuOptions["onSyscall"];
   private readonly onTrap?: CpuOptions["onTrap"];
@@ -154,8 +158,8 @@ export class Cpu {
   private translate(va: bigint, kind: AccessKind): MmuResult {
     return this.mmu.translate(va, kind, (pa) => {
       const off = this.mem.physToOffset(pa);
-      if (off < 0) return 0n; // non-RAM PTE reads fault as V=0
-      return this.mem.readU64(off);
+      if (off < 0 || off + 8 > this.mem.ramBytes) return 0n; // non-RAM PTE reads fault as V=0
+      return this.mem.readU64(Number(pa));
     });
   }
 
@@ -167,15 +171,19 @@ export class Cpu {
       return null;
     }
     const off = this.mem.physToOffset(tr.pa);
-    if (off < 0) {
+    // Full access width must land inside guest RAM — the footer (regfile /
+    // sync page) is host-internal and never guest-visible.
+    if (off < 0 || off + size > this.mem.ramBytes) {
       this.raise(kind === "read" ? 13n : 15n, addr);
       return null;
     }
+    // Accessors take PHYSICAL addresses (pa), matching loadImage().
+    const pa = Number(tr.pa);
     switch (size) {
-      case 1: return BigInt(this.mem.readU8(off));
-      case 2: return BigInt(this.mem.readU16(off));
-      case 4: return BigInt(this.mem.readU32(off));
-      case 8: return this.mem.readU64(off);
+      case 1: return BigInt(this.mem.readU8(pa));
+      case 2: return BigInt(this.mem.readU16(pa));
+      case 4: return BigInt(this.mem.readU32(pa));
+      case 8: return this.mem.readU64(pa);
     }
   }
 
@@ -186,27 +194,30 @@ export class Cpu {
       return false;
     }
     const off = this.mem.physToOffset(tr.pa);
-    if (off < 0) {
+    if (off < 0 || off + size > this.mem.ramBytes) {
       this.raise(15n, addr);
       return false;
     }
+    const pa = Number(tr.pa);
     const v = BigInt.asUintN(64, value);
     switch (size) {
-      case 1: this.mem.writeU8(off, Number(v & 0xffn)); break;
-      case 2: this.mem.writeU16(off, Number(v & 0xffffn)); break;
-      case 4: this.mem.writeU32(off, Number(v & 0xffffffffn)); break;
-      case 8: this.mem.writeU64(off, v); break;
+      case 1: this.mem.writeU8(pa, Number(v & 0xffn)); break;
+      case 2: this.mem.writeU16(pa, Number(v & 0xffffn)); break;
+      case 4: this.mem.writeU32(pa, Number(v & 0xffffffffn)); break;
+      case 8: this.mem.writeU64(pa, v); break;
     }
-    // Any store clears the local LR/SC reservation (conservative Phase 0
-    // choice; exact address-set semantics deferred to Phase 1 — see ADR-0002).
-    if (this.resValid) this.resValid = false;
+    // Every store bumps the shared epoch: any store (this hart or another)
+    // invalidates outstanding LR/SC reservations — conservative, always
+    // spec-legal (spurious SC failures are allowed). See ADR-0002.
+    this.mem.bumpStoreEpoch();
     return true;
   }
 
   raise(cause: bigint | number, tval: bigint): void {
     const c = typeof cause === "number" ? BigInt(cause) : cause;
     // Phase 0: machine traps only; write mepc/mcause/mtval and vector.
-    this.writeCsr(CSR_MEPC, this.pc);
+    // mepc = the PC of the FAULTING instruction (trapPc), not pc+4.
+    this.writeCsr(CSR_MEPC, this.trapPc);
     this.writeCsr(CSR_MCAUSE, c);
     this.writeCsr(CSR_MTVAL, tval);
     const mtvec = this.readCsr(CSR_MTVEC, this.pc) ?? 0n;
@@ -225,7 +236,20 @@ export class Cpu {
   step(): boolean {
     if (this.halted) return false;
     const pc = this.pc;
-    const pcNum = this.mem.physToOffset(pc);
+    this.trapPc = pc;
+    // Fetch through the MMU when translation is active (S/U + Sv39): `pc` is
+    // a virtual address then; M-mode/bare fetches are identity.
+    let pcNum: number;
+    if (this.mmu.mode !== 0n && this.mmu.privilege !== 3) {
+      const tr = this.translate(pc, "fetch");
+      if (!tr.ok) {
+        this.raise(tr.cause, pc); // instruction page fault (cause 12)
+        return !this.halted;
+      }
+      pcNum = this.mem.physToOffset(tr.pa);
+    } else {
+      pcNum = this.mem.physToOffset(pc);
+    }
     if (pcNum < 0 || pcNum + 4 > this.mem.ramBytes) {
       this.raise(1n, pc); // instruction access fault
       return !this.halted;
@@ -239,6 +263,7 @@ export class Cpu {
   /** Execute an already-decoded instruction at `pc` (shared with the JIT slow path). */
   execute(insn: Insn, pc: bigint): boolean {
     const next = pc + 4n;
+    this.trapPc = pc; // synchronous faults record THIS pc in mepc, not pc+4
     this.pc = next;
 
     if (insn.op === "illegal") {
@@ -346,15 +371,21 @@ export class Cpu {
         if (v === null) break;
         this.resValid = true;
         this.resAddr = addr;
+        this.resEpoch = this.mem.storeEpoch;
         this.setReg(insn.rd, size === 4 ? BigInt.asIntN(32, v) : v);
         break;
       }
       case "sc_w": case "sc_d": {
         const addr = this.getReg(insn.rs1);
         const size = insn.op.endsWith("_w") ? 4 : 8;
-        if (this.resValid && this.resAddr === addr) {
+        // Any SC attempt CONSUMES the reservation (even when it fails), and
+        // success additionally requires no store since the matching LR —
+        // by any hart — bumped the epoch (ADR-0002).
+        const canSucceed =
+          this.resValid && this.resAddr === addr && this.resEpoch === this.mem.storeEpoch;
+        this.resValid = false;
+        if (canSucceed) {
           const ok = this.store(addr, size as 4 | 8, this.getReg(insn.rs2));
-          this.resValid = false;
           if (ok) this.setReg(insn.rd, 0n);
           else this.setReg(insn.rd, 1n);
         } else {
@@ -445,26 +476,38 @@ export class Cpu {
     const addr = this.getReg(insn.rs1);
     const isW = insn.op.endsWith("_w");
     const size = isW ? 4 : 8;
-    const old = this.loadU(addr, size as 4 | 8, "write"); // AMOs need write permission
-    if (old === null) return;
-    const b = this.getReg(insn.rs2);
-    const base = insn.op.replace(/_(w|d)$/, "");
-    let next: bigint;
-    switch (base) {
-      case "amoadd": next = (isW ? BigInt.asIntN(32, old) : old) + (isW ? BigInt.asIntN(32, b) : b); break;
-      case "amoswap": next = b; break;
-      case "amoxor": next = old ^ b; break;
-      case "amoand": next = old & b; break;
-      case "amoor": next = old | b; break;
-      case "amomin": next = (isW ? BigInt.asIntN(32, old) : BigInt.asIntN(64, old)) < (isW ? BigInt.asIntN(32, b) : BigInt.asIntN(64, b)) ? old : b; break;
-      case "amomax": next = (isW ? BigInt.asIntN(32, old) : BigInt.asIntN(64, old)) > (isW ? BigInt.asIntN(32, b) : BigInt.asIntN(64, b)) ? old : b; break;
-      case "amominu": next = BigInt.asUintN(64, old) < BigInt.asUintN(64, b) ? old : b; break;
-      case "amomaxu": next = BigInt.asUintN(64, old) > BigInt.asUintN(64, b) ? old : b; break;
-      default: this.raise(2n, BigInt(insn.raw >>> 0)); return;
+    // The whole load–compute–store must be one atomic unit across harts:
+    // serialise on the shared AMO lock (shared memories only).
+    const locked = this.mem.lockAmo();
+    try {
+      const old = this.loadU(addr, size as 4 | 8, "write"); // AMOs need write permission
+      if (old === null) return;
+      const b = this.getReg(insn.rs2);
+      const base = insn.op.replace(/_(w|d)$/, "");
+      // AMO.W compares/stores only the low 32 bits of both operands.
+      const a64 = isW ? BigInt.asUintN(32, old) : old;
+      const b64 = isW ? BigInt.asUintN(32, b) : b;
+      const asi = isW ? BigInt.asIntN(32, old) : BigInt.asIntN(64, old);
+      const bsi = isW ? BigInt.asIntN(32, b) : BigInt.asIntN(64, b);
+      let next: bigint;
+      switch (base) {
+        case "amoadd": next = (isW ? BigInt.asIntN(32, old) : old) + (isW ? BigInt.asIntN(32, b) : b); break;
+        case "amoswap": next = b; break;
+        case "amoxor": next = old ^ b; break;
+        case "amoand": next = old & b; break;
+        case "amoor": next = old | b; break;
+        case "amomin": next = asi < bsi ? old : b; break;
+        case "amomax": next = asi > bsi ? old : b; break;
+        case "amominu": next = a64 < b64 ? old : b; break;
+        case "amomaxu": next = a64 > b64 ? old : b; break;
+        default: this.raise(2n, BigInt(insn.raw >>> 0)); return;
+      }
+      if (isW) next = BigInt.asIntN(32, next);
+      if (!this.store(addr, size as 4 | 8, next)) return;
+      this.setReg(insn.rd, isW ? BigInt.asIntN(32, old) : old);
+    } finally {
+      if (locked) this.mem.releaseAmo();
     }
-    if (isW) next = BigInt.asIntN(32, next);
-    if (!this.store(addr, size as 4 | 8, next)) return;
-    this.setReg(insn.rd, isW ? BigInt.asIntN(32, old) : old);
     void pc;
   }
 
