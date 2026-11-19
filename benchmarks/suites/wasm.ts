@@ -65,7 +65,11 @@ function reserveCase(): BenchCase {
       ok = false;
     }
     const ms = performance.now() - t0;
-    return { ms, instructions: pages, meta: { ok, initialPages: current, requestedMaxPages: opts.maximum ?? pages } };
+    return {
+      ms,
+      instructions: pages,
+      meta: { ok, initialPages: current, requestedMaxPages: opts.maximum ?? pages },
+    };
   };
   return {
     name: 'memory-reserve',
@@ -134,7 +138,12 @@ function atomicsCase(iterations: number): BenchCase {
     name: 'atomics-micro',
     description: 'JS Atomics vs Wasm i32.atomic.add, nanoseconds per operation (Spike B prerequisite)',
     showMeta: true,
-    metric: { name: 'wasm atomic ns/op', value: (_best, stats) => stats?.['wasmAtomicAddNs'] ?? 0, digits: 2, lowerIsBetter: true },
+    metric: {
+      name: 'wasm atomic ns/op',
+      value: (_best, stats) => stats?.['wasmAtomicAddNs'] ?? 0,
+      digits: 2,
+      lowerIsBetter: true,
+    },
     variants: [
       {
         name: `micro x${iterations}`,

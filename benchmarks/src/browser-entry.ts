@@ -28,7 +28,9 @@ function param(name: string, fallback: string): string {
 }
 
 function availableSuites(scale: number): Suite[] {
-  const ids = param('suites', 'jit,wasm').split(',').map((s) => s.trim());
+  const ids = param('suites', 'jit,wasm')
+    .split(',')
+    .map((s) => s.trim());
   const out: Suite[] = [];
   if (ids.includes('jit')) out.push(jitSuite(scale));
   if (ids.includes('wasm')) out.push(wasmSuite(1_000_000));
@@ -54,7 +56,11 @@ async function main(): Promise<void> {
       s.verify?.();
     }
     const report = runSuites(suites, { reps });
-    await fetch('/report', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(report) });
+    await fetch('/report', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(report),
+    });
     window.__wnxBenchDone?.(report);
     document.title = 'done';
   } catch (err) {

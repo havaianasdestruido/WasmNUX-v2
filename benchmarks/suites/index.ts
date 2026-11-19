@@ -60,7 +60,8 @@ export function suiteIds(): string[] {
 export async function resolveSuites(ids: string[] | 'all', opts: SuiteOptions = {}): Promise<Suite[]> {
   const wanted = ids === 'all' ? SUITE_REGISTRY : SUITE_REGISTRY.filter((s) => ids.includes(s.id));
   const unknown = ids === 'all' ? [] : ids.filter((id) => !SUITE_REGISTRY.some((s) => s.id === id));
-  if (unknown.length) throw new Error(`unknown suite(s): ${unknown.join(', ')} (available: ${suiteIds().join(', ')})`);
+  if (unknown.length)
+    throw new Error(`unknown suite(s): ${unknown.join(', ')} (available: ${suiteIds().join(', ')})`);
   const out: Suite[] = [];
   for (const entry of wanted) {
     const suite = await entry.factory(opts);

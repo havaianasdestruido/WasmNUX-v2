@@ -44,7 +44,13 @@ export {
   type GuestRunOptions,
   type Workload,
 } from './guest.ts';
-export { SUITE_REGISTRY, resolveSuites, suiteIds, type SuiteEntry, type SuiteOptions } from '../suites/index.ts';
+export {
+  SUITE_REGISTRY,
+  resolveSuites,
+  suiteIds,
+  type SuiteEntry,
+  type SuiteOptions,
+} from '../suites/index.ts';
 export { JIT_VARIANTS, jitSuite, verifyJitResults } from '../suites/jit.ts';
 export { baselineSuite, comparableWorkloads, loadBaselineEmulator } from '../suites/baseline.ts';
 export { wasmSuite } from '../suites/wasm.ts';

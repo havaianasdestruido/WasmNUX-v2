@@ -356,7 +356,8 @@ export function runWorkload(opts: GuestRunOptions): Outcome {
   const budget = w.budget ?? 200_000_000;
   const stop = machine.run(budget);
   const s = machine.stats();
-  if (stop !== 'exit') throw new Error(`workload ${w.id} stopped with '${stop}', not 'exit' (budget ${budget})`);
+  if (stop !== 'exit')
+    throw new Error(`workload ${w.id} stopped with '${stop}', not 'exit' (budget ${budget})`);
   return {
     ms: s.wallMs,
     instructions: s.instructions,

@@ -23,7 +23,9 @@ function left(s: string, n: number): string {
 }
 
 export function formatEnv(env: BenchEnv): string {
-  const git = env.git ? `${env.git.branch}@${env.git.commit.slice(0, 7)}${env.git.dirty ? ' (dirty)' : ''}` : 'no git';
+  const git = env.git
+    ? `${env.git.branch}@${env.git.commit.slice(0, 7)}${env.git.dirty ? ' (dirty)' : ''}`
+    : 'no git';
   const w = env.wasm;
   const features = [
     ['threads', w.threads],
@@ -80,7 +82,13 @@ function round(v: number, digits: number): number {
 
 /** The number a case is judged by: its declared metric, or throughput. */
 function headline(r: CaseResult): { label: string; value: number; digits: number; lowerIsBetter: boolean } {
-  if (r.metric) return { label: r.metric.name, value: r.metric.value, digits: r.metric.digits, lowerIsBetter: r.metric.lowerIsBetter };
+  if (r.metric)
+    return {
+      label: r.metric.name,
+      value: r.metric.value,
+      digits: r.metric.digits,
+      lowerIsBetter: r.metric.lowerIsBetter,
+    };
   return { label: 'MIPS', value: r.ips / 1e6, digits: 1, lowerIsBetter: false };
 }
 
@@ -116,7 +124,13 @@ export function formatResults(results: CaseResult[]): string {
       const hv = headline(r);
       const ratio = ref && refValue > 0 && hv.value > 0 ? `x${(hv.value / refValue).toFixed(2)}` : '-';
       const line = `${left(r.variant, nameWidth)}  ${left(r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1), 9)} ${left(hv.value.toFixed(hv.digits), 18)} ${left(ratio, 8)} ${left(String(r.best.instructions), 11)}`;
-      out.push(anyStats ? `${line} ${STAT_COLUMNS.map((c) => statCell(r, c)).join(' ')}` : showMeta ? `${line}${metaText(r)}` : line);
+      out.push(
+        anyStats
+          ? `${line} ${STAT_COLUMNS.map((c) => statCell(r, c)).join(' ')}`
+          : showMeta
+            ? `${line}${metaText(r)}`
+            : line,
+      );
     }
     // Spread only means something for samples long enough to be perturbed.
     const noisy = list.filter((r) => r.samples.length > 2 && r.best.ms >= 1);
@@ -128,15 +142,22 @@ export function formatResults(results: CaseResult[]): string {
         return min > 0 ? (max - min) / min : 0;
       });
       const worst = Math.max(...spread);
-      if (worst > 0.25) out.push(`   (note: sample spread up to ${(worst * 100).toFixed(0)}% - machine was noisy)`);
+      if (worst > 0.25)
+        out.push(`   (note: sample spread up to ${(worst * 100).toFixed(0)}% - machine was noisy)`);
     }
   }
   return out.join('\n');
 }
 
 export function formatGate(g: GateResult): string {
-  const out: string[] = [`regression gate (tolerance ${(g.tolerance * 100).toFixed(0)}%)`, g.baselineFile ? `baseline: ${g.baselineFile}` : 'baseline: none found'];
-  out.push('', `${left('suite/case/variant', 62)} ${left('baseline', 10)} ${left('current', 10)} ${left('ratio', 8)} status`);
+  const out: string[] = [
+    `regression gate (tolerance ${(g.tolerance * 100).toFixed(0)}%)`,
+    g.baselineFile ? `baseline: ${g.baselineFile}` : 'baseline: none found',
+  ];
+  out.push(
+    '',
+    `${left('suite/case/variant', 62)} ${left('baseline', 10)} ${left('current', 10)} ${left('ratio', 8)} status`,
+  );
   for (const r of g.rows) {
     const name = `${r.suite}/${r.case}/${r.variant}`;
     out.push(
@@ -144,7 +165,12 @@ export function formatGate(g: GateResult): string {
     );
   }
   const regressions = g.rows.filter((r) => r.status === 'regression' || r.status === 'missing');
-  out.push('', regressions.length ? `FAIL: ${regressions.length} row(s) regressed or went missing` : 'PASS: no regressions');
+  out.push(
+    '',
+    regressions.length
+      ? `FAIL: ${regressions.length} row(s) regressed or went missing`
+      : 'PASS: no regressions',
+  );
   return out.join('\n');
 }
 
@@ -166,7 +192,9 @@ export function toMarkdown(report: BenchReport, title = 'WasmNUX benchmark repor
         const hv = headline(r);
         const ratio = ref && refValue > 0 && hv.value > 0 ? `x${(hv.value / refValue).toFixed(2)}` : '-';
         const label = hv.lowerIsBetter ? `${hv.label} (lower better)` : hv.label;
-        lines.push(`| ${c} | ${r.variant} | ${r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1)} | ${label} | ${hv.value.toFixed(hv.digits)} | ${ratio} | ${r.best.instructions} |`);
+        lines.push(
+          `| ${c} | ${r.variant} | ${r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1)} | ${label} | ${hv.value.toFixed(hv.digits)} | ${ratio} | ${r.best.instructions} |`,
+        );
       }
       if (list.some((r) => r.showMeta)) {
         for (const r of list) {

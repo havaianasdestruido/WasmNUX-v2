@@ -97,7 +97,12 @@ interface Served {
  * page has no `SharedArrayBuffer`, so the atomics and shared-memory cases would
  * silently measure the fallback path instead of the real one.
  */
-export async function serveBundle(opts: { code: string; port: number; query: string; timeoutMs: number }): Promise<Served> {
+export async function serveBundle(opts: {
+  code: string;
+  port: number;
+  query: string;
+  timeoutMs: number;
+}): Promise<Served> {
   const logs: string[] = [];
   let resolveDone!: (r: BenchReport) => void;
   let rejectDone!: (e: Error) => void;
@@ -105,7 +110,10 @@ export async function serveBundle(opts: { code: string; port: number; query: str
     resolveDone = res;
     rejectDone = rej;
   });
-  const timer = setTimeout(() => rejectDone(new Error(`browser run timed out after ${opts.timeoutMs} ms`)), opts.timeoutMs);
+  const timer = setTimeout(
+    () => rejectDone(new Error(`browser run timed out after ${opts.timeoutMs} ms`)),
+    opts.timeoutMs,
+  );
 
   const server = createServer((req, res) => {
     const send = (status: number, body: string, type = 'text/plain; charset=utf-8'): void => {
@@ -187,10 +195,15 @@ export function findBrowser(explicit?: string): string | null {
   ];
   for (const c of candidates) if (existsSync(c)) return c;
   // playwright's own download cache, if `npx playwright install chromium` ran.
-  const cache = process.env['PLAYWRIGHT_BROWSERS_PATH'] ?? `${process.env['HOME'] ?? ''}/.cache/ms-playwright`;
+  const cache =
+    process.env['PLAYWRIGHT_BROWSERS_PATH'] ?? `${process.env['HOME'] ?? ''}/.cache/ms-playwright`;
   if (cache && existsSync(cache)) {
     for (const dir of readdirSync(cache).filter((d) => d.startsWith('chromium'))) {
-      for (const rel of ['chrome-linux/chrome', 'chrome-linux/headless_shell', 'chrome-mac/Chromium.app/Contents/MacOS/Chromium']) {
+      for (const rel of [
+        'chrome-linux/chrome',
+        'chrome-linux/headless_shell',
+        'chrome-mac/Chromium.app/Contents/MacOS/Chromium',
+      ]) {
         const p = `${cache}/${dir}/${rel}`;
         if (existsSync(p)) return p;
       }
@@ -224,7 +237,12 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     reps: String(opts.reps ?? 5),
     scale: String(opts.scale ?? 1),
   }).toString();
-  const served = await serveBundle({ code, port: opts.port ?? 0, query, timeoutMs: opts.timeoutMs ?? 20 * 60_000 });
+  const served = await serveBundle({
+    code,
+    port: opts.port ?? 0,
+    query,
+    timeoutMs: opts.timeoutMs ?? 20 * 60_000,
+  });
 
   const { chromium } = await import('playwright-core');
   const browser = await chromium.launch({

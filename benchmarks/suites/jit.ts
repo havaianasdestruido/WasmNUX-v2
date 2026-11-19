@@ -66,7 +66,8 @@ export const JIT_VARIANTS: JitVariant[] = [
     name: 'jit memory/inline',
     jit: { config: { ...MEMORY_INLINE } },
     machine: { controlPage: true },
-    rationale: 'Register file in guest memory (a trailing control page): fewest globals, worst-case extra loads',
+    rationale:
+      'Register file in guest memory (a trailing control page): fewest globals, worst-case extra loads',
   },
   {
     name: 'jit tail-chain',

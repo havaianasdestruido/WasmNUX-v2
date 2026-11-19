@@ -65,7 +65,9 @@ export async function loadBaselineEmulator(): Promise<EmulatorModule | null> {
   try {
     const req = createRequire(import.meta.url);
     const pkgPath = req.resolve('8086emu');
-    const pkg = JSON.parse(readFileSync(join(dirname(pkgPath), 'package.json'), 'utf8')) as { version?: string };
+    const pkg = JSON.parse(readFileSync(join(dirname(pkgPath), 'package.json'), 'utf8')) as {
+      version?: string;
+    };
     const wasmPath = join(dirname(pkgPath), 'multi_cpu_emu_bg.wasm');
     const mod = (await import('8086emu')) as unknown as {
       initSync(input: { module: Uint8Array }): void;
@@ -112,7 +114,11 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
         const ms = performance.now() - t0;
         // `steps` is a nominal budget: see the module comment for why this
         // engine's step accounting is not compared against ours.
-        return { ms, instructions: steps, meta: { imageBytes: image.length, halted: e.halted(), stoppedAtPc: e.pc() } };
+        return {
+          ms,
+          instructions: steps,
+          meta: { imageBytes: image.length, halted: e.halted(), stoppedAtPc: e.pc() },
+        };
       },
     };
 
@@ -121,7 +127,8 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
         name: 'interpreter (ours)',
         run: (): Outcome => {
           const o = runWorkload({ workload: w, jit: false });
-          if (o.instructions !== steps) throw new Error(`interpreter retired ${o.instructions}, expected ${steps}`);
+          if (o.instructions !== steps)
+            throw new Error(`interpreter retired ${o.instructions}, expected ${steps}`);
           return o;
         },
       },
@@ -153,10 +160,14 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
         const interp = runWorkload({ workload: w, jit: false });
         const jit = runWorkload({ workload: w, jit: { config: { regalloc: 'globals', bounds: 'trap' } } });
         if (interp.instructions !== jit.instructions) {
-          throw new Error(`workload '${w.id}': retired ${interp.instructions} interpreted vs ${jit.instructions} compiled`);
+          throw new Error(
+            `workload '${w.id}': retired ${interp.instructions} interpreted vs ${jit.instructions} compiled`,
+          );
         }
         if (interp.meta?.['result'] !== jit.meta?.['result']) {
-          throw new Error(`workload '${w.id}': our engines disagree (${interp.meta?.['result']} vs ${jit.meta?.['result']})`);
+          throw new Error(
+            `workload '${w.id}': our engines disagree (${interp.meta?.['result']} vs ${jit.meta?.['result']})`,
+          );
         }
       }
     },

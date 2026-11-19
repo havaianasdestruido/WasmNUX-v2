@@ -21,7 +21,11 @@ import type { BenchReport, CaseResult, GateResult, GateRow, GitInfo } from './ty
 
 function git(args: string[]): string | undefined {
   try {
-    return execFileSync('git', args, { cwd: repoRoot(), encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    return execFileSync('git', args, {
+      cwd: repoRoot(),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    }).trim();
   } catch {
     return undefined;
   }
@@ -54,7 +58,8 @@ export const DEFAULT_TOLERANCE = 0.2;
 export function repoRoot(): string {
   let dir = dirname(fileURLToPath(import.meta.url));
   for (let i = 0; i < 8; i++) {
-    if (existsSync(join(dir, 'ROADMAP.md')) || existsSync(join(dir, 'node_modules', '.package-lock.json'))) return dir;
+    if (existsSync(join(dir, 'ROADMAP.md')) || existsSync(join(dir, 'node_modules', '.package-lock.json')))
+      return dir;
     const parent = dirname(dir);
     if (parent === dir) break;
     dir = parent;
@@ -126,7 +131,8 @@ export function readBaseline(suite: string, dir = baselinesDir()): CaseResult[] 
   return o.results;
 }
 
-const key = (r: { suite: string; case: string; variant: string }): string => `${r.suite}\u0000${r.case}\u0000${r.variant}`;
+const key = (r: { suite: string; case: string; variant: string }): string =>
+  `${r.suite}\u0000${r.case}\u0000${r.variant}`;
 
 /**
  * Compare a fresh report against the stored baselines.
@@ -153,19 +159,48 @@ export function gate(report: BenchReport, tolerance = DEFAULT_TOLERANCE, dir = b
     seen.add(k);
     const b = baseline.get(k);
     if (!b) {
-      rows.push({ suite: r.suite, case: r.case, variant: r.variant, baselineIps: 0, currentIps: r.ips, ratio: 0, status: 'new' });
+      rows.push({
+        suite: r.suite,
+        case: r.case,
+        variant: r.variant,
+        baselineIps: 0,
+        currentIps: r.ips,
+        ratio: 0,
+        status: 'new',
+      });
       continue;
     }
     const ratio = b.ips > 0 ? r.ips / b.ips : 0;
     const status = ratio < 1 - tolerance ? 'regression' : ratio > 1 + tolerance ? 'improved' : 'ok';
-    rows.push({ suite: r.suite, case: r.case, variant: r.variant, baselineIps: b.ips, currentIps: r.ips, ratio, status });
+    rows.push({
+      suite: r.suite,
+      case: r.case,
+      variant: r.variant,
+      baselineIps: b.ips,
+      currentIps: r.ips,
+      ratio,
+      status,
+    });
   }
   for (const [k, b] of baseline) {
     if (seen.has(k)) continue;
     // Only flag rows from suites this run actually touched.
     if (!suites.includes(b.suite)) continue;
-    rows.push({ suite: b.suite, case: b.case, variant: b.variant, baselineIps: b.ips, currentIps: 0, ratio: 0, status: 'missing' });
+    rows.push({
+      suite: b.suite,
+      case: b.case,
+      variant: b.variant,
+      baselineIps: b.ips,
+      currentIps: 0,
+      ratio: 0,
+      status: 'missing',
+    });
   }
 
-  return { tolerance, rows, failed: rows.some((r) => r.status === 'regression' || r.status === 'missing'), baselineFile };
+  return {
+    tolerance,
+    rows,
+    failed: rows.some((r) => r.status === 'regression' || r.status === 'missing'),
+    baselineFile,
+  };
 }
