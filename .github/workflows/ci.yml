@@ -105,10 +105,20 @@ jobs:
         # --timeout-min bounds a hung page: a renderer that dies produces no
         # report and no error, only silence, and the default wait is longer than
         # it is worth spending to find that out.
-        run: npm run bench:browser -- --suite jit,wasm --reps 5 --timeout-min 8 --out browser-report.json
+        run: |
+          set -o pipefail
+          npm run bench:browser -- --suite jit,wasm --reps 5 --timeout-min 8 --out browser-report.json 2>&1 | tee browser.log
+      # This job is non-blocking, so its failure has to be legible without
+      # opening the log viewer: the tail goes into a check annotation.
+      - name: Surface the failure as an annotation
+        if: failure()
+        run: |
+          echo "::error title=browser benchmark failed::$(tail -n 20 browser.log | tr '\n' '|' | tr -d '\r' | cut -c1-900)"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: benchmarks-browser-${{ github.sha }}
-          path: browser-report.json
+          path: |
+            browser-report.json
+            browser.log
           if-no-files-found: warn
