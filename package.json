@@ -1,0 +1,25 @@
+{
+  "name": "wasmnux-v2",
+  "version": "0.0.1-phase0",
+  "private": true,
+  "description": "WasmNUX v2 — Debian Linux in a browser tab via tiered Wasm JIT, WebGPU, and OPFS",
+  "license": "Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "spikes/*",
+    "benchmarks"
+  ],
+  "scripts": {
+    "test": "node --test \"spikes/**/*.test.mjs\" \"benchmarks/**/*.test.mjs\"",
+    "bench": "node benchmarks/harness.mjs",
+    "spike:a": "node spikes/spike-a-jit/bench.mjs",
+    "spike:b": "node spikes/spike-b-smp/bench.mjs",
+    "spike:c": "node spikes/spike-c-storage/bench.mjs",
+    "spike:d": "node spikes/spike-d-gpu/bench.mjs",
+    "spike:e": "node spikes/spike-e-network/bench.mjs",
+    "spike:f": "node spikes/spike-f-terminal/bench.mjs"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

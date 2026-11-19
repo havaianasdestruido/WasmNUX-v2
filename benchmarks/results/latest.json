@@ -1,0 +1,74 @@
+{
+  "timestamp": "2026-11-19T01:32:16.593Z",
+  "commit": "fee2d04",
+  "nodeVersion": "v22.22.3",
+  "spikes": {
+    "spikeA_jit": {
+      "interpRes": "1999000",
+      "jitRes": "1999000",
+      "interpMs": 47.646,
+      "jitMs": 0.839,
+      "compileMs": 0.604,
+      "interpMips": 63,
+      "jitMips": 3579.06,
+      "speedup": 56.81,
+      "wasmBytes": 84
+    },
+    "spikeB_smp": {
+      "lrsc4Expected": 400000,
+      "lrsc4Actual": 400000,
+      "lrsc4Ms": 142.56,
+      "amo4Expected": 400000,
+      "amo4Actual": 400000,
+      "amo4Ms": 130.25,
+      "par1Ms": 98.73,
+      "par4Ms": 301.16,
+      "scalingPerCore": 0.33
+    },
+    "spikeC_storage": [
+      {
+        "chunkSize": 4096,
+        "seqWriteMBs": 2.5,
+        "seqReadMBs": 1798.3,
+        "rand4kIOPS": 801964
+      },
+      {
+        "chunkSize": 65536,
+        "seqWriteMBs": 103,
+        "seqReadMBs": 7957,
+        "rand4kIOPS": 695375
+      },
+      {
+        "chunkSize": 262144,
+        "seqWriteMBs": 334.6,
+        "seqReadMBs": 2548.1,
+        "rand4kIOPS": 1197914
+      },
+      {
+        "chunkSize": 1048576,
+        "seqWriteMBs": 1220.3,
+        "seqReadMBs": 10476.6,
+        "rand4kIOPS": 1190557
+      }
+    ],
+    "spikeD_gpu": {
+      "recommendedPath": "Custom virtio-webgpu + Mesa driver",
+      "fallbackPath": "lavapipe/llvmpipe (Wasm SIMD + threads)",
+      "drawsPerSec": 19872794,
+      "scanoutMsPerFrame1080p": 0.025,
+      "checksum": 16342320
+    },
+    "spikeE_network": {
+      "tier": "userspace-tcpip-relay",
+      "packets": 50000,
+      "throughputMBs": 887,
+      "ms": 80.63
+    },
+    "spikeF_terminal": {
+      "lines": 20000,
+      "throughputMBs": 39.8,
+      "ms": 24.92,
+      "atlasSize": 28
+    }
+  }
+}
