@@ -1,32 +1,30 @@
 # WasmNUX
 
-Debian Linux in a browser tab. A RISC-V machine — CPU, MMU-less memory model,
-CLINT/PLIC, virtio devices — emulated in WebAssembly, running a stock Debian
-userland where `apt` works and the UI is a terminal.
+The goal is Debian Linux in a browser tab. This repository is an experimental
+RISC-V emulator foundation; it does **not** yet boot Debian or provide virtio
+devices, a network stack, persistent storage, or a terminal renderer.
 
 The whole design is in [ROADMAP.md](ROADMAP.md). This repository is Phase 0: the
 parts of that roadmap that had to be _measured_ before anything else could be
 built.
 
 ```
-npm install
-npm test          # 288 tests
+npm ci
+npm test
 npm run bench -- --all
 ```
 
 ## Status
 
-**Phase 0 — foundations and spikes.** Spike A (JIT feasibility) is done and its
-answer is **GO**; ADR-0001…0013 are written; the benchmark harness, three
-suites, a per-commit result store and a CI regression gate exist and run.
-
-What is _not_ here yet: an MMU, privilege modes, a bootable kernel, virtio-blk,
-networking, a terminal renderer. Those are Phase 1+ and each has an ADR saying
-what it will take.
+**Integration in progress — not ready to merge.** The RV32 interpreter and
+JIT are the foundation, with an experimental page-table walker and Node-only
+SMP worker prototype. Privilege modes and the host subsystems are not complete.
+See [integration status](docs/integration-status.md) for evidence and blockers.
 
 ## What works today
 
-A complete RV32IMA execution stack in TypeScript, differentially tested:
+An RV32IMA prototype in TypeScript, with differential tests (not a complete
+privileged architecture implementation):
 
 | layer          | where                          | what it does                                                         |
 | -------------- | ------------------------------ | -------------------------------------------------------------------- |
@@ -34,7 +32,7 @@ A complete RV32IMA execution stack in TypeScript, differentially tested:
 | Assembler      | `core/src/cpu/asm.ts`          | two-pass, labels, `.balign`, `.word`, constant folding, `--define`   |
 | Interpreter    | `core/src/cpu/interp.ts`       | Tier 0, 1 IPC cycle model, `MachinePort` for MMIO/syscalls           |
 | CFG recovery   | `core/src/jit/cfg.ts`          | basic blocks, mid-block truncation, loop headers, regions            |
-| Translator     | `core/src/jit/codegen.ts`      | RV32IMA → Wasm, incl. atomics, LR/SC, precise faults                 |
+| Translator     | `core/src/jit/codegen.ts`      | RV32IMA → Wasm; fault and counter correctness under review           |
 | Wasm encoder   | `core/src/jit/wasm/encoder.ts` | module/function/memory/table/atomic emission from scratch            |
 | Tiering engine | `core/src/jit/engine.ts`       | heat → compile → run → optimise, code cache, invalidation, tier-down |
 | Memory         | `core/src/machine/memory.ts`   | one lazily-reserved `WebAssembly.Memory`, optional control page      |
@@ -45,30 +43,11 @@ A complete RV32IMA execution stack in TypeScript, differentially tested:
 
 ## Numbers
 
-Measured on Node 22 / V8, linux-x64, 2 vCPUs (a shared CI-class box). Guest
-throughput in millions of instructions per second; full tables, methodology and
-caveats in [`docs/spikes/spike-a-jit.md`](docs/spikes/spike-a-jit.md), raw
-samples in `benchmarks/results/`.
-
-|                         | interpreter | JIT (best config) |  speedup |
-| ----------------------- | ----------: | ----------------: | -------: |
-| ALU loop                |          59 |              3203 |  **54×** |
-| memory copy             |          45 |              2901 |  **65×** |
-| div/rem LCG             |          62 |              2491 |  **40×** |
-| unpredictable branches  |          52 |              1181 |  **23×** |
-| matrix scale            |          55 |              2472 |  **45×** |
-| atomics (shared memory) |          43 |               637 |  **15×** |
-| recursive fib(24)       |          42 |               285 | **6.8×** |
-| UART polling            |          48 |                27 |    0.56× |
-
-Against `8086emu` 1.5.1 — a Rust-to-Wasm RV32IM interpreter, used as the
-"existing in-browser emulator" comparator from ROADMAP §4 — the JIT is
-**6.8–14.8×** faster on the same guest bytes. The KPI was ≥3×. The interpreter
-alone is 0.4× of it, which is the reason the JIT is not optional.
-
-The last row is the interesting one: a device-polling loop is _slower_ compiled,
-because every poll exits to the host. That is why the interpreter is a permanent
-tier and why the engine tiers regions back down (§4.5 of the spike).
+Historical Phase 0 samples are in `benchmarks/results/` and the original spike
+notes. The latest integration run exposed differing interpreter/JIT instruction
+counts on several workloads, and high sample spread. Do not treat its speedups
+as correctness-validated or compare them across hosts. See
+[integration status](docs/integration-status.md).
 
 ## Decisions
 
@@ -113,7 +92,7 @@ do not. The compute path is DOM-free and tested in Node (`web/test/demo.test.ts`
 ## Commands
 
 ```sh
-npm test                                  # vitest, 288 tests
+npm test                                  # vitest tests
 npm run test:watch
 npm run lint                              # prettier --check + tsc
 npm run format
@@ -138,8 +117,8 @@ corpus of programs — ALU loops, all seven AMOs, LR/SC success and both failure
 modes, a CAS retry loop, division corners, calls and indirect jumps, every
 load/store width, MMIO, CSR, nested loops — under **eight** JIT configurations
 and requires identical registers, guest RAM, stop reason, `minstret`, and MMIO
-read counts versus the interpreter. `benchmarks/suites/*.verify()` runs the same
-check before any timing, so a suite whose variants disagree refuses to measure.
+read counts versus the interpreter. The benchmark verification does not currently catch all counter mismatches;
+the benchmark run reported in the integration status demonstrates that gap.
 
 Not yet covered, and tracked as such: `riscv-tests`, `riscv-arch-test`, QEMU-TCG
 differential fuzzing, and browser-engine runs. All four need tooling this
