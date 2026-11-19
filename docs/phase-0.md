@@ -18,6 +18,16 @@ See [benchmark reproduction](../benchmarks/README.md) and [raw reference reports
 | F: terminal | GPU glyph atlas readback, wide glyph and shaped raster checks, Chromium IME pre-edit/commit | Full terminal parser/shaping coverage and key-to-display measurements |
 | ADRs | [0001–0012](adr/README.md) | Revisit provisional entries with the required evidence |
 
+## Reference run
+
+[Raw Chromium samples](../benchmarks/results/be5104195011047d0170542122959a4d58391b90.json) were collected from clean source `be51041` on Linux x86-64 (two logical processors available, Chromium 149.0.7827.0, SwiftShader).
+
+- **JIT:** Median for one million iterations: **125.32 ms** interpreter, **12.40 ms** block JIT, **4.29 ms** bounded region, **5.19 ms** v86. The region took about 2.9× less time than the block JIT on the same RV64 workload. Its advantage over v86 on this single mixed-ISA arithmetic fixture is not a system throughput claim.
+- **SMP:** 1/2/4-worker cases took **12.81 / 35.76 / 44.43 ms** wall time for 20,000 contended iterations per worker. All workers were notified; all shared totals and both SC litmus checks passed. Four workers oversubscribe the available processors.
+- **Storage:** At 64/256/1024/4096 KiB, 8 MiB reopen/read throughput was **118 / 274 / 542 / 778 MB/s**; flushed write throughput was **55 / 127 / 182 / 244 MB/s**; seeded 4 KiB reads gave **3.6–3.9k IOPS**. This small test includes file-open costs and is not a sustained guest disk benchmark. A strict bucket request and same-session reopen worked; Chrome reported neither durability nor a persistence grant, and the quota override did not induce exhaustion. Simulated origin clear removed the control sector.
+- **Graphics/terminal:** Median **11.30 ms** for a 1080p upload+copy into an offscreen GPU texture (canvas interop unavailable), **2.35 ms** for the glyph atlas fixture. Both are queue times, not presented frames. Real Chromium IME pre-edit and commit ordering passed separately.
+- **Network:** **3.61 ms** to connect and **577.80 ms** to echo 16 KiB end-to-end through the fixture in this run. These are local measurements, not production network latency.
+
 ## KPI gate ledger
 
 All statuses below apply to the **roadmap KPI**, not a prototype. In particular, no prototype queue timing or bandwidth result is a system or release gate pass.

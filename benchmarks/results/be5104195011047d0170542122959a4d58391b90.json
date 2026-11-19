@@ -1,0 +1,310 @@
+{
+  "schema": 1,
+  "commit": "be5104195011047d0170542122959a4d58391b90",
+  "dirty": false,
+  "recordedAt": "2026-11-19T01:43:46.693Z",
+  "environment": {
+    "browser": "149.0.7827.0",
+    "node": "v22.22.3",
+    "arch": "x64",
+    "os": "linux",
+    "kernel": "6.1.158+",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "logicalProcessors": 2,
+    "gpuMode": "SwiftShader requested"
+  },
+  "crossOriginIsolated": true,
+  "ime": {
+    "samples": [
+      {
+        "preedit": "日",
+        "commits": []
+      },
+      {
+        "preedit": "日本",
+        "commits": []
+      }
+    ],
+    "commits": [
+      "日本"
+    ]
+  },
+  "cpu": {
+    "jit": {
+      "iterations": 1000000,
+      "instructionsPerBlock": 5,
+      "moduleBytes": 123,
+      "compileInstantiateMs": 0.9799999999813735,
+      "regionBytes": 150,
+      "regionCompileInstantiateMs": 0.375,
+      "interpreterMs": [
+        139.92499999993015,
+        129.3550000000978,
+        123.60499999998137,
+        125.31999999994878,
+        123.57499999995343
+      ],
+      "jitMs": [
+        12.339999999967404,
+        14.26500000001397,
+        12.375,
+        12.400000000023283,
+        12.394999999902211
+      ],
+      "regionMs": [
+        7.294999999925494,
+        4.239999999990687,
+        4.285000000032596,
+        4.309999999939464,
+        4.275000000023283
+      ],
+      "checksum": "4621145621205013795"
+    },
+    "baseline": {
+      "isa": "i386",
+      "iterations": 1000000,
+      "instructionsPerBlock": 5,
+      "warmupMs": 9.790000000037253,
+      "jitMs": [
+        5.150000000023283,
+        5.114999999990687,
+        5.2299999999813735,
+        5.28000000002794
+      ],
+      "checksumLow32": 1732695331
+    }
+  },
+  "smp": [
+    {
+      "count": 1,
+      "iterations": 20000,
+      "elapsedMs": 12.809999999939464,
+      "notified": 1,
+      "totals": [
+        20000,
+        20000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 28.64000000001397,
+          "workMs": 11.994999999995343,
+          "retries": 0,
+          "scLitmusRounds": 0
+        }
+      ]
+    },
+    {
+      "count": 2,
+      "iterations": 20000,
+      "elapsedMs": 35.76000000000931,
+      "notified": 2,
+      "totals": [
+        40000,
+        40000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 34.95000000006985,
+          "workMs": 21.559999999939464,
+          "retries": 3133,
+          "scLitmusRounds": 256
+        },
+        {
+          "wake": "ok",
+          "idleMs": 29.01999999990221,
+          "workMs": 21.555000000051223,
+          "retries": 3329,
+          "scLitmusRounds": 256
+        }
+      ]
+    },
+    {
+      "count": 4,
+      "iterations": 20000,
+      "elapsedMs": 44.425000000046566,
+      "notified": 4,
+      "totals": [
+        80000,
+        80000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 39.93999999994412,
+          "workMs": 25.680000000051223,
+          "retries": 278,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 39.43000000005122,
+          "workMs": 35.79999999993015,
+          "retries": 294,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 32.654999999911524,
+          "workMs": 34.05500000005122,
+          "retries": 676,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 35.34999999997672,
+          "workMs": 37.78000000002794,
+          "retries": 1012,
+          "scLitmusRounds": 0
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "sweep": [
+      {
+        "chunkBytes": 65536,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 152.80500000005122,
+        "reopenReadMs": 71.07999999995809,
+        "randomReadMs": 536.4749999999767
+      },
+      {
+        "chunkBytes": 262144,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 65.77000000001863,
+        "reopenReadMs": 30.599999999976717,
+        "randomReadMs": 563.7000000000698
+      },
+      {
+        "chunkBytes": 1048576,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 46.22999999998137,
+        "reopenReadMs": 15.474999999976717,
+        "randomReadMs": 563.6700000000419
+      },
+      {
+        "chunkBytes": 4194304,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 34.45000000006985,
+        "reopenReadMs": 10.78000000002794,
+        "randomReadMs": 521.9399999999441
+      }
+    ],
+    "estimate": {
+      "quota": 1073741824,
+      "usage": 0,
+      "usageDetails": {}
+    },
+    "persisted": false,
+    "bucket": {
+      "available": true,
+      "requestedDurability": "strict",
+      "reportedDurability": null,
+      "persisted": false,
+      "reopenVerified": true
+    },
+    "eviction": "not induced by this probe"
+  },
+  "originLoss": {
+    "originDataClearSimulation": {
+      "before": {
+        "usage": 4446,
+        "persisted": false,
+        "present": true
+      },
+      "after": {
+        "present": false
+      }
+    },
+    "quota": {
+      "status": "not-induced"
+    },
+    "automaticEviction": "unmeasured"
+  },
+  "graphics": {
+    "status": "measured",
+    "adapter": {
+      "vendor": "google",
+      "architecture": "swiftshader",
+      "device": "",
+      "description": "",
+      "isFallbackAdapter": true
+    },
+    "scanout": {
+      "width": 1920,
+      "height": 1080,
+      "frames": 16,
+      "durationsMs": [
+        11.599999999976717,
+        12.425000000046566,
+        11.04999999993015,
+        11.14000000001397,
+        13.175000000046566,
+        10.895000000018626,
+        10.710000000079162,
+        11.574999999953434,
+        11.260000000009313,
+        11.669999999925494,
+        11.350000000093132,
+        10.82999999995809,
+        10.645000000018626,
+        11.559999999939464,
+        11.29500000004191,
+        11.304999999934807
+      ],
+      "format": "rgba8unorm",
+      "destination": "offscreen-texture",
+      "canvasError": "A valid external Instance reference no longer exists."
+    },
+    "atlas": {
+      "glyphs": 48,
+      "uniqueAtlasEntries": 29,
+      "inkByRow": [
+        736,
+        865,
+        786,
+        1248
+      ],
+      "durationsMs": [
+        2.51500000001397,
+        2.3699999999953434,
+        2.4299999999348074,
+        2.355000000097789,
+        2.315000000060536,
+        2.2850000000325963,
+        2.3449999999720603,
+        2.415000000037253,
+        2.349999999976717,
+        2.334999999962747,
+        2.3050000000512227,
+        2.3299999999580905
+      ],
+      "raster": {
+        "shapedRunDiffers": true,
+        "distinctWideGlyphs": true
+      }
+    }
+  },
+  "network": {
+    "payloadBytes": 16384,
+    "connectMs": 3.60999999998603,
+    "echoMs": 577.8049999999348,
+    "packetCounts": [
+      {
+        "sent": 29,
+        "received": 28
+      },
+      {
+        "sent": 28,
+        "received": 29
+      }
+    ],
+    "directSocketsExposed": false
+  }
+}
