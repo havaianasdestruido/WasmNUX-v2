@@ -1,0 +1,327 @@
+{
+  "schema": 2,
+  "commit": "35a17fb533bbc17ad0687910fe15c13c4bc6adcb",
+  "dirty": false,
+  "recordedAt": "2026-11-19T17:00:59.462Z",
+  "environment": {
+    "browser": "149.0.7827.0",
+    "node": "v22.22.3",
+    "arch": "x64",
+    "os": "linux",
+    "kernel": "6.1.158+",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.60GHz",
+    "logicalProcessors": 2,
+    "gpuMode": "SwiftShader requested"
+  },
+  "crossOriginIsolated": true,
+  "ime": {
+    "samples": [
+      {
+        "preedit": "日",
+        "commits": []
+      },
+      {
+        "preedit": "日本",
+        "commits": []
+      }
+    ],
+    "commits": [
+      "日本"
+    ]
+  },
+  "cpu": {
+    "jit": {
+      "iterations": 1000000,
+      "instructionsPerBlock": 5,
+      "moduleBytes": 123,
+      "compileInstantiateMs": 1.139999999999418,
+      "regionBytes": 150,
+      "regionCompileInstantiateMs": 0.33000000000174623,
+      "interpreterMs": [
+        166.70999999999185,
+        154.44500000000698,
+        157.4600000000064,
+        135.30999999999767,
+        140.8249999999971
+      ],
+      "jitMs": [
+        19.919999999998254,
+        20.92500000000291,
+        19.364999999990687,
+        19.835000000006403,
+        19.085000000006403
+      ],
+      "regionMs": [
+        7.310000000012224,
+        4.460000000006403,
+        6.25,
+        6.029999999998836,
+        4.32499999999709
+      ],
+      "checksum": "4621145621205013795"
+    },
+    "baseline": {
+      "isa": "i386",
+      "iterations": 1000000,
+      "instructionsPerBlock": 5,
+      "warmupMs": 10.075000000011642,
+      "jitMs": [
+        4.894999999989523,
+        4.975000000005821,
+        4.704999999987194,
+        4.870000000009895
+      ],
+      "checksumLow32": 1732695331
+    }
+  },
+  "smp": [
+    {
+      "count": 1,
+      "iterations": 20000,
+      "wakeIssuedAtMs": 1460.5299999999988,
+      "elapsedMs": 14.32011718749709,
+      "notified": 1,
+      "totals": [
+        20000,
+        20000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 30.375,
+          "workMs": 14.184999999997672,
+          "workFinishedAtMs": 1474.850117187496,
+          "validationFinishedAtMs": 1474.8801171874948,
+          "retries": 0,
+          "scLitmusRounds": 0
+        }
+      ]
+    },
+    {
+      "count": 2,
+      "iterations": 20000,
+      "wakeIssuedAtMs": 1523.324999999997,
+      "elapsedMs": 26.440048828124418,
+      "notified": 2,
+      "totals": [
+        40000,
+        40000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 26.135000000009313,
+          "workMs": 26.20999999999185,
+          "workFinishedAtMs": 1549.7650488281215,
+          "validationFinishedAtMs": 1562.9900488281273,
+          "retries": 1028,
+          "scLitmusRounds": 256
+        },
+        {
+          "wake": "ok",
+          "idleMs": 27.744999999995343,
+          "workMs": 24.804999999993015,
+          "workFinishedAtMs": 1548.29503906249,
+          "validationFinishedAtMs": 1563.1250390624919,
+          "retries": 1021,
+          "scLitmusRounds": 256
+        }
+      ]
+    },
+    {
+      "count": 4,
+      "iterations": 20000,
+      "wakeIssuedAtMs": 1643.125,
+      "elapsedMs": 56.78013671874942,
+      "notified": 4,
+      "totals": [
+        80000,
+        80000
+      ],
+      "harts": [
+        {
+          "wake": "ok",
+          "idleMs": 49.195000000006985,
+          "workMs": 35.09999999999127,
+          "workFinishedAtMs": 1678.3299902343715,
+          "validationFinishedAtMs": 1699.9549902343715,
+          "retries": 1682,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 44.875,
+          "workMs": 49.205000000001746,
+          "workFinishedAtMs": 1692.6201074218698,
+          "validationFinishedAtMs": 1692.6701074218727,
+          "retries": 376,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 38.2899999999936,
+          "workMs": 36.81500000000233,
+          "workFinishedAtMs": 1688.4450976562512,
+          "validationFinishedAtMs": 1692.7000976562413,
+          "retries": 381,
+          "scLitmusRounds": 0
+        },
+        {
+          "wake": "ok",
+          "idleMs": 35.88000000000466,
+          "workMs": 51.054999999993015,
+          "workFinishedAtMs": 1699.9051367187494,
+          "validationFinishedAtMs": 1699.945136718743,
+          "retries": 1886,
+          "scLitmusRounds": 0
+        }
+      ]
+    }
+  ],
+  "storage": {
+    "sweep": [
+      {
+        "chunkBytes": 65536,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 161.76999999998952,
+        "reopenReadMs": 97.20500000000175,
+        "randomReadMs": 619.4850000000006
+      },
+      {
+        "chunkBytes": 262144,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 64.11499999999069,
+        "reopenReadMs": 30.29000000000815,
+        "randomReadMs": 635.195000000007
+      },
+      {
+        "chunkBytes": 1048576,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 43.43000000000757,
+        "reopenReadMs": 15.19999999999709,
+        "randomReadMs": 651.2450000000099
+      },
+      {
+        "chunkBytes": 4194304,
+        "bytes": 8388608,
+        "randomOps": 2048,
+        "writeFlushMs": 40.620000000009895,
+        "reopenReadMs": 12.77499999999418,
+        "randomReadMs": 612.25
+      }
+    ],
+    "estimate": {
+      "quota": 1073741824,
+      "usage": 0,
+      "usageDetails": {}
+    },
+    "persisted": false,
+    "bucket": {
+      "available": true,
+      "requestedDurability": "strict",
+      "reportedDurability": null,
+      "persisted": false,
+      "reopenVerified": true
+    },
+    "eviction": "not induced by this probe"
+  },
+  "originLoss": {
+    "originDataClearSimulation": {
+      "before": {
+        "usage": 4446,
+        "persisted": false,
+        "present": true
+      },
+      "after": {
+        "present": false
+      }
+    },
+    "quota": {
+      "status": "not-induced"
+    },
+    "automaticEviction": "unmeasured"
+  },
+  "graphics": {
+    "status": "measured",
+    "adapter": {
+      "vendor": "google",
+      "architecture": "swiftshader",
+      "device": "",
+      "description": "",
+      "isFallbackAdapter": true
+    },
+    "scanout": {
+      "width": 1920,
+      "height": 1080,
+      "frames": 16,
+      "durationsMs": [
+        11.565000000002328,
+        11.305000000007567,
+        11.610000000000582,
+        11.42500000000291,
+        11.544999999998254,
+        11.110000000000582,
+        10.865000000005239,
+        10.939999999987776,
+        10.855000000010477,
+        11.665000000008149,
+        11.184999999997672,
+        11.240000000005239,
+        11.065000000002328,
+        11.444999999992433,
+        11.115000000005239,
+        12.065000000002328
+      ],
+      "format": "rgba8unorm",
+      "destination": "offscreen-texture",
+      "canvasError": "A valid external Instance reference no longer exists."
+    },
+    "atlas": {
+      "glyphs": 48,
+      "uniqueAtlasEntries": 29,
+      "inkByRow": [
+        736,
+        865,
+        786,
+        1248
+      ],
+      "durationsMs": [
+        2.5350000000034925,
+        2.5050000000046566,
+        2.404999999998836,
+        2.414999999993597,
+        2.529999999998836,
+        2.5650000000023283,
+        2.5350000000034925,
+        2.4099999999889405,
+        2.389999999999418,
+        2.485000000000582,
+        2.555000000007567,
+        2.4649999999965075
+      ],
+      "raster": {
+        "shapedRunDiffers": true,
+        "distinctWideGlyphs": true
+      }
+    }
+  },
+  "network": {
+    "payloadBytes": 16384,
+    "connectMs": 5.940000000002328,
+    "echoMs": 558.7299999999959,
+    "packetCounts": [
+      {
+        "sent": 29,
+        "received": 28
+      },
+      {
+        "sent": 28,
+        "received": 29
+      }
+    ],
+    "directSocketsExposed": false
+  }
+}
