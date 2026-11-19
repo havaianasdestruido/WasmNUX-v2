@@ -116,7 +116,7 @@ export const amoRl = (i: number): boolean => ((i >>> 25) & 1) === 1;
 export const immI = (i: number): number => i >> 20;
 
 /** S-type immediate (sign extended). */
-export const immS = (i: number): number => ((i >>> 25) << 5 | ((i >>> 7) & 0x1f)) << 20 >> 20;
+export const immS = (i: number): number => ((((i >>> 25) << 5) | ((i >>> 7) & 0x1f)) << 20) >> 20;
 
 /** B-type immediate (sign extended, always even). */
 export const immB = (i: number): number => {
@@ -155,37 +155,42 @@ const checkReg = (r: number, what: string): number => {
 
 export function rType(op: number, f3: number, f7: number, rd_: number, rs1_: number, rs2_: number): number {
   return (
-    ((f7 & 0x7f) << 25) |
-    (checkReg(rs2_, 'rs2') << 20) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (checkReg(rd_, 'rd') << 7) |
-    (op & 0x7f)
-  ) >>> 0;
+    (((f7 & 0x7f) << 25) |
+      (checkReg(rs2_, 'rs2') << 20) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (checkReg(rd_, 'rd') << 7) |
+      (op & 0x7f)) >>>
+    0
+  );
 }
 
 export function iType(op: number, f3: number, rd_: number, rs1_: number, imm: number): number {
-  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047) throw new Error(`I-type immediate out of range: ${imm}`);
+  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047)
+    throw new Error(`I-type immediate out of range: ${imm}`);
   return (
-    (((imm & 0xfff) << 20) >>> 0) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (checkReg(rd_, 'rd') << 7) |
-    (op & 0x7f)
-  ) >>> 0;
+    ((((imm & 0xfff) << 20) >>> 0) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (checkReg(rd_, 'rd') << 7) |
+      (op & 0x7f)) >>>
+    0
+  );
 }
 
 export function sType(op: number, f3: number, rs1_: number, rs2_: number, imm: number): number {
-  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047) throw new Error(`S-type immediate out of range: ${imm}`);
+  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047)
+    throw new Error(`S-type immediate out of range: ${imm}`);
   const v = imm & 0xfff;
   return (
-    ((((v >>> 5) & 0x7f) << 25) >>> 0) |
-    (checkReg(rs2_, 'rs2') << 20) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (((v & 0x1f) << 7) >>> 0) |
-    (op & 0x7f)
-  ) >>> 0;
+    (((((v >>> 5) & 0x7f) << 25) >>> 0) |
+      (checkReg(rs2_, 'rs2') << 20) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (((v & 0x1f) << 7) >>> 0) |
+      (op & 0x7f)) >>>
+    0
+  );
 }
 
 export function bType(op: number, f3: number, rs1_: number, rs2_: number, offset: number): number {
@@ -194,15 +199,16 @@ export function bType(op: number, f3: number, rs1_: number, rs2_: number, offset
   }
   const v = offset & 0x1fff;
   return (
-    ((((v >>> 12) & 1) << 31) >>> 0) |
-    ((((v >>> 5) & 0x3f) << 25) >>> 0) |
-    (checkReg(rs2_, 'rs2') << 20) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (((v & 0x1e) << 7) >>> 0) |
-    ((((v >>> 11) & 1) << 7) >>> 0) |
-    (op & 0x7f)
-  ) >>> 0;
+    (((((v >>> 12) & 1) << 31) >>> 0) |
+      ((((v >>> 5) & 0x3f) << 25) >>> 0) |
+      (checkReg(rs2_, 'rs2') << 20) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (((v & 0x1e) << 7) >>> 0) |
+      ((((v >>> 11) & 1) << 7) >>> 0) |
+      (op & 0x7f)) >>>
+    0
+  );
 }
 
 /**
@@ -215,7 +221,9 @@ export function bType(op: number, f3: number, rs1_: number, rs2_: number, offset
 export function uType(op: number, rd_: number, imm20: number): number {
   if (!Number.isInteger(imm20) || imm20 < -524288 || imm20 > 0xfffff) {
     throw new Error(
-      'U-type immediate out of range: ' + imm20 + ' (expected the 20-bit field, not a value already shifted to bits 31:12)',
+      'U-type immediate out of range: ' +
+        imm20 +
+        ' (expected the 20-bit field, not a value already shifted to bits 31:12)',
     );
   }
   return ((((imm20 << 12) & 0xfffff000) >>> 0) | (checkReg(rd_, 'rd') << 7) | (op & 0x7f)) >>> 0;
@@ -233,12 +241,13 @@ export function systemType(f3: number, rd_: number, rs1_: number, csr: number): 
     throw new Error('CSR address out of range (12 bits unsigned): ' + csr);
   }
   return (
-    (((csr & 0xfff) << 20) >>> 0) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (checkReg(rd_, 'rd') << 7) |
-    (OP_SYSTEM & 0x7f)
-  ) >>> 0;
+    ((((csr & 0xfff) << 20) >>> 0) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (checkReg(rd_, 'rd') << 7) |
+      (OP_SYSTEM & 0x7f)) >>>
+    0
+  );
 }
 
 export function jType(op: number, rd_: number, offset: number): number {
@@ -247,26 +256,36 @@ export function jType(op: number, rd_: number, offset: number): number {
   }
   const v = offset & 0x1fffff;
   return (
-    ((((v >>> 20) & 1) << 31) >>> 0) |
-    ((((v >>> 1) & 0x3ff) << 21) >>> 0) |
-    ((((v >>> 11) & 1) << 20) >>> 0) |
-    ((((v >>> 12) & 0xff) << 12) >>> 0) |
-    (checkReg(rd_, 'rd') << 7) |
-    (op & 0x7f)
-  ) >>> 0;
+    (((((v >>> 20) & 1) << 31) >>> 0) |
+      ((((v >>> 1) & 0x3ff) << 21) >>> 0) |
+      ((((v >>> 11) & 1) << 20) >>> 0) |
+      ((((v >>> 12) & 0xff) << 12) >>> 0) |
+      (checkReg(rd_, 'rd') << 7) |
+      (op & 0x7f)) >>>
+    0
+  );
 }
 
-export function amoType(f5: number, aq: boolean, rl: boolean, rd_: number, rs1_: number, rs2_: number, f3: number): number {
+export function amoType(
+  f5: number,
+  aq: boolean,
+  rl: boolean,
+  rd_: number,
+  rs1_: number,
+  rs2_: number,
+  f3: number,
+): number {
   return (
-    (((f5 & 0x1f) << 27) >>> 0) |
-    ((aq ? 1 : 0) << 26) |
-    ((rl ? 1 : 0) << 25) |
-    (checkReg(rs2_, 'rs2') << 20) |
-    (checkReg(rs1_, 'rs1') << 15) |
-    ((f3 & 7) << 12) |
-    (checkReg(rd_, 'rd') << 7) |
-    OP_AMO
-  ) >>> 0;
+    ((((f5 & 0x1f) << 27) >>> 0) |
+      ((aq ? 1 : 0) << 26) |
+      ((rl ? 1 : 0) << 25) |
+      (checkReg(rs2_, 'rs2') << 20) |
+      (checkReg(rs1_, 'rs1') << 15) |
+      ((f3 & 7) << 12) |
+      (checkReg(rd_, 'rd') << 7) |
+      OP_AMO) >>>
+    0
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -305,8 +324,38 @@ export interface Decoded {
 }
 
 const REG_ABI = [
-  'zero', 'ra', 'sp', 'gp', 'tp', 't0', 't1', 't2', 's0', 's1', 'a0', 'a1', 'a2', 'a3', 'a4', 'a5',
-  'a6', 'a7', 's2', 's3', 's4', 's5', 's6', 's7', 's8', 's9', 's10', 's11', 't3', 't4', 't5', 't6',
+  'zero',
+  'ra',
+  'sp',
+  'gp',
+  'tp',
+  't0',
+  't1',
+  't2',
+  's0',
+  's1',
+  'a0',
+  'a1',
+  'a2',
+  'a3',
+  'a4',
+  'a5',
+  'a6',
+  'a7',
+  's2',
+  's3',
+  's4',
+  's5',
+  's6',
+  's7',
+  's8',
+  's9',
+  's10',
+  's11',
+  't3',
+  't4',
+  't5',
+  't6',
 ];
 
 export const regName = (r: number): string => REG_ABI[r] ?? `x${r}`;
@@ -395,8 +444,19 @@ export function decode(instr: number, pc = 0): Decoded {
       d.isBranch = true;
       d.terminatesBlock = true;
       d.mnemonic =
-        f3 === F3_BEQ ? 'beq' : f3 === F3_BNE ? 'bne' : f3 === F3_BLT ? 'blt' : f3 === F3_BGE ? 'bge'
-        : f3 === F3_BLTU ? 'bltu' : f3 === F3_BGEU ? 'bgeu' : 'illegal';
+        f3 === F3_BEQ
+          ? 'beq'
+          : f3 === F3_BNE
+            ? 'bne'
+            : f3 === F3_BLT
+              ? 'blt'
+              : f3 === F3_BGE
+                ? 'bge'
+                : f3 === F3_BLTU
+                  ? 'bltu'
+                  : f3 === F3_BGEU
+                    ? 'bgeu'
+                    : 'illegal';
       if (d.mnemonic === 'illegal') d.illegal = true;
       break;
     }
@@ -406,7 +466,17 @@ export function decode(instr: number, pc = 0): Decoded {
       d.isLoad = true;
       d.touchesMemory = true;
       d.mnemonic =
-        f3 === F3_B ? 'lb' : f3 === F3_H ? 'lh' : f3 === F3_W ? 'lw' : f3 === F3_BU ? 'lbu' : f3 === F3_HU ? 'lhu' : 'illegal';
+        f3 === F3_B
+          ? 'lb'
+          : f3 === F3_H
+            ? 'lh'
+            : f3 === F3_W
+              ? 'lw'
+              : f3 === F3_BU
+                ? 'lbu'
+                : f3 === F3_HU
+                  ? 'lhu'
+                  : 'illegal';
       if (d.mnemonic === 'illegal') d.illegal = true;
       break;
     }
@@ -424,18 +494,34 @@ export function decode(instr: number, pc = 0): Decoded {
       d.imm = immI(instr);
       const shamt = (instr >>> 20) & 0x1f;
       switch (f3) {
-        case F3_ADD: d.mnemonic = 'addi'; break;
-        case F3_SLT: d.mnemonic = 'slti'; break;
-        case F3_SLTU: d.mnemonic = 'sltiu'; break;
-        case F3_XOR: d.mnemonic = 'xori'; break;
-        case F3_OR: d.mnemonic = 'ori'; break;
-        case F3_AND: d.mnemonic = 'andi'; break;
-        case F3_SLL: d.mnemonic = f7 === F7_NORMAL ? 'slli' : 'illegal'; d.imm = shamt; break;
+        case F3_ADD:
+          d.mnemonic = 'addi';
+          break;
+        case F3_SLT:
+          d.mnemonic = 'slti';
+          break;
+        case F3_SLTU:
+          d.mnemonic = 'sltiu';
+          break;
+        case F3_XOR:
+          d.mnemonic = 'xori';
+          break;
+        case F3_OR:
+          d.mnemonic = 'ori';
+          break;
+        case F3_AND:
+          d.mnemonic = 'andi';
+          break;
+        case F3_SLL:
+          d.mnemonic = f7 === F7_NORMAL ? 'slli' : 'illegal';
+          d.imm = shamt;
+          break;
         case F3_SRL:
           d.mnemonic = f7 === F7_NORMAL ? 'srli' : f7 === F7_ALT ? 'srai' : 'illegal';
           d.imm = shamt;
           break;
-        default: d.mnemonic = 'illegal';
+        default:
+          d.mnemonic = 'illegal';
       }
       if (d.mnemonic === 'illegal') d.illegal = true;
       break;
@@ -444,18 +530,49 @@ export function decode(instr: number, pc = 0): Decoded {
       d.format = 'R';
       if (f7 === F7_MULDIV) {
         d.mnemonic =
-          f3 === F3_MUL ? 'mul' : f3 === F3_MULH ? 'mulh' : f3 === F3_MULHSU ? 'mulhsu' : f3 === F3_MULHU ? 'mulhu'
-          : f3 === F3_DIV ? 'div' : f3 === F3_DIVU ? 'divu' : f3 === F3_REM ? 'rem' : f3 === F3_REMU ? 'remu' : 'illegal';
+          f3 === F3_MUL
+            ? 'mul'
+            : f3 === F3_MULH
+              ? 'mulh'
+              : f3 === F3_MULHSU
+                ? 'mulhsu'
+                : f3 === F3_MULHU
+                  ? 'mulhu'
+                  : f3 === F3_DIV
+                    ? 'div'
+                    : f3 === F3_DIVU
+                      ? 'divu'
+                      : f3 === F3_REM
+                        ? 'rem'
+                        : f3 === F3_REMU
+                          ? 'remu'
+                          : 'illegal';
       } else if (f7 === F7_NORMAL || f7 === F7_ALT) {
         switch (f3) {
-          case F3_ADD: d.mnemonic = f7 === F7_NORMAL ? 'add' : 'sub'; break;
-          case F3_SLL: d.mnemonic = f7 === F7_NORMAL ? 'sll' : 'illegal'; break;
-          case F3_SLT: d.mnemonic = f7 === F7_NORMAL ? 'slt' : 'illegal'; break;
-          case F3_SLTU: d.mnemonic = f7 === F7_NORMAL ? 'sltu' : 'illegal'; break;
-          case F3_XOR: d.mnemonic = f7 === F7_NORMAL ? 'xor' : 'illegal'; break;
-          case F3_SRL: d.mnemonic = f7 === F7_NORMAL ? 'srl' : 'sra'; break;
-          case F3_OR: d.mnemonic = f7 === F7_NORMAL ? 'or' : 'illegal'; break;
-          case F3_AND: d.mnemonic = f7 === F7_NORMAL ? 'and' : 'illegal'; break;
+          case F3_ADD:
+            d.mnemonic = f7 === F7_NORMAL ? 'add' : 'sub';
+            break;
+          case F3_SLL:
+            d.mnemonic = f7 === F7_NORMAL ? 'sll' : 'illegal';
+            break;
+          case F3_SLT:
+            d.mnemonic = f7 === F7_NORMAL ? 'slt' : 'illegal';
+            break;
+          case F3_SLTU:
+            d.mnemonic = f7 === F7_NORMAL ? 'sltu' : 'illegal';
+            break;
+          case F3_XOR:
+            d.mnemonic = f7 === F7_NORMAL ? 'xor' : 'illegal';
+            break;
+          case F3_SRL:
+            d.mnemonic = f7 === F7_NORMAL ? 'srl' : 'sra';
+            break;
+          case F3_OR:
+            d.mnemonic = f7 === F7_NORMAL ? 'or' : 'illegal';
+            break;
+          case F3_AND:
+            d.mnemonic = f7 === F7_NORMAL ? 'and' : 'illegal';
+            break;
         }
       } else {
         d.mnemonic = 'illegal';
@@ -481,9 +598,29 @@ export function decode(instr: number, pc = 0): Decoded {
         d.illegal = true;
       } else {
         d.mnemonic =
-          f5 === AMO5_LR ? 'lr.w' : f5 === AMO5_SC ? 'sc.w' : f5 === AMO5_SWAP ? 'amoswap.w' : f5 === AMO5_ADD ? 'amoadd.w'
-          : f5 === AMO5_XOR ? 'amoxor.w' : f5 === AMO5_OR ? 'amoor.w' : f5 === AMO5_AND ? 'amoand.w' : f5 === AMO5_MIN ? 'amomin.w'
-          : f5 === AMO5_MAX ? 'amomax.w' : f5 === AMO5_MINU ? 'amominu.w' : f5 === AMO5_MAXU ? 'amomaxu.w' : 'illegal';
+          f5 === AMO5_LR
+            ? 'lr.w'
+            : f5 === AMO5_SC
+              ? 'sc.w'
+              : f5 === AMO5_SWAP
+                ? 'amoswap.w'
+                : f5 === AMO5_ADD
+                  ? 'amoadd.w'
+                  : f5 === AMO5_XOR
+                    ? 'amoxor.w'
+                    : f5 === AMO5_OR
+                      ? 'amoor.w'
+                      : f5 === AMO5_AND
+                        ? 'amoand.w'
+                        : f5 === AMO5_MIN
+                          ? 'amomin.w'
+                          : f5 === AMO5_MAX
+                            ? 'amomax.w'
+                            : f5 === AMO5_MINU
+                              ? 'amominu.w'
+                              : f5 === AMO5_MAXU
+                                ? 'amomaxu.w'
+                                : 'illegal';
         if (d.mnemonic === 'illegal') d.illegal = true;
       }
       break;
@@ -495,8 +632,17 @@ export function decode(instr: number, pc = 0): Decoded {
         d.terminatesBlock = true;
         const f12 = (instr >>> 20) & 0xfff;
         d.mnemonic =
-          f12 === F12_ECALL ? 'ecall' : f12 === F12_EBREAK ? 'ebreak' : f12 === F12_MRET ? 'mret'
-          : f12 === F12_SRET ? 'sret' : f12 === F12_WFI ? 'wfi' : 'illegal';
+          f12 === F12_ECALL
+            ? 'ecall'
+            : f12 === F12_EBREAK
+              ? 'ebreak'
+              : f12 === F12_MRET
+                ? 'mret'
+                : f12 === F12_SRET
+                  ? 'sret'
+                  : f12 === F12_WFI
+                    ? 'wfi'
+                    : 'illegal';
         if (d.mnemonic === 'illegal') d.illegal = true;
       } else {
         d.format = 'CSR';
@@ -504,8 +650,19 @@ export function decode(instr: number, pc = 0): Decoded {
         d.csr = csrAddr(instr);
         d.imm = (instr >>> 15) & 0x1f;
         d.mnemonic =
-          f3 === F3_CSRRW ? 'csrrw' : f3 === F3_CSRRS ? 'csrrs' : f3 === F3_CSRRC ? 'csrrc'
-          : f3 === F3_CSRRWI ? 'csrrwi' : f3 === F3_CSRRSI ? 'csrrsi' : f3 === F3_CSRRCI ? 'csrrci' : 'illegal';
+          f3 === F3_CSRRW
+            ? 'csrrw'
+            : f3 === F3_CSRRS
+              ? 'csrrs'
+              : f3 === F3_CSRRC
+                ? 'csrrc'
+                : f3 === F3_CSRRWI
+                  ? 'csrrwi'
+                  : f3 === F3_CSRRSI
+                    ? 'csrrsi'
+                    : f3 === F3_CSRRCI
+                      ? 'csrrci'
+                      : 'illegal';
         if (d.mnemonic === 'illegal') d.illegal = true;
       }
       break;
@@ -531,19 +688,48 @@ export function disasm(instr: number, pc = 0): string {
       return `${hex}  jal ${r(d.rd)}, 0x${d.target.toString(16)}`;
     case 'jalr':
       return `${hex}  jalr ${r(d.rd)}, ${d.imm}(${r(d.rs1)})`;
-    case 'beq': case 'bne': case 'blt': case 'bge': case 'bltu': case 'bgeu':
+    case 'beq':
+    case 'bne':
+    case 'blt':
+    case 'bge':
+    case 'bltu':
+    case 'bgeu':
       return `${hex}  ${d.mnemonic} ${r(d.rs1)}, ${r(d.rs2)}, 0x${d.target.toString(16)}`;
-    case 'lb': case 'lh': case 'lw': case 'lbu': case 'lhu':
+    case 'lb':
+    case 'lh':
+    case 'lw':
+    case 'lbu':
+    case 'lhu':
       return `${hex}  ${d.mnemonic} ${r(d.rd)}, ${d.imm}(${r(d.rs1)})`;
-    case 'sb': case 'sh': case 'sw':
+    case 'sb':
+    case 'sh':
+    case 'sw':
       return `${hex}  ${d.mnemonic} ${r(d.rs2)}, ${d.imm}(${r(d.rs1)})`;
-    case 'addi': case 'slti': case 'sltiu': case 'xori': case 'ori': case 'andi': case 'slli': case 'srli': case 'srai':
+    case 'addi':
+    case 'slti':
+    case 'sltiu':
+    case 'xori':
+    case 'ori':
+    case 'andi':
+    case 'slli':
+    case 'srli':
+    case 'srai':
       return `${hex}  ${d.mnemonic} ${r(d.rd)}, ${r(d.rs1)}, ${d.imm}`;
-    case 'ecall': case 'ebreak': case 'mret': case 'sret': case 'wfi': case 'fence': case 'fence.i':
+    case 'ecall':
+    case 'ebreak':
+    case 'mret':
+    case 'sret':
+    case 'wfi':
+    case 'fence':
+    case 'fence.i':
       return `${hex}  ${d.mnemonic}`;
-    case 'csrrw': case 'csrrs': case 'csrrc':
+    case 'csrrw':
+    case 'csrrs':
+    case 'csrrc':
       return `${hex}  ${d.mnemonic} ${r(d.rd)}, ${CSR_NAMES[d.csr] ?? `0x${d.csr.toString(16)}`}, ${r(d.rs1)}`;
-    case 'csrrwi': case 'csrrsi': case 'csrrci':
+    case 'csrrwi':
+    case 'csrrsi':
+    case 'csrrci':
       return `${hex}  ${d.mnemonic} ${r(d.rd)}, ${CSR_NAMES[d.csr] ?? `0x${d.csr.toString(16)}`}, ${d.imm}`;
     case 'lr.w':
       return `${hex}  lr.w ${r(d.rd)}, (${r(d.rs1)})`;
@@ -570,12 +756,14 @@ export function patchU(word: number, value: number): number {
 }
 
 export function patchI(word: number, imm: number): number {
-  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047) throw new Error(`I-type immediate out of range: ${imm}`);
+  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047)
+    throw new Error(`I-type immediate out of range: ${imm}`);
   return ((word >>> 0) | (((imm & 0xfff) << 20) >>> 0)) >>> 0;
 }
 
 export function patchS(word: number, imm: number): number {
-  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047) throw new Error(`S-type immediate out of range: ${imm}`);
+  if (!Number.isInteger(imm) || imm < -2048 || imm > 2047)
+    throw new Error(`S-type immediate out of range: ${imm}`);
   const v = imm & 0xfff;
   return ((word >>> 0) | ((((v >>> 5) & 0x7f) << 25) >>> 0) | (((v & 0x1f) << 7) >>> 0)) >>> 0;
 }
@@ -595,7 +783,8 @@ export function patchB(word: number, offset: number): number {
       ((((v >>> 12) & 1) << 31) >>> 0) |
       ((((v >>> 5) & 0x3f) << 25) >>> 0) |
       (((v & 0x1e) << 7) >>> 0) |
-      ((((v >>> 11) & 1) << 7) >>> 0)) >>> 0
+      ((((v >>> 11) & 1) << 7) >>> 0)) >>>
+    0
   );
 }
 
@@ -612,7 +801,8 @@ export function patchJ(word: number, offset: number): number {
       ((((v >>> 20) & 1) << 31) >>> 0) |
       ((((v >>> 1) & 0x3ff) << 21) >>> 0) |
       ((((v >>> 11) & 1) << 20) >>> 0) |
-      ((((v >>> 12) & 0xff) << 12) >>> 0)) >>> 0
+      ((((v >>> 12) & 0xff) << 12) >>> 0)) >>>
+    0
   );
 }
 

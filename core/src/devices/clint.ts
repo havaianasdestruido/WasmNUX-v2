@@ -106,12 +106,16 @@ export class Clint implements Device {
 
   read32(offset: number): number {
     if (offset >= MTIME && offset < MTIME + 8) {
-      return offset === MTIME ? Number(this.mtime & 0xffffffffn) | 0 : Number((this.mtime >> 32n) & 0xffffffffn) | 0;
+      return offset === MTIME
+        ? Number(this.mtime & 0xffffffffn) | 0
+        : Number((this.mtime >> 32n) & 0xffffffffn) | 0;
     }
     if (offset >= MTIMECMP && offset < MTIMECMP + this.harts * 8) {
       const hart = (offset - MTIMECMP) >> 3;
       const v = this.mtimecmp[hart] ?? 0n;
-      return (offset - MTIMECMP) % 8 === 0 ? Number(v & 0xffffffffn) | 0 : Number((v >> 32n) & 0xffffffffn) | 0;
+      return (offset - MTIMECMP) % 8 === 0
+        ? Number(v & 0xffffffffn) | 0
+        : Number((v >> 32n) & 0xffffffffn) | 0;
     }
     if (offset >= MSIP && offset < MSIP + this.harts * 4) {
       return this.msip[offset >> 2] ?? 0;
@@ -138,9 +142,10 @@ export class Clint implements Device {
     if (offset >= MTIMECMP && offset < MTIMECMP + this.harts * 8) {
       const hart = (offset - MTIMECMP) >> 3;
       const cur = this.mtimecmp[hart] ?? 0n;
-      this.mtimecmp[hart] = (offset - MTIMECMP) % 8 === 0
-        ? (cur & ~0xffffffffn) | BigInt(v >>> 0)
-        : (cur & 0xffffffffn) | (BigInt(v >>> 0) << 32n);
+      this.mtimecmp[hart] =
+        (offset - MTIMECMP) % 8 === 0
+          ? (cur & ~0xffffffffn) | BigInt(v >>> 0)
+          : (cur & 0xffffffffn) | (BigInt(v >>> 0) << 32n);
       this.onTimerPending(hart, this.mtime >= this.mtimecmp[hart]!);
       return;
     }
@@ -211,7 +216,10 @@ export class Plic implements Device {
   /** context -> { threshold, enables } */
   private readonly contexts: Array<{ threshold: number; enables: Set<number> }>;
 
-  constructor(private readonly harts = 1, private readonly maxIrqs = 1024) {
+  constructor(
+    private readonly harts = 1,
+    private readonly maxIrqs = 1024,
+  ) {
     this.priority = new Int32Array(maxIrqs + 1);
     // Two contexts per hart (S-mode then M-mode), as on QEMU virt.
     this.contexts = Array.from({ length: harts * 2 }, () => ({ threshold: 0, enables: new Set<number>() }));
@@ -252,18 +260,18 @@ export class Plic implements Device {
       const word = (offset - 0x1000) >> 2;
       let v = 0;
       for (const irq of this.pending) {
-        if ((irq >> 5) === word) v |= 1 << (irq & 31);
+        if (irq >> 5 === word) v |= 1 << (irq & 31);
       }
       return v;
     }
     if (offset >= 0x2000 && offset < 0x2000 + this.contexts.length * 0x100) {
-      const ctxIdx = (offset - 0x2000) / 0x100 | 0;
+      const ctxIdx = ((offset - 0x2000) / 0x100) | 0;
       const within = offset - 0x2000 - ctxIdx * 0x100;
       const ctx = this.contexts[ctxIdx]!;
       if (within < 0x80) {
         const word = within >> 2;
         let v = 0;
-        for (const irq of ctx.enables) if ((irq >> 5) === word) v |= 1 << (irq & 31);
+        for (const irq of ctx.enables) if (irq >> 5 === word) v |= 1 << (irq & 31);
         return v;
       }
       if (within === 0x80) return ctx.threshold;

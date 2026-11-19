@@ -10,15 +10,7 @@
 export const RV32_REG_COUNT = 32;
 
 /** Why a run stopped. `running` means "budget exhausted but not finished". */
-export type StopReason =
-  | 'running'
-  | 'exit'
-  | 'idle'
-  | 'syscall'
-  | 'mmio'
-  | 'trap'
-  | 'breakpoint'
-  | 'error';
+export type StopReason = 'running' | 'exit' | 'idle' | 'syscall' | 'mmio' | 'trap' | 'breakpoint' | 'error';
 
 /** Exit reasons returned by compiled regions (kept dense: they are compared in hot loops). */
 export const EXIT = {

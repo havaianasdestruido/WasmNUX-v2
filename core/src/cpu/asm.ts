@@ -97,20 +97,89 @@ import {
 } from './encoding.ts';
 
 const REGISTERS: Record<string, number> = {
-  zero: 0, x0: 0, ra: 1, x1: 1, sp: 2, x2: 2, gp: 3, x3: 3, tp: 4, x4: 4,
-  t0: 5, x5: 5, t1: 6, x6: 6, t2: 7, x7: 7, s0: 8, fp: 8, x8: 8, s1: 9, x9: 9,
-  a0: 10, x10: 10, a1: 11, x11: 11, a2: 12, x12: 12, a3: 13, x13: 13, a4: 14, x14: 14,
-  a5: 15, x15: 15, a6: 16, x16: 16, a7: 17, x17: 17, s2: 18, x18: 18, s3: 19, x19: 19,
-  s4: 20, x20: 20, s5: 21, x21: 21, s6: 22, x22: 22, s7: 23, x23: 23, s8: 24, x24: 24,
-  s9: 25, x25: 25, s10: 26, x26: 26, s11: 27, x27: 27, t3: 28, x28: 28, t4: 29, x29: 29,
-  t5: 30, x30: 30, t6: 31, x31: 31,
+  zero: 0,
+  x0: 0,
+  ra: 1,
+  x1: 1,
+  sp: 2,
+  x2: 2,
+  gp: 3,
+  x3: 3,
+  tp: 4,
+  x4: 4,
+  t0: 5,
+  x5: 5,
+  t1: 6,
+  x6: 6,
+  t2: 7,
+  x7: 7,
+  s0: 8,
+  fp: 8,
+  x8: 8,
+  s1: 9,
+  x9: 9,
+  a0: 10,
+  x10: 10,
+  a1: 11,
+  x11: 11,
+  a2: 12,
+  x12: 12,
+  a3: 13,
+  x13: 13,
+  a4: 14,
+  x14: 14,
+  a5: 15,
+  x15: 15,
+  a6: 16,
+  x16: 16,
+  a7: 17,
+  x17: 17,
+  s2: 18,
+  x18: 18,
+  s3: 19,
+  x19: 19,
+  s4: 20,
+  x20: 20,
+  s5: 21,
+  x21: 21,
+  s6: 22,
+  x22: 22,
+  s7: 23,
+  x23: 23,
+  s8: 24,
+  x24: 24,
+  s9: 25,
+  x25: 25,
+  s10: 26,
+  x26: 26,
+  s11: 27,
+  x27: 27,
+  t3: 28,
+  x28: 28,
+  t4: 29,
+  x29: 29,
+  t5: 30,
+  x30: 30,
+  t6: 31,
+  x31: 31,
 };
 
 export const CSR_ALIASES: Record<string, number> = {
-  cycle: 0xc00, time: 0xc01, instret: 0xc02,
-  mstatus: 0x300, misa: 0x301, mie: 0x304, mtvec: 0x305, mscratch: 0x340,
-  mepc: 0x341, mcause: 0x342, mtval: 0x343, mip: 0x344, mcycle: 0xb00,
-  minstret: 0xb02, mhartid: 0xf14,
+  cycle: 0xc00,
+  time: 0xc01,
+  instret: 0xc02,
+  mstatus: 0x300,
+  misa: 0x301,
+  mie: 0x304,
+  mtvec: 0x305,
+  mscratch: 0x340,
+  mepc: 0x341,
+  mcause: 0x342,
+  mtval: 0x343,
+  mip: 0x344,
+  mcycle: 0xb00,
+  minstret: 0xb02,
+  mhartid: 0xf14,
 };
 
 export interface AssembleOptions {
@@ -135,7 +204,10 @@ export interface Assembled {
 }
 
 export class AsmError extends Error {
-  constructor(message: string, readonly line: number) {
+  constructor(
+    message: string,
+    readonly line: number,
+  ) {
     super(`line ${line}: ${message}`);
     this.name = 'AsmError';
   }
@@ -228,18 +300,30 @@ function parseConstNumber(t: string): number | null {
 
 function escapeChar(c: string): number {
   switch (c) {
-    case 'n': return 10;
-    case 't': return 9;
-    case 'r': return 13;
-    case '0': return 0;
-    case 'a': return 7;
-    case 'b': return 8;
-    case 'f': return 12;
-    case 'v': return 11;
-    case '\\': return 0x5c;
-    case "'": return 0x27;
-    case '"': return 0x22;
-    default: return c.charCodeAt(0);
+    case 'n':
+      return 10;
+    case 't':
+      return 9;
+    case 'r':
+      return 13;
+    case '0':
+      return 0;
+    case 'a':
+      return 7;
+    case 'b':
+      return 8;
+    case 'f':
+      return 12;
+    case 'v':
+      return 11;
+    case '\\':
+      return 0x5c;
+    case "'":
+      return 0x27;
+    case '"':
+      return 0x22;
+    default:
+      return c.charCodeAt(0);
   }
 }
 
@@ -303,9 +387,9 @@ function foldConst(src: string, line: number): number {
   };
   const unary = (): number => {
     ws();
-    if (eat('-')) return (-unary()) | 0;
+    if (eat('-')) return -unary() | 0;
     if (eat('+')) return unary() | 0;
-    if (eat('~')) return (~unary()) | 0;
+    if (eat('~')) return ~unary() | 0;
     if (eat('!')) return unary() === 0 ? 1 : 0;
     return atom();
   };
@@ -314,9 +398,13 @@ function foldConst(src: string, line: number): number {
     for (;;) {
       ws();
       if (eat('*')) v = Math.imul(v, unary()) | 0;
-      else if (eat('/')) { const d = unary(); v = d === 0 ? 0 : (v / d) | 0; }
-      else if (eat('%')) { const d = unary(); v = d === 0 ? 0 : v % d; }
-      else return v;
+      else if (eat('/')) {
+        const d = unary();
+        v = d === 0 ? 0 : (v / d) | 0;
+      } else if (eat('%')) {
+        const d = unary();
+        v = d === 0 ? 0 : v % d;
+      } else return v;
     }
   };
   const parseAdd = (): number => {
@@ -332,10 +420,16 @@ function foldConst(src: string, line: number): number {
     let v = parseAdd();
     for (;;) {
       ws();
-      if (s.startsWith('<<', i)) { i += 2; v = (v << (parseAdd() & 31)) | 0; }
-      else if (s.startsWith('>>>', i)) { i += 3; v = v >>> (parseAdd() & 31); }
-      else if (s.startsWith('>>', i)) { i += 2; v = v >> (parseAdd() & 31); }
-      else return v;
+      if (s.startsWith('<<', i)) {
+        i += 2;
+        v = (v << (parseAdd() & 31)) | 0;
+      } else if (s.startsWith('>>>', i)) {
+        i += 3;
+        v = v >>> (parseAdd() & 31);
+      } else if (s.startsWith('>>', i)) {
+        i += 2;
+        v = v >> (parseAdd() & 31);
+      } else return v;
     }
   };
   const parseAnd = (): number => {
@@ -416,16 +510,33 @@ const AMO_MNEMONICS: Record<string, number> = {
 };
 
 const R_INSNS: Record<string, [number, number]> = {
-  add: [F3_ADD, F7_NORMAL], sub: [F3_ADD, F7_ALT], sll: [F3_SLL, F7_NORMAL],
-  slt: [F3_SLT, F7_NORMAL], sltu: [F3_SLTU, F7_NORMAL], xor: [F3_XOR, F7_NORMAL],
-  srl: [F3_SRL, F7_NORMAL], sra: [F3_SRL, F7_ALT], or: [F3_OR, F7_NORMAL], and: [F3_AND, F7_NORMAL],
-  mul: [F3_MUL, F7_MULDIV], mulh: [F3_MULH, F7_MULDIV], mulhsu: [F3_MULHSU, F7_MULDIV],
-  mulhu: [F3_MULHU, F7_MULDIV], div: [F3_DIV, F7_MULDIV], divu: [F3_DIVU, F7_MULDIV],
-  rem: [F3_REM, F7_MULDIV], remu: [F3_REMU, F7_MULDIV],
+  add: [F3_ADD, F7_NORMAL],
+  sub: [F3_ADD, F7_ALT],
+  sll: [F3_SLL, F7_NORMAL],
+  slt: [F3_SLT, F7_NORMAL],
+  sltu: [F3_SLTU, F7_NORMAL],
+  xor: [F3_XOR, F7_NORMAL],
+  srl: [F3_SRL, F7_NORMAL],
+  sra: [F3_SRL, F7_ALT],
+  or: [F3_OR, F7_NORMAL],
+  and: [F3_AND, F7_NORMAL],
+  mul: [F3_MUL, F7_MULDIV],
+  mulh: [F3_MULH, F7_MULDIV],
+  mulhsu: [F3_MULHSU, F7_MULDIV],
+  mulhu: [F3_MULHU, F7_MULDIV],
+  div: [F3_DIV, F7_MULDIV],
+  divu: [F3_DIVU, F7_MULDIV],
+  rem: [F3_REM, F7_MULDIV],
+  remu: [F3_REMU, F7_MULDIV],
 };
 
 const I_ARITH: Record<string, number> = {
-  addi: F3_ADD, slti: F3_SLT, sltiu: F3_SLTU, xori: F3_XOR, ori: F3_OR, andi: F3_AND,
+  addi: F3_ADD,
+  slti: F3_SLT,
+  sltiu: F3_SLTU,
+  xori: F3_XOR,
+  ori: F3_OR,
+  andi: F3_AND,
 };
 
 const SHIFTS: Record<string, number> = { slli: F7_NORMAL, srli: F7_NORMAL, srai: F7_ALT };
@@ -433,7 +544,12 @@ const SHIFTS: Record<string, number> = { slli: F7_NORMAL, srli: F7_NORMAL, srai:
 const LOADS: Record<string, number> = { lb: F3_B, lh: F3_H, lw: F3_W, lbu: F3_BU, lhu: F3_HU };
 const STORES: Record<string, number> = { sb: F3_B, sh: F3_H, sw: F3_W };
 const BRANCHES: Record<string, number> = {
-  beq: F3_BEQ, bne: F3_BNE, blt: F3_BLT, bge: F3_BGE, bltu: F3_BLTU, bgeu: F3_BGEU,
+  beq: F3_BEQ,
+  bne: F3_BNE,
+  blt: F3_BLT,
+  bge: F3_BGE,
+  bltu: F3_BLTU,
+  bgeu: F3_BGEU,
 };
 
 /** Expand `li rd, imm` the way binutils does (1 or 2 instructions). */
@@ -456,7 +572,10 @@ function expandLi(rd_: number, expr: Expr, line: number): Build {
   // Symbolic: absolute address materialisation (lui + addi).
   return {
     words: [uType(OP_LUI, rd_, 0), iType(OP_OPI, F3_ADD, rd_, rd_, 0)],
-    slots: [{ expr: { kind: 'hi', inner: expr }, rel: false }, { expr: { kind: 'lo', inner: expr }, rel: false }],
+    slots: [
+      { expr: { kind: 'hi', inner: expr }, rel: false },
+      { expr: { kind: 'lo', inner: expr }, rel: false },
+    ],
   };
 }
 
@@ -466,7 +585,11 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
     if (ops.length !== n) throw new AsmError(`'${mnem}' expects ${n} operand(s), got ${ops.length}`, line);
     return ops;
   };
-  const B = (words: number[], slots: (Slot | null)[], pcrelSym?: string): Build => ({ words, slots, pcrelSym });
+  const B = (words: number[], slots: (Slot | null)[], pcrelSym?: string): Build => ({
+    words,
+    slots,
+    pcrelSym,
+  });
 
   // ---- pseudo instructions ------------------------------------------------
   switch (mnem) {
@@ -491,15 +614,24 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
     }
     case 'snez': {
       need(2);
-      return B([rType(OP_OP, F3_SLTU, F7_NORMAL, parseReg(ops[0]!, line), 0, parseReg(ops[1]!, line))], [null]);
+      return B(
+        [rType(OP_OP, F3_SLTU, F7_NORMAL, parseReg(ops[0]!, line), 0, parseReg(ops[1]!, line))],
+        [null],
+      );
     }
     case 'sltz': {
       need(2);
-      return B([rType(OP_OP, F3_SLT, F7_NORMAL, parseReg(ops[0]!, line), parseReg(ops[1]!, line), 0)], [null]);
+      return B(
+        [rType(OP_OP, F3_SLT, F7_NORMAL, parseReg(ops[0]!, line), parseReg(ops[1]!, line), 0)],
+        [null],
+      );
     }
     case 'sgtz': {
       need(2);
-      return B([rType(OP_OP, F3_SLT, F7_NORMAL, parseReg(ops[0]!, line), 0, parseReg(ops[1]!, line))], [null]);
+      return B(
+        [rType(OP_OP, F3_SLT, F7_NORMAL, parseReg(ops[0]!, line), 0, parseReg(ops[1]!, line))],
+        [null],
+      );
     }
     case 'li': {
       need(2);
@@ -511,7 +643,10 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
       const e = parseExpr(ops[1]!, line);
       return B(
         [uType(OP_LUI, r, 0), iType(OP_OPI, F3_ADD, r, r, 0)],
-        [{ expr: { kind: 'hi', inner: e }, rel: false }, { expr: { kind: 'lo', inner: e }, rel: false }],
+        [
+          { expr: { kind: 'hi', inner: e }, rel: false },
+          { expr: { kind: 'lo', inner: e }, rel: false },
+        ],
       );
     }
     case 'lla': {
@@ -520,7 +655,10 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
       const sym = ops[1]!.trim();
       return B(
         [uType(OP_AUIPC, r, 0), iType(OP_OPI, F3_ADD, r, r, 0)],
-        [{ expr: { kind: 'pcrelHi', sym }, rel: false }, { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false }],
+        [
+          { expr: { kind: 'pcrelHi', sym }, rel: false },
+          { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false },
+        ],
         sym,
       );
     }
@@ -546,7 +684,10 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
       const sym = ops[0]!.trim();
       return B(
         [uType(OP_AUIPC, 1, 0), iType(OP_JALR, 0, 1, 1, 0)],
-        [{ expr: { kind: 'pcrelHi', sym }, rel: false }, { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false }],
+        [
+          { expr: { kind: 'pcrelHi', sym }, rel: false },
+          { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false },
+        ],
         sym,
       );
     }
@@ -555,33 +696,54 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
       const sym = ops[0]!.trim();
       return B(
         [uType(OP_AUIPC, 5, 0), iType(OP_JALR, 0, 0, 5, 0)],
-        [{ expr: { kind: 'pcrelHi', sym }, rel: false }, { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false }],
+        [
+          { expr: { kind: 'pcrelHi', sym }, rel: false },
+          { expr: { kind: 'pcrelLoBack', back: 4 }, rel: false },
+        ],
         sym,
       );
     }
     case 'beqz': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BEQ, parseReg(ops[0]!, line), 0, 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BEQ, parseReg(ops[0]!, line), 0, 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'bnez': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BNE, parseReg(ops[0]!, line), 0, 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BNE, parseReg(ops[0]!, line), 0, 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'blez': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BGE, 0, parseReg(ops[0]!, line), 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BGE, 0, parseReg(ops[0]!, line), 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'bgez': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BGE, parseReg(ops[0]!, line), 0, 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BGE, parseReg(ops[0]!, line), 0, 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'bltz': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BLT, parseReg(ops[0]!, line), 0, 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BLT, parseReg(ops[0]!, line), 0, 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'bgtz': {
       need(2);
-      return B([bType(OP_BRANCH, F3_BLT, 0, parseReg(ops[0]!, line), 0)], [{ expr: parseExpr(ops[1]!, line), rel: true }]);
+      return B(
+        [bType(OP_BRANCH, F3_BLT, 0, parseReg(ops[0]!, line), 0)],
+        [{ expr: parseExpr(ops[1]!, line), rel: true }],
+      );
     }
     case 'csrr': {
       need(2);
@@ -611,32 +773,64 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
   if (R_INSNS[mnem]) {
     need(3);
     const [f3, f7] = R_INSNS[mnem]!;
-    return B([rType(OP_OP, f3, f7, parseReg(ops[0]!, line), parseReg(ops[1]!, line), parseReg(ops[2]!, line))], [null]);
+    return B(
+      [rType(OP_OP, f3, f7, parseReg(ops[0]!, line), parseReg(ops[1]!, line), parseReg(ops[2]!, line))],
+      [null],
+    );
   }
   if (I_ARITH[mnem] !== undefined) {
     need(3);
     const e = parseExpr(ops[2]!, line);
     if (e.kind === 'const') {
-      return B([iType(OP_OPI, I_ARITH[mnem]!, parseReg(ops[0]!, line), parseReg(ops[1]!, line), e.value)], [null]);
+      return B(
+        [iType(OP_OPI, I_ARITH[mnem]!, parseReg(ops[0]!, line), parseReg(ops[1]!, line), e.value)],
+        [null],
+      );
     }
-    return B([iType(OP_OPI, I_ARITH[mnem]!, parseReg(ops[0]!, line), parseReg(ops[1]!, line), 0)], [{ expr: e, rel: false }]);
+    return B(
+      [iType(OP_OPI, I_ARITH[mnem]!, parseReg(ops[0]!, line), parseReg(ops[1]!, line), 0)],
+      [{ expr: e, rel: false }],
+    );
   }
   if (SHIFTS[mnem] !== undefined) {
     need(3);
     const shamt = foldConst(ops[2]!, line);
     if (shamt < 0 || shamt > 31) throw new AsmError(`shift amount out of range: ${shamt}`, line);
-    return B([iType(OP_OPI, mnem === 'slli' ? F3_SLL : F3_SRL, parseReg(ops[0]!, line), parseReg(ops[1]!, line), shamt | (SHIFTS[mnem]! << 5))], [null]);
+    return B(
+      [
+        iType(
+          OP_OPI,
+          mnem === 'slli' ? F3_SLL : F3_SRL,
+          parseReg(ops[0]!, line),
+          parseReg(ops[1]!, line),
+          shamt | (SHIFTS[mnem]! << 5),
+        ),
+      ],
+      [null],
+    );
   }
   if (LOADS[mnem] !== undefined) {
     need(2);
     const m = parseMem(ops[1]!, line);
-    const word = iType(OP_LOAD, LOADS[mnem]!, parseReg(ops[0]!, line), m.reg, m.expr.kind === 'const' ? m.expr.value : 0);
+    const word = iType(
+      OP_LOAD,
+      LOADS[mnem]!,
+      parseReg(ops[0]!, line),
+      m.reg,
+      m.expr.kind === 'const' ? m.expr.value : 0,
+    );
     return B([word], [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }]);
   }
   if (STORES[mnem] !== undefined) {
     need(2);
     const m = parseMem(ops[1]!, line);
-    const word = sType(OP_STORE, STORES[mnem]!, m.reg, parseReg(ops[0]!, line), m.expr.kind === 'const' ? m.expr.value : 0);
+    const word = sType(
+      OP_STORE,
+      STORES[mnem]!,
+      m.reg,
+      parseReg(ops[0]!, line),
+      m.expr.kind === 'const' ? m.expr.value : 0,
+    );
     return B([word], [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }]);
   }
   if (BRANCHES[mnem] !== undefined) {
@@ -657,15 +851,24 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
   if (mnem === 'jalr') {
     if (ops.length === 1) {
       const m = parseMem(ops[0]!, line);
-      return B([iType(OP_JALR, 0, 1, m.reg, m.expr.kind === 'const' ? m.expr.value : 0)], [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }]);
+      return B(
+        [iType(OP_JALR, 0, 1, m.reg, m.expr.kind === 'const' ? m.expr.value : 0)],
+        [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }],
+      );
     }
     if (ops.length === 2) {
       const r = parseReg(ops[0]!, line);
       const m = parseMem(ops[1]!, line);
-      return B([iType(OP_JALR, 0, r, m.reg, m.expr.kind === 'const' ? m.expr.value : 0)], [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }]);
+      return B(
+        [iType(OP_JALR, 0, r, m.reg, m.expr.kind === 'const' ? m.expr.value : 0)],
+        [m.expr.kind === 'const' ? null : { expr: m.expr, rel: false }],
+      );
     }
     need(3);
-    return B([iType(OP_JALR, 0, parseReg(ops[0]!, line), parseReg(ops[2]!, line), foldConst(ops[1]!, line))], [null]);
+    return B(
+      [iType(OP_JALR, 0, parseReg(ops[0]!, line), parseReg(ops[2]!, line), foldConst(ops[1]!, line))],
+      [null],
+    );
   }
   if (mnem === 'fence' || mnem === 'fence.i') {
     const word = iType(OP_MISC_MEM, mnem === 'fence' ? 0 : 1, 0, 0, 0);
@@ -681,9 +884,16 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
     let base = mnem;
     let aq = false;
     let rl = false;
-    if (base.endsWith('.aqrl')) { aq = rl = true; base = base.slice(0, -5); }
-    else if (base.endsWith('.aq')) { aq = true; base = base.slice(0, -3); }
-    else if (base.endsWith('.rl')) { rl = true; base = base.slice(0, -3); }
+    if (base.endsWith('.aqrl')) {
+      aq = rl = true;
+      base = base.slice(0, -5);
+    } else if (base.endsWith('.aq')) {
+      aq = true;
+      base = base.slice(0, -3);
+    } else if (base.endsWith('.rl')) {
+      rl = true;
+      base = base.slice(0, -3);
+    }
     const f5 = AMO_MNEMONICS[base];
     if (f5 !== undefined) {
       if (base === 'lr.w') {
@@ -702,7 +912,10 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
   const CSR3I: Record<string, number> = { csrrwi: F3_CSRRWI, csrrsi: F3_CSRRSI, csrrci: F3_CSRRCI };
   if (CSR3[mnem] !== undefined) {
     need(3);
-    return B([systemType(CSR3[mnem]!, parseReg(ops[0]!, line), parseReg(ops[2]!, line), parseCsr(ops[1]!, line))], [null]);
+    return B(
+      [systemType(CSR3[mnem]!, parseReg(ops[0]!, line), parseReg(ops[2]!, line), parseCsr(ops[1]!, line))],
+      [null],
+    );
   }
   if (CSR3I[mnem] !== undefined) {
     need(3);
@@ -765,20 +978,33 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
       const dir = (space < 0 ? text : text.slice(0, space)).toLowerCase();
       const arg = space < 0 ? '' : text.slice(space + 1).trim();
       switch (dir) {
-        case '.text': case '.data': case '.section': case '.option': case '.file':
-        case '.type': case '.size': case '.ident': case '.attribute':
+        case '.text':
+        case '.data':
+        case '.section':
+        case '.option':
+        case '.file':
+        case '.type':
+        case '.size':
+        case '.ident':
+        case '.attribute':
           continue;
-        case '.globl': case '.global':
+        case '.globl':
+        case '.global':
           globals.push(arg);
           continue;
-        case '.align': case '.balign': case '.p2align': {
+        case '.align':
+        case '.balign':
+        case '.p2align': {
           const n = foldConst(arg, line);
           const to = dir === '.balign' ? n : 1 << n;
           recs.push({ t: 'align', to });
           pc = (pc + ((to - (pc % to)) % to)) >>> 0;
           continue;
         }
-        case '.byte': case '.half': case '.word': case '.long': {
+        case '.byte':
+        case '.half':
+        case '.word':
+        case '.long': {
           const width = dir === '.byte' ? 1 : dir === '.half' ? 2 : 4;
           for (const part of splitOperands(arg)) {
             const e = parseExpr(part, line);
@@ -794,7 +1020,9 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
           }
           continue;
         }
-        case '.string': case '.asciz': case '.ascii': {
+        case '.string':
+        case '.asciz':
+        case '.ascii': {
           const m = /^"((?:[^"\\]|\\.)*)"$/.exec(arg);
           if (!m) throw new AsmError(`expected a quoted string after ${dir}`, line);
           const bytes = unescapeString(m[1]!);
@@ -803,13 +1031,16 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
           pc = (pc + bytes.length) >>> 0;
           continue;
         }
-        case '.zero': case '.space': case '.skip': {
+        case '.zero':
+        case '.space':
+        case '.skip': {
           const n = foldConst(arg, line);
           recs.push({ t: 'zero', count: n, addr: pc });
           pc = (pc + n) >>> 0;
           continue;
         }
-        case '.set': case '.equ': {
+        case '.set':
+        case '.equ': {
           const comma = arg.indexOf(',');
           if (comma < 0) throw new AsmError(`expected '.set name, value'`, line);
           const name = arg.slice(0, comma).trim();
@@ -828,7 +1059,14 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
     const mnem = space < 0 ? text : text.slice(0, space);
     const operandText = space < 0 ? '' : text.slice(space + 1).trim();
     const build = buildInsn(mnem, operandText.length ? splitOperands(operandText) : [], line);
-    recs.push({ t: 'insn', line, words: build.words, slots: build.slots, pcrelSym: build.pcrelSym, addr: pc });
+    recs.push({
+      t: 'insn',
+      line,
+      words: build.words,
+      slots: build.slots,
+      pcrelSym: build.pcrelSym,
+      addr: pc,
+    });
     pc = (pc + build.words.length * 4) >>> 0;
   }
 
@@ -947,11 +1185,16 @@ function currentAddrOf(recs: Rec[], label: Rec, base: number): number {
 function patchImm(word: number, value: number, line: number): number {
   try {
     switch (immFormat(word)) {
-      case 'U': return patchU(word, value);
-      case 'I': return patchI(word, value);
-      case 'S': return patchS(word, value);
-      case 'B': return patchB(word, value);
-      case 'J': return patchJ(word, value);
+      case 'U':
+        return patchU(word, value);
+      case 'I':
+        return patchI(word, value);
+      case 'S':
+        return patchS(word, value);
+      case 'B':
+        return patchB(word, value);
+      case 'J':
+        return patchJ(word, value);
     }
   } catch (err) {
     throw new AsmError((err as Error).message, line);

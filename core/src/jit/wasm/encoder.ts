@@ -103,14 +103,22 @@ export class Buf {
 
   f32(v: number): this {
     this.ensure(4);
-    new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength).setFloat32(this.length, v, true);
+    new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength).setFloat32(
+      this.length,
+      v,
+      true,
+    );
     this.length += 4;
     return this;
   }
 
   f64(v: number): this {
     this.ensure(8);
-    new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength).setFloat64(this.length, v, true);
+    new DataView(this.data.buffer, this.data.byteOffset, this.data.byteLength).setFloat64(
+      this.length,
+      v,
+      true,
+    );
     this.length += 8;
     return this;
   }
@@ -528,58 +536,158 @@ export class FuncEmitter {
   }
 
   // -- i32 arithmetic -----------------------------------------------------
-  i32Eqz(): this { return this.op(OP.i32_eqz); }
-  i32Eq(): this { return this.op(OP.i32_eq); }
-  i32Ne(): this { return this.op(OP.i32_ne); }
-  i32LtS(): this { return this.op(OP.i32_lt_s); }
-  i32LtU(): this { return this.op(OP.i32_lt_u); }
-  i32GtS(): this { return this.op(OP.i32_gt_s); }
-  i32GtU(): this { return this.op(OP.i32_gt_u); }
-  i32LeS(): this { return this.op(OP.i32_le_s); }
-  i32LeU(): this { return this.op(OP.i32_le_u); }
-  i32GeS(): this { return this.op(OP.i32_ge_s); }
-  i32GeU(): this { return this.op(OP.i32_ge_u); }
-  i32Add(): this { return this.op(OP.i32_add); }
-  i32Sub(): this { return this.op(OP.i32_sub); }
-  i32Mul(): this { return this.op(OP.i32_mul); }
-  i32DivS(): this { return this.op(OP.i32_div_s); }
-  i32DivU(): this { return this.op(OP.i32_div_u); }
-  i32RemS(): this { return this.op(OP.i32_rem_s); }
-  i32RemU(): this { return this.op(OP.i32_rem_u); }
-  i32And(): this { return this.op(OP.i32_and); }
-  i32Or(): this { return this.op(OP.i32_or); }
-  i32Xor(): this { return this.op(OP.i32_xor); }
-  i32Shl(): this { return this.op(OP.i32_shl); }
-  i32ShrS(): this { return this.op(OP.i32_shr_s); }
-  i32ShrU(): this { return this.op(OP.i32_shr_u); }
-  i32Rotl(): this { return this.op(OP.i32_rotl); }
-  i32Rotr(): this { return this.op(OP.i32_rotr); }
-  i32Clz(): this { return this.op(OP.i32_clz); }
-  i32Ctz(): this { return this.op(OP.i32_ctz); }
-  i32Popcnt(): this { return this.op(OP.i32_popcnt); }
+  i32Eqz(): this {
+    return this.op(OP.i32_eqz);
+  }
+  i32Eq(): this {
+    return this.op(OP.i32_eq);
+  }
+  i32Ne(): this {
+    return this.op(OP.i32_ne);
+  }
+  i32LtS(): this {
+    return this.op(OP.i32_lt_s);
+  }
+  i32LtU(): this {
+    return this.op(OP.i32_lt_u);
+  }
+  i32GtS(): this {
+    return this.op(OP.i32_gt_s);
+  }
+  i32GtU(): this {
+    return this.op(OP.i32_gt_u);
+  }
+  i32LeS(): this {
+    return this.op(OP.i32_le_s);
+  }
+  i32LeU(): this {
+    return this.op(OP.i32_le_u);
+  }
+  i32GeS(): this {
+    return this.op(OP.i32_ge_s);
+  }
+  i32GeU(): this {
+    return this.op(OP.i32_ge_u);
+  }
+  i32Add(): this {
+    return this.op(OP.i32_add);
+  }
+  i32Sub(): this {
+    return this.op(OP.i32_sub);
+  }
+  i32Mul(): this {
+    return this.op(OP.i32_mul);
+  }
+  i32DivS(): this {
+    return this.op(OP.i32_div_s);
+  }
+  i32DivU(): this {
+    return this.op(OP.i32_div_u);
+  }
+  i32RemS(): this {
+    return this.op(OP.i32_rem_s);
+  }
+  i32RemU(): this {
+    return this.op(OP.i32_rem_u);
+  }
+  i32And(): this {
+    return this.op(OP.i32_and);
+  }
+  i32Or(): this {
+    return this.op(OP.i32_or);
+  }
+  i32Xor(): this {
+    return this.op(OP.i32_xor);
+  }
+  i32Shl(): this {
+    return this.op(OP.i32_shl);
+  }
+  i32ShrS(): this {
+    return this.op(OP.i32_shr_s);
+  }
+  i32ShrU(): this {
+    return this.op(OP.i32_shr_u);
+  }
+  i32Rotl(): this {
+    return this.op(OP.i32_rotl);
+  }
+  i32Rotr(): this {
+    return this.op(OP.i32_rotr);
+  }
+  i32Clz(): this {
+    return this.op(OP.i32_clz);
+  }
+  i32Ctz(): this {
+    return this.op(OP.i32_ctz);
+  }
+  i32Popcnt(): this {
+    return this.op(OP.i32_popcnt);
+  }
 
   // -- i64 arithmetic (used for MULH / cycle counters) --------------------
-  i64Add(): this { return this.op(OP.i64_add); }
-  i64Sub(): this { return this.op(OP.i64_sub); }
-  i64Mul(): this { return this.op(OP.i64_mul); }
-  i64DivS(): this { return this.op(OP.i64_div_s); }
-  i64DivU(): this { return this.op(OP.i64_div_u); }
-  i64RemS(): this { return this.op(OP.i64_rem_s); }
-  i64RemU(): this { return this.op(OP.i64_rem_u); }
-  i64And(): this { return this.op(OP.i64_and); }
-  i64Or(): this { return this.op(OP.i64_or); }
-  i64Xor(): this { return this.op(OP.i64_xor); }
-  i64Shl(): this { return this.op(OP.i64_shl); }
-  i64ShrS(): this { return this.op(OP.i64_shr_s); }
-  i64ShrU(): this { return this.op(OP.i64_shr_u); }
-  i64Eqz(): this { return this.op(OP.i64_eqz); }
-  i64Eq(): this { return this.op(OP.i64_eq); }
-  i64Ne(): this { return this.op(OP.i64_ne); }
-  i64LtS(): this { return this.op(OP.i64_lt_s); }
-  i64LtU(): this { return this.op(OP.i64_lt_u); }
-  i64ExtendI32S(): this { return this.op(OP.i64_extend_i32_s); }
-  i64ExtendI32U(): this { return this.op(OP.i64_extend_i32_u); }
-  i32WrapI64(): this { return this.op(OP.i32_wrap_i64); }
+  i64Add(): this {
+    return this.op(OP.i64_add);
+  }
+  i64Sub(): this {
+    return this.op(OP.i64_sub);
+  }
+  i64Mul(): this {
+    return this.op(OP.i64_mul);
+  }
+  i64DivS(): this {
+    return this.op(OP.i64_div_s);
+  }
+  i64DivU(): this {
+    return this.op(OP.i64_div_u);
+  }
+  i64RemS(): this {
+    return this.op(OP.i64_rem_s);
+  }
+  i64RemU(): this {
+    return this.op(OP.i64_rem_u);
+  }
+  i64And(): this {
+    return this.op(OP.i64_and);
+  }
+  i64Or(): this {
+    return this.op(OP.i64_or);
+  }
+  i64Xor(): this {
+    return this.op(OP.i64_xor);
+  }
+  i64Shl(): this {
+    return this.op(OP.i64_shl);
+  }
+  i64ShrS(): this {
+    return this.op(OP.i64_shr_s);
+  }
+  i64ShrU(): this {
+    return this.op(OP.i64_shr_u);
+  }
+  i64Eqz(): this {
+    return this.op(OP.i64_eqz);
+  }
+  i64Eq(): this {
+    return this.op(OP.i64_eq);
+  }
+  i64Ne(): this {
+    return this.op(OP.i64_ne);
+  }
+  i64LtS(): this {
+    return this.op(OP.i64_lt_s);
+  }
+  i64LtU(): this {
+    return this.op(OP.i64_lt_u);
+  }
+  i64ExtendI32S(): this {
+    return this.op(OP.i64_extend_i32_s);
+  }
+  i64ExtendI32U(): this {
+    return this.op(OP.i64_extend_i32_u);
+  }
+  i32WrapI64(): this {
+    return this.op(OP.i32_wrap_i64);
+  }
 
   // -- atomics ------------------------------------------------------------
   private atomic(sub: number, offset: number, align: number): this {
@@ -593,25 +701,59 @@ export class FuncEmitter {
     this.body.u8(0x00);
     return this;
   }
-  i32AtomicLoad(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_load, offset, align); }
-  i32AtomicLoad8u(offset = 0, align = 0): this { return this.atomic(ATOMIC.i32_load8_u, offset, align); }
-  i32AtomicLoad16u(offset = 0, align = 1): this { return this.atomic(ATOMIC.i32_load16_u, offset, align); }
-  i32AtomicStore(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_store, offset, align); }
-  i32AtomicStore8(offset = 0, align = 0): this { return this.atomic(ATOMIC.i32_store8, offset, align); }
-  i32AtomicStore16(offset = 0, align = 1): this { return this.atomic(ATOMIC.i32_store16, offset, align); }
-  i32AtomicAdd(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_add, offset, align); }
-  i32AtomicSub(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_sub, offset, align); }
-  i32AtomicAnd(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_and, offset, align); }
-  i32AtomicOr(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_or, offset, align); }
-  i32AtomicXor(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_xor, offset, align); }
-  i32AtomicXchg(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_xchg, offset, align); }
-  i32AtomicCmpxchg(offset = 0, align = 2): this { return this.atomic(ATOMIC.i32_rmw_cmpxchg, offset, align); }
-  i32AtomicRmw8AddU(offset = 0, align = 0): this { return this.atomic(ATOMIC.i32_rmw8_add_u, offset, align); }
-  i32AtomicRmw16AddU(offset = 0, align = 1): this { return this.atomic(ATOMIC.i32_rmw16_add_u, offset, align); }
+  i32AtomicLoad(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_load, offset, align);
+  }
+  i32AtomicLoad8u(offset = 0, align = 0): this {
+    return this.atomic(ATOMIC.i32_load8_u, offset, align);
+  }
+  i32AtomicLoad16u(offset = 0, align = 1): this {
+    return this.atomic(ATOMIC.i32_load16_u, offset, align);
+  }
+  i32AtomicStore(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_store, offset, align);
+  }
+  i32AtomicStore8(offset = 0, align = 0): this {
+    return this.atomic(ATOMIC.i32_store8, offset, align);
+  }
+  i32AtomicStore16(offset = 0, align = 1): this {
+    return this.atomic(ATOMIC.i32_store16, offset, align);
+  }
+  i32AtomicAdd(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_add, offset, align);
+  }
+  i32AtomicSub(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_sub, offset, align);
+  }
+  i32AtomicAnd(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_and, offset, align);
+  }
+  i32AtomicOr(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_or, offset, align);
+  }
+  i32AtomicXor(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_xor, offset, align);
+  }
+  i32AtomicXchg(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_xchg, offset, align);
+  }
+  i32AtomicCmpxchg(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.i32_rmw_cmpxchg, offset, align);
+  }
+  i32AtomicRmw8AddU(offset = 0, align = 0): this {
+    return this.atomic(ATOMIC.i32_rmw8_add_u, offset, align);
+  }
+  i32AtomicRmw16AddU(offset = 0, align = 1): this {
+    return this.atomic(ATOMIC.i32_rmw16_add_u, offset, align);
+  }
   /** addr, expected, timeout(ms) -> i32 status */
-  memoryAtomicWait32(offset = 0, align = 2): this { return this.atomic(ATOMIC.wait32, offset, align); }
+  memoryAtomicWait32(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.wait32, offset, align);
+  }
   /** addr, count -> i32 woken */
-  memoryAtomicNotify(offset = 0, align = 2): this { return this.atomic(ATOMIC.notify, offset, align); }
+  memoryAtomicNotify(offset = 0, align = 2): this {
+    return this.atomic(ATOMIC.notify, offset, align);
+  }
 
   // -- SIMD ---------------------------------------------------------------
   private simd(sub: number): this {
@@ -641,14 +783,30 @@ export class FuncEmitter {
     this.body.bytes(bytes);
     return this;
   }
-  i8x16Splat(): this { return this.simd(SIMD.i8x16_splat); }
-  i32x4Splat(): this { return this.simd(SIMD.i32x4_splat); }
-  i32x4Add(): this { return this.simd(SIMD.i32x4_add); }
-  i8x16Add(): this { return this.simd(SIMD.i8x16_add); }
-  v128And(): this { return this.simd(SIMD.v128_and); }
-  v128Or(): this { return this.simd(SIMD.v128_or); }
-  v128Xor(): this { return this.simd(SIMD.v128_xor); }
-  v128Bitselect(): this { return this.simd(SIMD.v128_bitselect); }
+  i8x16Splat(): this {
+    return this.simd(SIMD.i8x16_splat);
+  }
+  i32x4Splat(): this {
+    return this.simd(SIMD.i32x4_splat);
+  }
+  i32x4Add(): this {
+    return this.simd(SIMD.i32x4_add);
+  }
+  i8x16Add(): this {
+    return this.simd(SIMD.i8x16_add);
+  }
+  v128And(): this {
+    return this.simd(SIMD.v128_and);
+  }
+  v128Or(): this {
+    return this.simd(SIMD.v128_or);
+  }
+  v128Xor(): this {
+    return this.simd(SIMD.v128_xor);
+  }
+  v128Bitselect(): this {
+    return this.simd(SIMD.v128_bitselect);
+  }
   i8x16Shuffle(lanes: number[]): this {
     this.op(0xfd);
     this.body.uleb(SIMD.i8x16_shuffle);
@@ -706,7 +864,9 @@ export class WasmModuleBuilder {
   private startFunc: number | null = null;
 
   addType(params: ValType[], results: ValType[]): number {
-    const existing = this.types.findIndex((t) => t.params.join() === params.join() && t.results.join() === results.join());
+    const existing = this.types.findIndex(
+      (t) => t.params.join() === params.join() && t.results.join() === results.join(),
+    );
     if (existing >= 0) return existing;
     this.types.push({ params, results });
     return this.types.length - 1;
@@ -965,7 +1125,10 @@ export async function compileModule(
 }
 
 /** Synchronous compile+instantiate (used by the JIT hot path). */
-export function compileModuleSync(bytes: Uint8Array<ArrayBuffer>, imports?: WebAssembly.Imports): WebAssembly.Instance {
+export function compileModuleSync(
+  bytes: Uint8Array<ArrayBuffer>,
+  imports?: WebAssembly.Imports,
+): WebAssembly.Instance {
   const mod = new WebAssembly.Module(bytes);
   return new WebAssembly.Instance(mod, imports ?? {});
 }

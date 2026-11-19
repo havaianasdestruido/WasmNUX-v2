@@ -22,7 +22,13 @@ import { Interpreter, type MachinePort } from '../cpu/interp.ts';
 import type { GuestMemory } from '../machine/memory.ts';
 import { GLOBAL_NAMES } from './regfile.ts';
 import { buildCfg, formRegion, type BasicBlock, type Region } from './cfg.ts';
-import { DEFAULT_JIT_CONFIG, translateRegion, validateConfig, type JitConfig, type LinkTarget } from './codegen.ts';
+import {
+  DEFAULT_JIT_CONFIG,
+  translateRegion,
+  validateConfig,
+  type JitConfig,
+  type LinkTarget,
+} from './codegen.ts';
 import { G, RegFile } from './regfile.ts';
 import { WasmModuleBuilder, compileModuleSync, createFuncTable } from './wasm/encoder.ts';
 
@@ -196,7 +202,7 @@ export class JitCodeCache {
   remove(pc: number): void {
     const key = pc >>> 0;
     this.index.delete(key);
-    const i = this.records.findIndex((r) => (r.pc >>> 0) === key);
+    const i = this.records.findIndex((r) => r.pc >>> 0 === key);
     if (i >= 0) this.records.splice(i, 1);
   }
 
@@ -326,7 +332,12 @@ export class Engine {
       if (seen.has(ep.region)) continue;
       if (ep.entryBlock !== 0) continue;
       seen.add(ep.region);
-      out.push({ pc, bytes: ep.region.moduleBytes, blocks: [...ep.region.blocks.keys()].sort((a, b) => a - b), optimized: ep.region.optimized });
+      out.push({
+        pc,
+        bytes: ep.region.moduleBytes,
+        blocks: [...ep.region.blocks.keys()].sort((a, b) => a - b),
+        optimized: ep.region.optimized,
+      });
     }
     return out;
   }
@@ -393,7 +404,7 @@ export class Engine {
       if (cpu.stop !== 'running') break;
       const after = cpu.pc >>> 0;
       // Any non-sequential transfer marks its target hot (loops heat fastest).
-      if (after !== ((before + 4) >>> 0)) {
+      if (after !== (before + 4) >>> 0) {
         const h = (this.heat.get(after) ?? 0) + 1;
         this.heat.set(after, h);
         // Join compiled code at the earliest safe point. Checking only on control
@@ -440,7 +451,11 @@ export class Engine {
   }
 
   /** Follow compiled regions until the host is needed. */
-  private runCompiled(cpu: CpuState, entry: EntryPoint, budget: number): { remaining: number; leftJit: boolean; stop: boolean } {
+  private runCompiled(
+    cpu: CpuState,
+    entry: EntryPoint,
+    budget: number,
+  ): { remaining: number; leftJit: boolean; stop: boolean } {
     let current = entry;
     let b = budget;
     let hops = 0;
@@ -707,7 +722,10 @@ export class Engine {
     try {
       const instance = compileModuleSync(bytes as Uint8Array<ArrayBuffer>, imports);
       this.stats.instantiateMs += performance.now() - startedAt;
-      const raw = instance.exports['r0'] as WebAssembly.ExportValue as (entryBlock: number, budget: number) => unknown;
+      const raw = instance.exports['r0'] as WebAssembly.ExportValue as (
+        entryBlock: number,
+        budget: number,
+      ) => unknown;
       const slot = this.allocateSlot(raw as unknown as WebAssembly.ExportValue);
       const region: CompiledRegion = {
         call: makeCaller(raw),
@@ -925,7 +943,9 @@ export class Engine {
  * `memory` regalloc variant used in some probes) may return a single value.
  * Normalising here keeps the hot loop branch-free in spirit and correct in fact.
  */
-function makeCaller(raw: (...args: number[]) => unknown): (entryBlock: number, budget: number) => { reason: number; budget: number } {
+function makeCaller(
+  raw: (...args: number[]) => unknown,
+): (entryBlock: number, budget: number) => { reason: number; budget: number } {
   return (entryBlock: number, budget: number) => {
     const out = raw(entryBlock, budget) as unknown;
     if (Array.isArray(out)) return { reason: out[0] as number, budget: out[1] as number };

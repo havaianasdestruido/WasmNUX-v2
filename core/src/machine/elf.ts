@@ -60,7 +60,13 @@ export function parseElf32(bytes: Uint8Array): ElfImage {
     const flags = dv.getUint32(off + 24, true);
     if (fileOffset + fileSize > bytes.length) throw new ElfError(`PT_LOAD ${i} extends past end of file`);
     if (memSize < fileSize) throw new ElfError(`PT_LOAD ${i} has p_memsz < p_filesz`);
-    segments.push({ vaddr, bytes: bytes.subarray(fileOffset, fileOffset + fileSize), fileSize, memSize, flags });
+    segments.push({
+      vaddr,
+      bytes: bytes.subarray(fileOffset, fileOffset + fileSize),
+      fileSize,
+      memSize,
+      flags,
+    });
     lo = Math.min(lo, vaddr);
     hi = Math.max(hi, vaddr + memSize);
   }

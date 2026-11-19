@@ -52,7 +52,10 @@ export class Uart implements Device {
   private dll = 0x0c;
   private dlm = 0;
 
-  constructor(private readonly sink: UartSink, base = UART_BASE) {
+  constructor(
+    private readonly sink: UartSink,
+    base = UART_BASE,
+  ) {
     this.base = base;
   }
 
@@ -103,12 +106,18 @@ export class Uart implements Device {
         if (this.rxInterrupt) return 0x04; // IIR: RDA, no FIFO status bits set
         return 0x01;
       }
-      case R.LCR: return this.lcr;
-      case R.MCR: return this.mcr;
-      case R.LSR: return this.lsr();
-      case R.MSR: return 0;
-      case R.SCR: return this.scr;
-      default: return 0;
+      case R.LCR:
+        return this.lcr;
+      case R.MCR:
+        return this.mcr;
+      case R.LSR:
+        return this.lsr();
+      case R.MSR:
+        return 0;
+      case R.SCR:
+        return this.scr;
+      default:
+        return 0;
     }
   }
 

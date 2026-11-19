@@ -190,7 +190,7 @@ export class RegionCodegen {
     const f = this.f;
     if (r === 0) {
       f.drop(); // x0 is hardwired zero; nothing ever reads its slot
-    } else if (this.ctx.cfg.regalloc === "memory") {
+    } else if (this.ctx.cfg.regalloc === 'memory') {
       f.localSet(this.lT2);
       f.i32(this.slotAddr(r));
       f.localGet(this.lT2);
@@ -203,7 +203,11 @@ export class RegionCodegen {
 
   private setPc(pc: number): void {
     if (this.ctx.cfg.regalloc === 'globals') this.f.i32(pc | 0).globalSet(G.PC);
-    else this.f.i32(this.slotAddr(G.PC)).i32(pc | 0).i32Store(0, 2);
+    else
+      this.f
+        .i32(this.slotAddr(G.PC))
+        .i32(pc | 0)
+        .i32Store(0, 2);
   }
 
   private setPcFromT0(): void {
@@ -226,7 +230,11 @@ export class RegionCodegen {
 
   private setSlotConst(slot: number, value: number): void {
     if (this.ctx.cfg.regalloc === 'globals') this.f.i32(value | 0).globalSet(slot);
-    else this.f.i32(this.slotAddr(slot)).i32(value | 0).i32Store(0, 2);
+    else
+      this.f
+        .i32(this.slotAddr(slot))
+        .i32(value | 0)
+        .i32Store(0, 2);
   }
 
   private setSlotFromReg(slot: number, r: number): void {
@@ -272,7 +280,10 @@ export class RegionCodegen {
     f.block('void'); // $budgetExit
     for (let i = 0; i < this.n; i++) f.block('void'); // $b_{n-1} .. $b_0
     f.localGet(0);
-    f.brTable(Array.from({ length: this.n }, (_, i) => i), this.n + 3);
+    f.brTable(
+      Array.from({ length: this.n }, (_, i) => i),
+      this.n + 3,
+    );
     for (let i = 0; i < this.n; i++) {
       f.end(); // closes $b_i; body i follows
       this.cur = i;
@@ -341,7 +352,7 @@ export class RegionCodegen {
 
   private emitEdge(target: number): void {
     const { region, cfg, links } = this.ctx;
-    const local = region.blocks.findIndex((b) => b.start === (target >>> 0));
+    const local = region.blocks.findIndex((b) => b.start === target >>> 0);
     if (local >= 0) {
       if (local > this.cur) {
         this.f.br(this.depthToBlock(local));
@@ -393,10 +404,13 @@ export class RegionCodegen {
         const last = block.insns[block.insns.length - 1]!;
         this.setPc(block.exit.pc);
         const reason =
-          last.mnemonic === 'ecall' ? EXIT.SYSCALL
-          : last.mnemonic === 'ebreak' ? EXIT.BREAK
-          : last.mnemonic === 'wfi' ? EXIT.IDLE
-          : EXIT.RETIRE;
+          last.mnemonic === 'ecall'
+            ? EXIT.SYSCALL
+            : last.mnemonic === 'ebreak'
+              ? EXIT.BREAK
+              : last.mnemonic === 'wfi'
+                ? EXIT.IDLE
+                : EXIT.RETIRE;
         this.f.i32(reason).localSet(this.lReason);
         this.f.br(this.depthToExitLoop());
         this.terminated = true;
@@ -423,26 +437,52 @@ export class RegionCodegen {
       this.readReg(d.rs1);
       this.readReg(d.rs2);
       switch (d.mnemonic) {
-        case 'beq': f.i32Eq(); break;
-        case 'bne': f.i32Ne(); break;
-        case 'blt': f.i32LtS(); break;
-        case 'bge': f.i32GeS(); break;
-        case 'bltu': f.i32LtU(); break;
-        case 'bgeu': f.i32GeU(); break;
-        default: throw new Error(`not a branch: ${d.mnemonic}`);
+        case 'beq':
+          f.i32Eq();
+          break;
+        case 'bne':
+          f.i32Ne();
+          break;
+        case 'blt':
+          f.i32LtS();
+          break;
+        case 'bge':
+          f.i32GeS();
+          break;
+        case 'bltu':
+          f.i32LtU();
+          break;
+        case 'bgeu':
+          f.i32GeU();
+          break;
+        default:
+          throw new Error(`not a branch: ${d.mnemonic}`);
       }
     };
     const cmpInverted = () => {
       this.readReg(d.rs1);
       this.readReg(d.rs2);
       switch (d.mnemonic) {
-        case 'beq': f.i32Ne(); break;
-        case 'bne': f.i32Eq(); break;
-        case 'blt': f.i32GeS(); break;
-        case 'bge': f.i32LtS(); break;
-        case 'bltu': f.i32GeU(); break;
-        case 'bgeu': f.i32LtU(); break;
-        default: throw new Error(`not a branch: ${d.mnemonic}`);
+        case 'beq':
+          f.i32Ne();
+          break;
+        case 'bne':
+          f.i32Eq();
+          break;
+        case 'blt':
+          f.i32GeS();
+          break;
+        case 'bge':
+          f.i32LtS();
+          break;
+        case 'bltu':
+          f.i32GeU();
+          break;
+        case 'bgeu':
+          f.i32LtU();
+          break;
+        default:
+          throw new Error(`not a branch: ${d.mnemonic}`);
       }
     };
 
@@ -475,12 +515,18 @@ export class RegionCodegen {
 
   private foldBranch(mnem: string, a: number, b: number): boolean {
     switch (mnem) {
-      case 'beq': return a === b;
-      case 'bne': return a !== b;
-      case 'blt': return a < b;
-      case 'bge': return a >= b;
-      case 'bltu': return (a >>> 0) < (b >>> 0);
-      default: return (a >>> 0) >= (b >>> 0);
+      case 'beq':
+        return a === b;
+      case 'bne':
+        return a !== b;
+      case 'blt':
+        return a < b;
+      case 'bge':
+        return a >= b;
+      case 'bltu':
+        return a >>> 0 < b >>> 0;
+      default:
+        return a >>> 0 >= b >>> 0;
     }
   }
 
@@ -519,19 +565,39 @@ export class RegionCodegen {
         return;
       }
       case 'slti':
-        this.binaryImm(d, () => f.i32LtS(), (x, imm) => (x < imm ? 1 : 0));
+        this.binaryImm(
+          d,
+          () => f.i32LtS(),
+          (x, imm) => (x < imm ? 1 : 0),
+        );
         return;
       case 'sltiu':
-        this.binaryImm(d, () => f.i32LtU(), (x, imm) => ((x >>> 0) < (imm >>> 0) ? 1 : 0));
+        this.binaryImm(
+          d,
+          () => f.i32LtU(),
+          (x, imm) => (x >>> 0 < imm >>> 0 ? 1 : 0),
+        );
         return;
       case 'xori':
-        this.binaryImm(d, () => f.i32Xor(), (x, imm) => x ^ imm);
+        this.binaryImm(
+          d,
+          () => f.i32Xor(),
+          (x, imm) => x ^ imm,
+        );
         return;
       case 'ori':
-        this.binaryImm(d, () => f.i32Or(), (x, imm) => x | imm);
+        this.binaryImm(
+          d,
+          () => f.i32Or(),
+          (x, imm) => x | imm,
+        );
         return;
       case 'andi':
-        this.binaryImm(d, () => f.i32And(), (x, imm) => x & imm);
+        this.binaryImm(
+          d,
+          () => f.i32And(),
+          (x, imm) => x & imm,
+        );
         return;
       case 'slli':
       case 'srli':
@@ -539,7 +605,8 @@ export class RegionCodegen {
         const shamt = d.imm & 31;
         const src = this.known(d.rs1);
         if (src !== undefined) {
-          const v = d.mnemonic === 'slli' ? (src << shamt) | 0 : d.mnemonic === 'srli' ? src >>> shamt : src >> shamt;
+          const v =
+            d.mnemonic === 'slli' ? (src << shamt) | 0 : d.mnemonic === 'srli' ? src >>> shamt : src >> shamt;
           f.i32(v);
           this.writeReg(d.rd, v);
           return;
@@ -554,17 +621,83 @@ export class RegionCodegen {
         this.writeReg(d.rd);
         return;
       }
-      case 'add': this.binaryReg(d, () => f.i32Add(), (x, y) => (x + y) | 0); return;
-      case 'sub': this.binaryReg(d, () => f.i32Sub(), (x, y) => (x - y) | 0); return;
-      case 'sll': this.binaryReg(d, () => f.i32Shl(), (x, y) => (x << (y & 31)) | 0); return;
-      case 'srl': this.binaryReg(d, () => f.i32ShrU(), (x, y) => x >>> (y & 31)); return;
-      case 'sra': this.binaryReg(d, () => f.i32ShrS(), (x, y) => x >> (y & 31)); return;
-      case 'xor': this.binaryReg(d, () => f.i32Xor(), (x, y) => x ^ y); return;
-      case 'or': this.binaryReg(d, () => f.i32Or(), (x, y) => x | y); return;
-      case 'and': this.binaryReg(d, () => f.i32And(), (x, y) => x & y); return;
-      case 'slt': this.binaryReg(d, () => f.i32LtS(), (x, y) => (x < y ? 1 : 0)); return;
-      case 'sltu': this.binaryReg(d, () => f.i32LtU(), (x, y) => ((x >>> 0) < (y >>> 0) ? 1 : 0)); return;
-      case 'mul': this.binaryReg(d, () => f.i32Mul(), (x, y) => Math.imul(x, y)); return;
+      case 'add':
+        this.binaryReg(
+          d,
+          () => f.i32Add(),
+          (x, y) => (x + y) | 0,
+        );
+        return;
+      case 'sub':
+        this.binaryReg(
+          d,
+          () => f.i32Sub(),
+          (x, y) => (x - y) | 0,
+        );
+        return;
+      case 'sll':
+        this.binaryReg(
+          d,
+          () => f.i32Shl(),
+          (x, y) => (x << (y & 31)) | 0,
+        );
+        return;
+      case 'srl':
+        this.binaryReg(
+          d,
+          () => f.i32ShrU(),
+          (x, y) => x >>> (y & 31),
+        );
+        return;
+      case 'sra':
+        this.binaryReg(
+          d,
+          () => f.i32ShrS(),
+          (x, y) => x >> (y & 31),
+        );
+        return;
+      case 'xor':
+        this.binaryReg(
+          d,
+          () => f.i32Xor(),
+          (x, y) => x ^ y,
+        );
+        return;
+      case 'or':
+        this.binaryReg(
+          d,
+          () => f.i32Or(),
+          (x, y) => x | y,
+        );
+        return;
+      case 'and':
+        this.binaryReg(
+          d,
+          () => f.i32And(),
+          (x, y) => x & y,
+        );
+        return;
+      case 'slt':
+        this.binaryReg(
+          d,
+          () => f.i32LtS(),
+          (x, y) => (x < y ? 1 : 0),
+        );
+        return;
+      case 'sltu':
+        this.binaryReg(
+          d,
+          () => f.i32LtU(),
+          (x, y) => (x >>> 0 < y >>> 0 ? 1 : 0),
+        );
+        return;
+      case 'mul':
+        this.binaryReg(
+          d,
+          () => f.i32Mul(),
+          (x, y) => Math.imul(x, y),
+        );
+        return;
       case 'mulh':
       case 'mulhu':
       case 'mulhsu': {
@@ -589,10 +722,16 @@ export class RegionCodegen {
       case 'remu':
         this.emitDivRem(d);
         return;
-      case 'lb': case 'lh': case 'lw': case 'lbu': case 'lhu':
+      case 'lb':
+      case 'lh':
+      case 'lw':
+      case 'lbu':
+      case 'lhu':
         this.emitLoad(d, addr);
         return;
-      case 'sb': case 'sh': case 'sw':
+      case 'sb':
+      case 'sh':
+      case 'sw':
         this.emitStore(d, addr);
         return;
       case 'jal':
@@ -618,7 +757,12 @@ export class RegionCodegen {
         }
         return;
       }
-      case 'beq': case 'bne': case 'blt': case 'bge': case 'bltu': case 'bgeu':
+      case 'beq':
+      case 'bne':
+      case 'blt':
+      case 'bge':
+      case 'bltu':
+      case 'bgeu':
         return; // emitted by emitExit via emitBranch
       case 'fence':
         return; // JS has nothing to order; cross-worker ordering uses atomics
@@ -744,10 +888,17 @@ export class RegionCodegen {
       f.localGet(this.lT0);
       f.localGet(this.lT1);
       switch (d.mnemonic) {
-        case 'div': f.i32DivS(); break;
-        case 'divu': f.i32DivU(); break;
-        case 'rem': f.i32RemS(); break;
-        default: f.i32RemU();
+        case 'div':
+          f.i32DivS();
+          break;
+        case 'divu':
+          f.i32DivU();
+          break;
+        case 'rem':
+          f.i32RemS();
+          break;
+        default:
+          f.i32RemU();
       }
     }
     if (!divisorSafe) {
@@ -832,16 +983,26 @@ export class RegionCodegen {
 
   private emitLoad(d: Decoded, addr: number): void {
     const f = this.f;
-    const size = d.mnemonic === 'lb' || d.mnemonic === 'lbu' ? 1 : d.mnemonic === 'lh' || d.mnemonic === 'lhu' ? 2 : 4;
+    const size =
+      d.mnemonic === 'lb' || d.mnemonic === 'lbu' ? 1 : d.mnemonic === 'lh' || d.mnemonic === 'lhu' ? 2 : 4;
     const folded = this.pushAddress(d, size, addr);
     if (this.terminated) return;
     const off = folded ?? 0;
     switch (d.mnemonic) {
-      case 'lb': f.i32Load8s(off, 0); break;
-      case 'lbu': f.i32Load8u(off, 0); break;
-      case 'lh': f.i32Load16s(off, 1); break;
-      case 'lhu': f.i32Load16u(off, 1); break;
-      default: f.i32Load(off, 2);
+      case 'lb':
+        f.i32Load8s(off, 0);
+        break;
+      case 'lbu':
+        f.i32Load8u(off, 0);
+        break;
+      case 'lh':
+        f.i32Load16s(off, 1);
+        break;
+      case 'lhu':
+        f.i32Load16u(off, 1);
+        break;
+      default:
+        f.i32Load(off, 2);
     }
     this.writeReg(d.rd);
   }
@@ -854,9 +1015,14 @@ export class RegionCodegen {
     this.readReg(d.rs2); // [ramAddr, value] - exactly what i32.store wants
     const off = folded ?? 0;
     switch (d.mnemonic) {
-      case 'sb': f.i32Store8(off, 0); break;
-      case 'sh': f.i32Store16(off, 1); break;
-      default: f.i32Store(off, 2);
+      case 'sb':
+        f.i32Store8(off, 0);
+        break;
+      case 'sh':
+        f.i32Store16(off, 1);
+        break;
+      default:
+        f.i32Store(off, 2);
     }
   }
 
@@ -941,12 +1107,23 @@ export class RegionCodegen {
       f.localGet(this.lT0);
       f.localGet(this.lT2);
       switch (f5) {
-        case AMO5_ADD: f.i32AtomicAdd(0, 2); break;
-        case AMO5_SWAP: f.i32AtomicXchg(0, 2); break;
-        case AMO5_XOR: f.i32AtomicXor(0, 2); break;
-        case AMO5_OR: f.i32AtomicOr(0, 2); break;
-        case AMO5_AND: f.i32AtomicAnd(0, 2); break;
-        default: throw new Error(`unsupported atomic ${d.mnemonic}`);
+        case AMO5_ADD:
+          f.i32AtomicAdd(0, 2);
+          break;
+        case AMO5_SWAP:
+          f.i32AtomicXchg(0, 2);
+          break;
+        case AMO5_XOR:
+          f.i32AtomicXor(0, 2);
+          break;
+        case AMO5_OR:
+          f.i32AtomicOr(0, 2);
+          break;
+        case AMO5_AND:
+          f.i32AtomicAnd(0, 2);
+          break;
+        default:
+          throw new Error(`unsupported atomic ${d.mnemonic}`);
       }
       f.localSet(this.lT1); // old value -> rd
     } else {
@@ -967,11 +1144,20 @@ export class RegionCodegen {
         f.localGet(this.lT1);
         this.readReg(d.rs2);
         switch (f5) {
-          case AMO5_ADD: f.i32Add(); break;
-          case AMO5_XOR: f.i32Xor(); break;
-          case AMO5_OR: f.i32Or(); break;
-          case AMO5_AND: f.i32And(); break;
-          default: throw new Error(`unsupported amo ${d.mnemonic}`);
+          case AMO5_ADD:
+            f.i32Add();
+            break;
+          case AMO5_XOR:
+            f.i32Xor();
+            break;
+          case AMO5_OR:
+            f.i32Or();
+            break;
+          case AMO5_AND:
+            f.i32And();
+            break;
+          default:
+            throw new Error(`unsupported amo ${d.mnemonic}`);
         }
       }
       f.i32Store(0, 2);

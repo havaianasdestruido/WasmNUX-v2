@@ -271,11 +271,11 @@ export class Machine implements MachinePort {
     if (cause < 0) return false;
 
     this.cpu.writeCsr(CSR.mepc, this.cpu.pc);
-    this.cpu.writeCsr(CSR.mcause, (0x80000000 | cause) | 0);
+    this.cpu.writeCsr(CSR.mcause, 0x80000000 | cause | 0);
     this.cpu.writeCsr(CSR.mtval, 0);
     this.cpu.writeCsr(CSR.mip, mip & ~(1 << cause));
     // Trap entry clears MIE and remembers it in MPIE.
-    this.cpu.writeCsr(CSR.mstatus, ((mstatus & ~(1 << 3)) | ((mstatus & (1 << 3)) << 4)) | 0);
+    this.cpu.writeCsr(CSR.mstatus, (mstatus & ~(1 << 3)) | ((mstatus & (1 << 3)) << 4) | 0);
     const mtvec = this.cpu.readCsr(CSR.mtvec) >>> 0;
     this.cpu.pc = (mtvec & ~3) >>> 0; // direct mode; vectored mode is Phase 1
     this.engine.invalidateAll('interrupt');

@@ -123,12 +123,24 @@ export class Interpreter {
         const b = regs[rs2]!;
         let taken = false;
         switch (f3) {
-          case F3_BEQ: taken = a === b; break;
-          case F3_BNE: taken = a !== b; break;
-          case F3_BLT: taken = a < b; break;
-          case F3_BGE: taken = a >= b; break;
-          case F3_BLTU: taken = (a >>> 0) < (b >>> 0); break;
-          case F3_BGEU: taken = (a >>> 0) >= (b >>> 0); break;
+          case F3_BEQ:
+            taken = a === b;
+            break;
+          case F3_BNE:
+            taken = a !== b;
+            break;
+          case F3_BLT:
+            taken = a < b;
+            break;
+          case F3_BGE:
+            taken = a >= b;
+            break;
+          case F3_BLTU:
+            taken = a >>> 0 < b >>> 0;
+            break;
+          case F3_BGEU:
+            taken = a >>> 0 >= b >>> 0;
+            break;
           default:
             this.illegal(cpu, instr, pc);
             return;
@@ -154,26 +166,46 @@ export class Interpreter {
         const imm = immI(instr);
         let result: number;
         switch (f3) {
-          case 0b000: result = (a + imm) | 0; break; // addi
-          case 0b001: { // slli
+          case 0b000:
+            result = (a + imm) | 0;
+            break; // addi
+          case 0b001: {
+            // slli
             const sh = (instr >>> 20) & 0x1f;
-            if (funct7(instr) !== 0) { this.illegal(cpu, instr, pc); return; }
+            if (funct7(instr) !== 0) {
+              this.illegal(cpu, instr, pc);
+              return;
+            }
             result = (a << sh) | 0;
             break;
           }
-          case 0b010: result = a < imm ? 1 : 0; break; // slti
-          case 0b011: result = (a >>> 0) < (imm >>> 0) ? 1 : 0; break; // sltiu
-          case 0b100: result = a ^ imm; break; // xori
-          case 0b101: { // srli / srai
+          case 0b010:
+            result = a < imm ? 1 : 0;
+            break; // slti
+          case 0b011:
+            result = a >>> 0 < imm >>> 0 ? 1 : 0;
+            break; // sltiu
+          case 0b100:
+            result = a ^ imm;
+            break; // xori
+          case 0b101: {
+            // srli / srai
             const sh = (instr >>> 20) & 0x1f;
             const f7 = funct7(instr);
             if (f7 === 0) result = a >>> sh;
             else if (f7 === 0x20) result = a >> sh;
-            else { this.illegal(cpu, instr, pc); return; }
+            else {
+              this.illegal(cpu, instr, pc);
+              return;
+            }
             break;
           }
-          case 0b110: result = a | imm; break; // ori
-          case 0b111: result = a & imm; break; // andi
+          case 0b110:
+            result = a | imm;
+            break; // ori
+          case 0b111:
+            result = a & imm;
+            break; // andi
           default:
             this.illegal(cpu, instr, pc);
             return;
@@ -189,10 +221,18 @@ export class Interpreter {
         if (f7 === 0x01) {
           // M extension
           switch (f3) {
-            case 0b000: result = Math.imul(a, b); break; // mul
-            case 0b001: result = mulh(a, b, false, false); break; // mulh
-            case 0b010: result = mulh(a, b, false, true); break; // mulhsu
-            case 0b011: result = mulh(a, b, true, true); break; // mulhu
+            case 0b000:
+              result = Math.imul(a, b);
+              break; // mul
+            case 0b001:
+              result = mulh(a, b, false, false);
+              break; // mulh
+            case 0b010:
+              result = mulh(a, b, false, true);
+              break; // mulhsu
+            case 0b011:
+              result = mulh(a, b, true, true);
+              break; // mulhu
             case 0b100: // div
               if (b === 0) result = -1;
               else if (a === -2147483648 && b === -1) result = -2147483648;
@@ -217,30 +257,52 @@ export class Interpreter {
           }
         } else if (f7 === 0x00 || f7 === 0x20) {
           switch (f3) {
-            case 0b000: result = f7 === 0 ? (a + b) | 0 : (a - b) | 0; break;
+            case 0b000:
+              result = f7 === 0 ? (a + b) | 0 : (a - b) | 0;
+              break;
             case 0b001:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
               result = (a << (b & 31)) | 0;
               break;
             case 0b010:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
               result = a < b ? 1 : 0;
               break;
             case 0b011:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
-              result = (a >>> 0) < (b >>> 0) ? 1 : 0;
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
+              result = a >>> 0 < b >>> 0 ? 1 : 0;
               break;
             case 0b100:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
               result = a ^ b;
               break;
-            case 0b101: result = f7 === 0 ? a >>> (b & 31) : a >> (b & 31); break;
+            case 0b101:
+              result = f7 === 0 ? a >>> (b & 31) : a >> (b & 31);
+              break;
             case 0b110:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
               result = a | b;
               break;
             case 0b111:
-              if (f7 !== 0) { this.illegal(cpu, instr, pc); return; }
+              if (f7 !== 0) {
+                this.illegal(cpu, instr, pc);
+                return;
+              }
               result = a & b;
               break;
             default:
@@ -304,15 +366,28 @@ export class Interpreter {
         const src = f3 >= 0b101 ? (instr >>> 15) & 0x1f : regs[rs1]!;
         let value = old;
         switch (f3) {
-          case 0b001: case 0b101: value = src; break; // csrrw(i)
-          case 0b010: case 0b110: value = old | src; break; // csrrs(i)
-          case 0b011: case 0b111: value = old & ~src; break; // csrrc(i)
+          case 0b001:
+          case 0b101:
+            value = src;
+            break; // csrrw(i)
+          case 0b010:
+          case 0b110:
+            value = old | src;
+            break; // csrrs(i)
+          case 0b011:
+          case 0b111:
+            value = old & ~src;
+            break; // csrrc(i)
           default:
             this.illegal(cpu, instr, pc);
             return;
         }
         // csrrs/csrrc with rs1=x0 must not write (a read-only CSR stays read-only).
-        const writes = f3 === 0b001 || f3 === 0b101 || ((f3 === 0b010 || f3 === 0b110) && src !== 0) || ((f3 === 0b011 || f3 === 0b111) && src !== 0);
+        const writes =
+          f3 === 0b001 ||
+          f3 === 0b101 ||
+          ((f3 === 0b010 || f3 === 0b110) && src !== 0) ||
+          ((f3 === 0b011 || f3 === 0b111) && src !== 0);
         if (writes) cpu.writeCsr(addrCsr, value);
         if (rd) regs[rd] = old;
         break;
@@ -349,11 +424,16 @@ export class Interpreter {
     }
     try {
       switch (f3) {
-        case 0b000: return mem.view.getInt8(off);
-        case 0b001: return mem.view.getInt16(off, true);
-        case 0b010: return mem.view.getInt32(off, true);
-        case 0b100: return mem.u8[off]!;
-        case 0b101: return mem.view.getUint16(off, true);
+        case 0b000:
+          return mem.view.getInt8(off);
+        case 0b001:
+          return mem.view.getInt16(off, true);
+        case 0b010:
+          return mem.view.getInt32(off, true);
+        case 0b100:
+          return mem.u8[off]!;
+        case 0b101:
+          return mem.view.getUint16(off, true);
         default:
           this.illegal(cpu, 0, pc);
           return 0;
@@ -374,9 +454,15 @@ export class Interpreter {
     }
     try {
       switch (f3) {
-        case 0b000: mem.u8[off] = value & 0xff; break;
-        case 0b001: mem.view.setUint16(off, value & 0xffff, true); break;
-        case 0b010: mem.view.setUint32(off, value >>> 0, true); break;
+        case 0b000:
+          mem.u8[off] = value & 0xff;
+          break;
+        case 0b001:
+          mem.view.setUint16(off, value & 0xffff, true);
+          break;
+        case 0b010:
+          mem.view.setUint32(off, value >>> 0, true);
+          break;
         default:
           this.illegal(cpu, 0, pc);
       }
@@ -426,11 +512,21 @@ export class Interpreter {
     }
     let old: number;
     switch (f5) {
-      case AMO5_SWAP: old = Atomics.exchange(mem.i32, idx, src); break;
-      case AMO5_ADD: old = Atomics.add(mem.i32, idx, src); break;
-      case AMO5_XOR: old = Atomics.xor(mem.i32, idx, src); break;
-      case AMO5_OR: old = Atomics.or(mem.i32, idx, src); break;
-      case AMO5_AND: old = Atomics.and(mem.i32, idx, src); break;
+      case AMO5_SWAP:
+        old = Atomics.exchange(mem.i32, idx, src);
+        break;
+      case AMO5_ADD:
+        old = Atomics.add(mem.i32, idx, src);
+        break;
+      case AMO5_XOR:
+        old = Atomics.xor(mem.i32, idx, src);
+        break;
+      case AMO5_OR:
+        old = Atomics.or(mem.i32, idx, src);
+        break;
+      case AMO5_AND:
+        old = Atomics.and(mem.i32, idx, src);
+        break;
       case AMO5_MIN: {
         old = Atomics.load(mem.i32, idx);
         const v = Math.min(old, src);
@@ -449,7 +545,7 @@ export class Interpreter {
       }
       case AMO5_MINU: {
         old = Atomics.load(mem.i32, idx);
-        const v = (old >>> 0) < (src >>> 0) ? old : src;
+        const v = old >>> 0 < src >>> 0 ? old : src;
         while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
@@ -457,7 +553,7 @@ export class Interpreter {
       }
       case AMO5_MAXU: {
         old = Atomics.load(mem.i32, idx);
-        const v = (old >>> 0) > (src >>> 0) ? old : src;
+        const v = old >>> 0 > src >>> 0 ? old : src;
         while (Atomics.compareExchange(mem.i32, idx, old, v) !== old) {
           old = Atomics.load(mem.i32, idx);
         }
@@ -494,9 +590,12 @@ export class Interpreter {
 export function signExtend(value: number, size: number, signed: boolean): number {
   if (!signed) return value >>> 0;
   switch (size) {
-    case 1: return (value << 24) >> 24;
-    case 2: return (value << 16) >> 16;
-    default: return value | 0;
+    case 1:
+      return (value << 24) >> 24;
+    case 2:
+      return (value << 16) >> 16;
+    default:
+      return value | 0;
   }
 }
 

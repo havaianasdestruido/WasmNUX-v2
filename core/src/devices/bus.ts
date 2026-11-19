@@ -79,8 +79,11 @@ export class DeviceBus {
 /** Mask a write to the accessed width, the way real hardware would. */
 export function truncate(value: number, size: number): number {
   switch (size) {
-    case 1: return value & 0xff;
-    case 2: return value & 0xffff;
-    default: return value | 0;
+    case 1:
+      return value & 0xff;
+    case 2:
+      return value & 0xffff;
+    default:
+      return value | 0;
   }
 }

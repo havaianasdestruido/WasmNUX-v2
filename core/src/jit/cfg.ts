@@ -207,7 +207,11 @@ export interface RegionOptions {
  * and it keeps control flow inside Wasm instead of bouncing through the JS
  * dispatcher - the single largest overhead the spike measures.
  */
-export function formRegion(blocks: Map<number, BasicBlock>, entry: number, opts: RegionOptions): Region | null {
+export function formRegion(
+  blocks: Map<number, BasicBlock>,
+  entry: number,
+  opts: RegionOptions,
+): Region | null {
   const start = blocks.get(entry >>> 0);
   if (!start) return null;
   const region: BasicBlock[] = [];

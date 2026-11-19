@@ -10,7 +10,17 @@
 
 import { describe, expect, it } from 'vitest';
 import { AsmError, CSR_ALIASES, assemble } from '../src/cpu/asm.ts';
-import { decode, disasm, immU, opcode, OP_LUI, OP_LOAD, OP_STORE, OP_SYSTEM, funct3 } from '../src/cpu/encoding.ts';
+import {
+  decode,
+  disasm,
+  immU,
+  opcode,
+  OP_LUI,
+  OP_LOAD,
+  OP_STORE,
+  OP_SYSTEM,
+  funct3,
+} from '../src/cpu/encoding.ts';
 import { RAM_BASE, runInterpreted, EXIT } from './helpers.ts';
 
 /** Assemble one line and return the first word. */
@@ -53,13 +63,23 @@ describe('encodings', () => {
   it('encodes loads and stores with every funct3, including zero', () => {
     // Regression: lb/sb have funct3 == 0 and were once dropped by a truthiness
     // test, which made them "unknown instruction".
-    for (const [mnem, f3] of [['lb', 0], ['lh', 1], ['lw', 2], ['lbu', 4], ['lhu', 5]] as const) {
+    for (const [mnem, f3] of [
+      ['lb', 0],
+      ['lh', 1],
+      ['lw', 2],
+      ['lbu', 4],
+      ['lhu', 5],
+    ] as const) {
       const w = word(`${mnem} x1, 8(x2)`);
       expect(opcode(w)).toBe(OP_LOAD);
       expect(funct3(w)).toBe(f3);
       expect(decode(w, 0).imm).toBe(8);
     }
-    for (const [mnem, f3] of [['sb', 0], ['sh', 1], ['sw', 2]] as const) {
+    for (const [mnem, f3] of [
+      ['sb', 0],
+      ['sh', 1],
+      ['sw', 2],
+    ] as const) {
       const w = word(`${mnem} x1, -4(x2)`);
       expect(opcode(w)).toBe(OP_STORE);
       expect(funct3(w)).toBe(f3);
@@ -106,7 +126,19 @@ describe('encodings', () => {
 
   it('encodes every AMO mnemonic to a distinct funct5', () => {
     const seen = new Map<number, string>();
-    for (const m of ['lr.w', 'sc.w', 'amoswap.w', 'amoadd.w', 'amoxor.w', 'amoor.w', 'amoand.w', 'amomin.w', 'amomax.w', 'amominu.w', 'amomaxu.w']) {
+    for (const m of [
+      'lr.w',
+      'sc.w',
+      'amoswap.w',
+      'amoadd.w',
+      'amoxor.w',
+      'amoor.w',
+      'amoand.w',
+      'amomin.w',
+      'amomax.w',
+      'amominu.w',
+      'amomaxu.w',
+    ]) {
       const src = m === 'lr.w' ? `${m} x1, (x3)` : `${m} x1, x2, (x3)`;
       const f5 = (word(src) >>> 27) & 0x1f;
       expect(seen.has(f5), `${m} collides with ${seen.get(f5)}`).toBe(false);
@@ -142,7 +174,21 @@ describe('pseudo instructions', () => {
   });
 
   it('li materialises the exact value for a sweep of magnitudes', () => {
-    const values = [0, 1, -1, 2047, -2048, 2048, -2049, 0xffff, 0x10000, 0x7fffffff, -2147483648, 0xdeadbeef | 0, 123456789];
+    const values = [
+      0,
+      1,
+      -1,
+      2047,
+      -2048,
+      2048,
+      -2049,
+      0xffff,
+      0x10000,
+      0x7fffffff,
+      -2147483648,
+      0xdeadbeef | 0,
+      123456789,
+    ];
     for (const v of values) {
       const r = runInterpreted(`  li t0, ${v}\n${EXIT}`);
       expect(r.reg(5), `li ${v}`).toBe(v | 0);
@@ -150,7 +196,8 @@ describe('pseudo instructions', () => {
   });
 
   it('la loads an absolute address and lla a pc-relative one', () => {
-    const r = runInterpreted(`
+    const r = runInterpreted(
+      `
       la   t0, target
       la   t1, target
       lla  t2, target
@@ -158,7 +205,9 @@ describe('pseudo instructions', () => {
     target:
       nop
     fin:
-    ${EXIT}`, { base: RAM_BASE });
+    ${EXIT}`,
+      { base: RAM_BASE },
+    );
     expect(r.reg(5)).toBe(r.label('target') | 0);
     expect(r.reg(6)).toBe(r.reg(5));
     expect(r.reg(7)).toBe(r.label('target') | 0);
@@ -219,7 +268,13 @@ describe('pseudo instructions', () => {
   });
 
   it('j, jr, ret, call and tail assemble', () => {
-    for (const src of ['j  label\nlabel:\n', 'jr t0\n', 'ret\n', 'call label\nlabel:\n', 'tail label\nlabel:\n']) {
+    for (const src of [
+      'j  label\nlabel:\n',
+      'jr t0\n',
+      'ret\n',
+      'call label\nlabel:\n',
+      'tail label\nlabel:\n',
+    ]) {
       expect(assemble(src).size % 4).toBe(0);
     }
   });
@@ -243,7 +298,10 @@ describe('labels, data and directives', () => {
   });
 
   it('emits data directives with correct sizes and alignment', () => {
-    const a = assemble('  .byte 1, 2, 3\n  .align 2\n  .half 0x1234\n  .word 0xdeadbeef\n  .string "hi"\n  .zero 3\n', { base: 0 });
+    const a = assemble(
+      '  .byte 1, 2, 3\n  .align 2\n  .half 0x1234\n  .word 0xdeadbeef\n  .string "hi"\n  .zero 3\n',
+      { base: 0 },
+    );
     expect(Array.from(a.bytes.slice(0, 4))).toEqual([1, 2, 3, 0]); // .align 2 padded to 4
     const dv = new DataView(a.bytes.buffer);
     expect(dv.getUint16(4, true)).toBe(0x1234);
@@ -291,7 +349,9 @@ _start:
   });
 
   it('evaluates constant expressions', () => {
-    const r = runInterpreted(`  li t0, 2 + 3 * 4\n  li t1, (1 << 8) | 3\n  li t2, 100 / 7\n  li t3, 100 % 7\n  li t4, -1 >> 1\n${EXIT}`);
+    const r = runInterpreted(
+      `  li t0, 2 + 3 * 4\n  li t1, (1 << 8) | 3\n  li t2, 100 / 7\n  li t3, 100 % 7\n  li t4, -1 >> 1\n${EXIT}`,
+    );
     expect(r.reg(5)).toBe(14);
     expect(r.reg(6)).toBe(0x103);
     expect(r.reg(7)).toBe(14);
@@ -346,7 +406,8 @@ describe('errors', () => {
 
 describe('disassembly', () => {
   it('round-trips a program through disasm and decode', () => {
-    const src = '  addi x1, x2, 3\n  lw x4, 8(x5)\n  sw x6, -4(x7)\n  beq x1, x2, .\n  amoadd.w x1, x2, (x3)\n';
+    const src =
+      '  addi x1, x2, 3\n  lw x4, 8(x5)\n  sw x6, -4(x7)\n  beq x1, x2, .\n  amoadd.w x1, x2, (x3)\n';
     for (const w of words(src)) {
       const d = decode(w, 0);
       expect(d.illegal, disasm(w)).toBe(false);

@@ -233,7 +233,7 @@ describe('module builder', () => {
     expect(s1()).toBe(101);
     // A second module instance sees the same register file.
     expect(s2()).toBe(201);
-    expect((g.value as number)).toBe(201);
+    expect(g.value as number).toBe(201);
   });
 
   it('supports SIMD v128 load/store/add when available', () => {

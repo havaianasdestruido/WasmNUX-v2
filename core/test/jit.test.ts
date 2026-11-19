@@ -23,16 +23,35 @@ import { Interpreter, type MachinePort } from '../src/cpu/interp.ts';
 import { EXIT as EXIT_ASM, RAM_BASE, RAM_BYTES, SCRATCH, run, runInterpreted } from './helpers.ts';
 
 /** Configuration variants the spike measures (see docs/spikes/spike-a-jit.md). */
-const VARIANTS: Array<{ name: string; config: Partial<JitConfig>; controlPage?: boolean; shared?: boolean }> = [
-  { name: 'globals/trap/host', config: { regalloc: 'globals', bounds: 'trap', chaining: 'host' } },
-  { name: 'globals/trap/tail', config: { regalloc: 'globals', bounds: 'trap', chaining: 'tail' } },
-  { name: 'globals/inline/host', config: { regalloc: 'globals', bounds: 'inline', chaining: 'host' } },
-  { name: 'memory/inline/host', config: { regalloc: 'memory', bounds: 'inline', chaining: 'host' }, controlPage: true },
-  { name: 'memory/inline/tail', config: { regalloc: 'memory', bounds: 'inline', chaining: 'tail' }, controlPage: true },
-  { name: 'globals/trap/instr-pc', config: { regalloc: 'globals', bounds: 'trap', pcTracking: 'instruction' } },
-  { name: 'globals/trap/block-budget', config: { regalloc: 'globals', bounds: 'trap', budgetCheck: 'block' } },
-  { name: 'shared/atomics', config: { regalloc: 'globals', bounds: 'trap', chaining: 'host' }, shared: true },
-];
+const VARIANTS: Array<{ name: string; config: Partial<JitConfig>; controlPage?: boolean; shared?: boolean }> =
+  [
+    { name: 'globals/trap/host', config: { regalloc: 'globals', bounds: 'trap', chaining: 'host' } },
+    { name: 'globals/trap/tail', config: { regalloc: 'globals', bounds: 'trap', chaining: 'tail' } },
+    { name: 'globals/inline/host', config: { regalloc: 'globals', bounds: 'inline', chaining: 'host' } },
+    {
+      name: 'memory/inline/host',
+      config: { regalloc: 'memory', bounds: 'inline', chaining: 'host' },
+      controlPage: true,
+    },
+    {
+      name: 'memory/inline/tail',
+      config: { regalloc: 'memory', bounds: 'inline', chaining: 'tail' },
+      controlPage: true,
+    },
+    {
+      name: 'globals/trap/instr-pc',
+      config: { regalloc: 'globals', bounds: 'trap', pcTracking: 'instruction' },
+    },
+    {
+      name: 'globals/trap/block-budget',
+      config: { regalloc: 'globals', bounds: 'trap', budgetCheck: 'block' },
+    },
+    {
+      name: 'shared/atomics',
+      config: { regalloc: 'globals', bounds: 'trap', chaining: 'host' },
+      shared: true,
+    },
+  ];
 
 /** Programs covering every instruction class the translator implements. */
 const CORPUS: Array<[string, string]> = [
@@ -357,16 +376,19 @@ describe('config validation', () => {
     const mem = new GuestMemory({ ramBytes: RAM_BYTES, ramBase: RAM_BASE, controlPage: true });
     expect(
       () =>
-        new Engine(
-          { mem, onSyscall() {}, onMMIORead: () => 0, onMMIOWrite() {}, onIdle: () => false },
-          mem,
-          { config: { regalloc: 'globals', bounds: 'trap' } },
-        ),
+        new Engine({ mem, onSyscall() {}, onMMIORead: () => 0, onMMIOWrite() {}, onIdle: () => false }, mem, {
+          config: { regalloc: 'globals', bounds: 'trap' },
+        }),
     ).toThrow(/control page/);
   });
 
   it('hashes a config deterministically and distinguishes variants', () => {
-    const base: JitConfig = { ...DEFAULT_JIT_CONFIG, ramBase: RAM_BASE, ramSize: RAM_BYTES, controlOffset: -1 };
+    const base: JitConfig = {
+      ...DEFAULT_JIT_CONFIG,
+      ramBase: RAM_BASE,
+      ramSize: RAM_BYTES,
+      controlOffset: -1,
+    };
     expect(configHash(base)).toBe(configHash({ ...base }));
     expect(configHash(base)).not.toBe(configHash({ ...base, optimize: true }));
     expect(configHash(base)).not.toBe(configHash({ ...base, bounds: 'inline' }));
@@ -384,7 +406,11 @@ describe('region translation', () => {
       ramSize: RAM_BYTES,
       controlOffset: cfgOverride.regalloc === 'memory' ? RAM_BYTES : -1,
     };
-    const mem = new GuestMemory({ ramBytes: RAM_BYTES, ramBase: RAM_BASE, controlPage: cfg.regalloc === 'memory' });
+    const mem = new GuestMemory({
+      ramBytes: RAM_BYTES,
+      ramBase: RAM_BASE,
+      controlPage: cfg.regalloc === 'memory',
+    });
     mem.u8.set(a.bytes, 0);
     const blocks = buildCfg(mem, entry ?? a.entry, { maxBlocks: 64, maxBlockInsns: 64 });
     const region = formRegion(blocks, entry ?? a.entry, { maxRegionBlocks: 24, maxRegionInsns: 512 })!;
@@ -435,7 +461,9 @@ describe('region translation', () => {
   });
 
   it('stops with EXIT.BUDGET and a precise pc when the budget runs out', () => {
-    const c = compile(`_start:\n  li t1, 1000\nloop:\n  addi t0, t0, 1\n  addi t1, t1, -1\n  bnez t1, loop\n${EXIT_ASM}`);
+    const c = compile(
+      `_start:\n  li t1, 1000\nloop:\n  addi t0, t0, 1\n  addi t1, t1, -1\n  bnez t1, loop\n${EXIT_ASM}`,
+    );
     c.rf.syncFrom(new Int32Array(32), c.entry);
     const [reason, budget] = c.run(0, 4);
     expect(reason).toBe(EXIT.BUDGET);
@@ -539,7 +567,9 @@ loop:
     const second = run(LOOP, { jit: { hotThreshold: 2, interpChunk: 8, codeCache: cache } });
     expect(second.machine.engine.stats.cacheHits).toBeGreaterThan(0);
     expect(second.reg(7)).toBe(first.reg(7));
-    expect(second.machine.engine.stats.compileMs).toBeLessThanOrEqual(first.machine.engine.stats.compileMs + 1);
+    expect(second.machine.engine.stats.compileMs).toBeLessThanOrEqual(
+      first.machine.engine.stats.compileMs + 1,
+    );
   });
 
   it('serialises and restores a code cache', () => {
@@ -748,7 +778,9 @@ loop:
     const jitIps = jitted.instructions / Math.max(jitted.machine.stats().wallMs, 1e-9);
     // Recorded, not just asserted: this is the number the spike exists for.
     // eslint-disable-next-line no-console
-    console.log(`[spike-a] interpreter ${(interpIps / 1e6).toFixed(1)} MIPS, jit ${(jitIps / 1e6).toFixed(1)} MIPS, speedup x${(jitIps / interpIps).toFixed(2)}`);
+    console.log(
+      `[spike-a] interpreter ${(interpIps / 1e6).toFixed(1)} MIPS, jit ${(jitIps / 1e6).toFixed(1)} MIPS, speedup x${(jitIps / interpIps).toFixed(2)}`,
+    );
     expect(jitIps).toBeGreaterThan(interpIps);
   });
 });

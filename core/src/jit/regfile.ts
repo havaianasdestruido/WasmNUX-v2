@@ -87,7 +87,9 @@ export class RegFile {
   }
 
   get info(): number {
-    return (this.useMemory() ? this.i32view![this.slot(G.INFO)]! : (this.globals[G.INFO]!.value as number)) >>> 0;
+    return (
+      (this.useMemory() ? this.i32view![this.slot(G.INFO)]! : (this.globals[G.INFO]!.value as number)) >>> 0
+    );
   }
 
   set info(v: number) {

@@ -20,7 +20,9 @@ function value(src: string, reg: number): number {
 
 describe('RV32I arithmetic', () => {
   it('addi/add/sub wrap at 32 bits', () => {
-    expect(value('  li t0, 2000000000\n  li t1, 2000000000\n  add t2, t0, t1', 7)).toBe((2000000000 + 2000000000) | 0);
+    expect(value('  li t0, 2000000000\n  li t1, 2000000000\n  add t2, t0, t1', 7)).toBe(
+      (2000000000 + 2000000000) | 0,
+    );
     expect(value('  li t0, -2000000000\n  sub t1, t0, t0\n  sub t2, t1, t0', 7)).toBe((0 + 2000000000) | 0);
   });
 
@@ -465,16 +467,17 @@ describe('register file', () => {
     // x2 (sp) has to survive as the buffer pointer: with all 31 other registers
     // holding test values there is nowhere else to keep it. x0 is checked too.
     const dump = SCRATCH + 0x400;
-    const set = [1, ...Array.from({ length: 29 }, (_, i) => i + 3)]
-      .map((n) => `  li x${n}, ${n}`)
-      .join('\n');
+    const set = [1, ...Array.from({ length: 29 }, (_, i) => i + 3)].map((n) => `  li x${n}, ${n}`).join('\n');
     const save = Array.from({ length: 32 }, (_, i) => `  sw x${i}, ${i * 4}(sp)`).join('\n');
-    const r = runInterpreted(`
+    const r = runInterpreted(
+      `
       li   sp, ${dump}
     ${set}
       li   sp, ${dump}
     ${save}
-    ${EXIT}`, { stackTop: dump });
+    ${EXIT}`,
+      { stackTop: dump },
+    );
     expect(r.word(dump)).toBe(0); // x0
     for (let i = 1; i < 32; i++) {
       expect(r.word(dump + i * 4)).toBe(i === 2 ? dump : i);
@@ -554,7 +557,8 @@ describe('programs with real structure', () => {
   });
 
   it('recursion through a stack works', () => {
-    const r = runInterpreted(`
+    const r = runInterpreted(
+      `
       li   sp, ${SCRATCH + 0x1000}
       li   a0, 10
       jal  ra, fib
@@ -582,7 +586,9 @@ describe('programs with real structure', () => {
       addi sp, sp, 8
       ret
     done:
-    ${EXIT}`, { stackTop: SCRATCH + 0x2000 });
+    ${EXIT}`,
+      { stackTop: SCRATCH + 0x2000 },
+    );
     expect(r.reg(10)).toBe(89); // fib(10) with fib(1)=fib(2)=1
   });
 });
