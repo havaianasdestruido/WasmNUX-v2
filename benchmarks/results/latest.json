@@ -1,0 +1,364 @@
+{
+  "date": "2026-11-19T02:39:47.528Z",
+  "rows": [
+    {
+      "id": "a1.interpreter-throughput",
+      "kpi": "Spike A — interpreter throughput",
+      "status": "ok",
+      "value": 3499254,
+      "unit": "steps/s",
+      "detail": "400000 steps in 114.3 ms",
+      "meta": {
+        "halted": false,
+        "exitCode": 0,
+        "jitFast": 400000,
+        "jitSlow": 0
+      }
+    },
+    {
+      "id": "a2.jit-throughput",
+      "kpi": "Spike A — JIT block execution throughput",
+      "status": "ok",
+      "value": 22823692,
+      "unit": "steps/s",
+      "detail": "400000 steps in 17.5 ms (compiles=2, fast=400000, slow=0, halted=false)",
+      "meta": {
+        "speedup": 6.52
+      }
+    },
+    {
+      "id": "a3.jit-speedup",
+      "kpi": "Spike A — JIT vs interpreter speedup (KPI: ≥2×; Phase 1 target ≥5×)",
+      "status": "ok",
+      "value": 6.52,
+      "unit": "×",
+      "detail": "114.3 ms interp → 17.5 ms jit"
+    },
+    {
+      "id": "a4.jit-equivalence",
+      "kpi": "Spike A — differential equivalence (10k-block fuzz, in unit tests)",
+      "status": "ok",
+      "value": 0,
+      "unit": "divergences",
+      "detail": "jit.test.ts expectEquivalent: ALU/branch/load/store/mul programs + 150-insn random fuzz"
+    },
+    {
+      "id": "a5.browser-baseline",
+      "kpi": "Spike A — existing in-browser emulator baseline (v86-style)",
+      "status": "skipped",
+      "detail": "No browser in CI and no baseline emulator vendored (offline npm/github-only sandbox); methodology limitation recorded in RESULTS.md — compare against Phase 1 in-browser harness."
+    },
+    {
+      "id": "b1.pingpong-latency",
+      "kpi": "Spike B — cross-thread ping-pong latency (LR/SC-style shared memory)",
+      "status": "ok",
+      "value": 46.17,
+      "unit": "µs/RTT",
+      "detail": "2000 round-trips in 92.3 ms via SPSC rings over shared Wasm memory",
+      "meta": {
+        "threads": 2,
+        "bytesPerRTT": 16
+      }
+    },
+    {
+      "id": "b2.ring-throughput",
+      "kpi": "Spike B — SPSC ring throughput (producer → vCPU worker)",
+      "status": "ok",
+      "value": 18851,
+      "unit": "KB/s",
+      "detail": "20000 × 8-byte messages in 8.5 ms",
+      "meta": {
+        "messages": 20000
+      }
+    },
+    {
+      "id": "b3.memory-model-litmus",
+      "kpi": "Spike B — MP/SB litmus validation (1000 rounds)",
+      "status": "ok",
+      "value": 0,
+      "unit": "violations",
+      "detail": "smp/reservation.test.ts: message-passing + store-buffering with seq-cst Atomics — 0/1000 violations each",
+      "meta": {
+        "rounds": 1000,
+        "model": "seq-cst (Atomics) — closest Wasm analogue"
+      }
+    },
+    {
+      "id": "b4.idle-gate",
+      "kpi": "Spike B — Atomics.wait idle (no busy spin)",
+      "status": "ok",
+      "value": 0,
+      "unit": "misses",
+      "detail": "IdleGate parks main/vCPU worker until kick(); timeout 0 ms observed in tests (reservation.test.ts)"
+    },
+    {
+      "id": "b5.browser-1vcpu-baseline",
+      "kpi": "Spike B — 1-vCPU browser baseline (existing in-browser emulator)",
+      "status": "skipped",
+      "detail": "Needs browser harness (web/index.html) + a baseline emulator; recorded as Phase 1 comparison."
+    },
+    {
+      "id": "c4096.rw",
+      "kpi": "Spike C — chunk 4 KiB COW write/read",
+      "status": "ok",
+      "value": 3987,
+      "unit": "KB/s write",
+      "detail": "write 32.9 ms, read 5.8 ms (22629 KB/s), recover 6.6 ms; sink=2880",
+      "meta": {
+        "chunkBytes": 4096,
+        "chunks": 32,
+        "recoverMs": 6.63
+      }
+    },
+    {
+      "id": "c65536.rw",
+      "kpi": "Spike C — chunk 64 KiB COW write/read",
+      "status": "ok",
+      "value": 48195,
+      "unit": "KB/s write",
+      "detail": "write 43.5 ms, read 7.8 ms (269769 KB/s), recover 20.0 ms; sink=2880",
+      "meta": {
+        "chunkBytes": 65536,
+        "chunks": 32,
+        "recoverMs": 19.95
+      }
+    },
+    {
+      "id": "c262144.rw",
+      "kpi": "Spike C — chunk 256 KiB COW write/read",
+      "status": "ok",
+      "value": 107906,
+      "unit": "KB/s write",
+      "detail": "write 77.7 ms, read 14.2 ms (591930 KB/s), recover 57.9 ms; sink=2880",
+      "meta": {
+        "chunkBytes": 262144,
+        "chunks": 32,
+        "recoverMs": 57.93
+      }
+    },
+    {
+      "id": "c1048576.rw",
+      "kpi": "Spike C — chunk 1024 KiB COW write/read",
+      "status": "ok",
+      "value": 171176,
+      "unit": "KB/s write",
+      "detail": "write 196.0 ms, read 21.8 ms (1539209 KB/s), recover 216.0 ms; sink=2880",
+      "meta": {
+        "chunkBytes": 1048576,
+        "chunks": 32,
+        "recoverMs": 215.98
+      }
+    },
+    {
+      "id": "c0.cow-atomicity",
+      "kpi": "Spike C — crash-window atomicity (journal at every append boundary)",
+      "status": "ok",
+      "value": 0,
+      "unit": "torn states",
+      "detail": "chunk-store.test.ts: 5/5 crash points yield old-or-new state; corrupt payload discarded + truncated"
+    },
+    {
+      "id": "c9.opfs-browser",
+      "kpi": "Spike C — OPFS SyncAccessHandle @4K (KPI ≥40 MB/s)",
+      "status": "skipped",
+      "detail": "OPFS requires a browser (web/index.html probes it; Chrome-only in practice). Node path measured instead."
+    },
+    {
+      "id": "c9b.journal-mem",
+      "kpi": "Spike C — journal+overlay fast path (in-memory backend)",
+      "status": "ok",
+      "value": 22976,
+      "unit": "KB/s",
+      "detail": "256 × 64 KiB in 730.2 ms"
+    },
+    {
+      "id": "c9c.cow-copyoverhead",
+      "kpi": "Spike C — COW copy overhead vs raw write",
+      "status": "skipped",
+      "detail": "Baseline raw write without journal is a Phase 2 measurement against OPFS; in-memory path isolates protocol overhead (see c9b)."
+    },
+    {
+      "id": "d1.present-full",
+      "kpi": "D — full-frame present (1080p RGBA → staging)",
+      "status": "ok",
+      "value": 0.77,
+      "unit": "ms/frame",
+      "detail": "7.9 MiB per frame; target ≤ 8.3 ms (120 Hz)",
+      "meta": {
+        "width": 1920,
+        "height": 1080
+      }
+    },
+    {
+      "id": "d2.present-dirty10",
+      "kpi": "D — damage present (10 dirty rows)",
+      "status": "ok",
+      "value": 1.94,
+      "unit": "ms",
+      "detail": "byte-diff skip on unchanged rows — keystroke→pixel path"
+    },
+    {
+      "id": "d3.damage-tracking",
+      "kpi": "D — damage mark+take per row",
+      "status": "ok",
+      "value": 1752,
+      "unit": "ns/op",
+      "detail": "row-bitset mark + full-row scan for 1080 rows (avg over 10k cycles)"
+    },
+    {
+      "id": "d4.gpu-path-model",
+      "kpi": "D — ADR-0007 four-path comparison (modelled)",
+      "status": "ok",
+      "value": 4,
+      "unit": "paths",
+      "detail": "best composite = C-webgpu-cmdstream (conformance 80.4%); browser scanout speed run in web/index.html",
+      "meta": {
+        "scores": [
+          {
+            "id": "A-gl-virgl",
+            "conformance": 56.5,
+            "perfClass": 3,
+            "effort": 3,
+            "composite": 1.961
+          },
+          {
+            "id": "B-venus",
+            "conformance": 67.4,
+            "perfClass": 3,
+            "effort": 4,
+            "composite": 2.296
+          },
+          {
+            "id": "C-webgpu-cmdstream",
+            "conformance": 80.4,
+            "perfClass": 4,
+            "effort": 5,
+            "composite": 3.12
+          },
+          {
+            "id": "D-lavapipe",
+            "conformance": 82.6,
+            "perfClass": 2,
+            "effort": 2,
+            "composite": 2.691
+          }
+        ]
+      }
+    },
+    {
+      "id": "d5.browser-scanout",
+      "kpi": "D — WebGPU vs Canvas2D scanout in-browser",
+      "status": "skipped",
+      "detail": "Needs a browser; web/index.html runs the probe and the harness picks webgpu|canvas2d by capability."
+    },
+    {
+      "id": "e1.tcp-loopback",
+      "kpi": "E — TCP loopback throughput (in Wasm)",
+      "status": "skipped",
+      "detail": "Needs guest userspace (Phase 1 image). Relay codecs + echo stack measured via unit tests (network.test.ts)."
+    },
+    {
+      "id": "e2.relay",
+      "kpi": "E — relay round-trip (WebSocket/WebRTC)",
+      "status": "skipped",
+      "detail": "Needs a browser + relay server (Phase 1+). Relay routing/stream framing covered by unit tests."
+    },
+    {
+      "id": "e3.stack-unit",
+      "kpi": "E — user-space IP/UDP/ICMP stack correctness",
+      "status": "ok",
+      "value": 11,
+      "unit": "tests",
+      "detail": "network.test.ts: RFC-1071 checksum, IPv4/UDP/ICMP codecs, echo server, relay streams, IWA policy"
+    },
+    {
+      "id": "f1.width-table",
+      "kpi": "F — Unicode cluster width (mixed corpus)",
+      "status": "ok",
+      "value": 2394816,
+      "unit": "chars/s",
+      "detail": "125.3 ms for 300000 clusters (sink=3840000)"
+    },
+    {
+      "id": "f2.ligature-scan",
+      "kpi": "F — ligature scan per row",
+      "status": "ok",
+      "value": 196344,
+      "unit": "rows/s",
+      "detail": "20k scans in 101.9 ms (lig=100000)"
+    },
+    {
+      "id": "f3.atlas-lookup",
+      "kpi": "F — glyph atlas lookup (1024², 16×32 cells, LRU)",
+      "status": "ok",
+      "value": 53140,
+      "unit": "lookups/s",
+      "detail": "100k lookups in 1881.8 ms; hits=67231 misses=32769 evictions=30721",
+      "meta": {
+        "capacity": 2048
+      }
+    },
+    {
+      "id": "f4.browser-ime",
+      "kpi": "F — IME keystroke→pixel ≤ 1 frame",
+      "status": "skipped",
+      "detail": "Requires browser input pipeline (web/index.html records it interactively); IME session logic covered by unit tests."
+    },
+    {
+      "id": "mix.synthetic",
+      "kpi": "wnx-mix — synthetic mix (ALU+mul+branch loop, 400k steps)",
+      "status": "ok",
+      "value": 4231700,
+      "unit": "steps/s",
+      "detail": "94.5 ms in Node v22.22.3; real CoreMark/Dhrystone rows below"
+    },
+    {
+      "id": "mix.coremark",
+      "kpi": "CoreMark (guest)",
+      "status": "skipped",
+      "detail": "Needs guest toolchain + image (Phase 1). Harness slot reserved: benchmarks/results/<commit>/coremark.json."
+    },
+    {
+      "id": "mix.dhrystone",
+      "kpi": "Dhrystone (guest)",
+      "status": "skipped",
+      "detail": "Needs guest toolchain + image (Phase 1)."
+    },
+    {
+      "id": "mix.gcc-selfcompile",
+      "kpi": "Self-compiling GCC (guest)",
+      "status": "skipped",
+      "detail": "Needs a Linux userspace image (Phase 2+)."
+    },
+    {
+      "id": "mix.fio",
+      "kpi": "fio (guest storage)",
+      "status": "skipped",
+      "detail": "Needs guest userspace + block device wiring (Phase 2); spike C measures the host-side store now."
+    },
+    {
+      "id": "mix.sysbench",
+      "kpi": "sysbench (guest)",
+      "status": "skipped",
+      "detail": "Needs guest userspace (Phase 2)."
+    },
+    {
+      "id": "mix.boot-qemu",
+      "kpi": "Boot time vs QEMU virt + x86_64",
+      "status": "skipped",
+      "detail": "Needs QEMU and a kernel image (Phase 1)."
+    },
+    {
+      "id": "mix.rust-gcc-baseline",
+      "kpi": "Rust (wasm32-wasip1) vs gcc x86_64 binaries",
+      "status": "skipped",
+      "detail": "No Rust/cargo toolchain in this environment (recorded gap)."
+    },
+    {
+      "id": "mix.boot-qos",
+      "kpi": "QoS boot ≤ 3 s / idle ≤ 250 mW / offline boot 3×",
+      "status": "skipped",
+      "detail": "Phase 1 (browser timing + hardware power)."
+    }
+  ]
+}

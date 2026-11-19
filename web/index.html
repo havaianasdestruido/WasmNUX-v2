@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>WasmNUX — Phase 0 browser probe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!--
+    ADR-0010: this page must be served with
+      Cross-Origin-Opener-Policy: same-origin
+      Cross-Origin-Embedder-Policy: require-corp
+    (or via coi-serviceworker fallback) for SharedArrayBuffer.
+    Serve with:  python3 -m http.server  (see web/serve.mjs for header-injecting dev server)
+  -->
+  <style>
+    body { font: 14px/1.5 ui-monospace, monospace; background: #101418; color: #d7e0ea; margin: 2rem; }
+    h1 { font-size: 1.1rem; }
+    .ok { color: #7ee787; } .warn { color: #f0b429; } .bad { color: #ff7b72; }
+    pre { background: #161b22; padding: 1rem; border-radius: 6px; overflow: auto; }
+    button { background: #238636; color: white; border: 0; padding: .5rem 1rem; border-radius: 6px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>WasmNUX Phase 0 — browser capability probe</h1>
+  <p>Runs the spike checks that need a real browser. Results print as JSON (also logged).</p>
+  <button id="run">Run probes</button>
+  <pre id="out">press “Run probes”…</pre>
+  <script type="module">
+    const out = document.getElementById("out");
+    const results = {};
+
+    async function probeIsolation() {
+      results.crossOriginIsolated = globalThis.crossOriginIsolated === true;
+      results.sharedArrayBuffer = typeof SharedArrayBuffer !== "undefined";
+      results.hardwareConcurrency = navigator.hardwareConcurrency ?? null;
+      results.userAgent = navigator.userAgent;
+      if (!results.crossOriginIsolated) {
+        results.hint = "Serve with COOP/COEP (ADR-0010) or install coi-serviceworker — SMP/spike B needs it.";
+      }
+    }
+
+    async function probeWebgpu() {
+      results.webgpu = "gpu" in navigator;
+      if (results.webgpu) {
+        try {
+          const adapter = await navigator.gpu.requestAdapter();
+          results.webgpuAdapter = !!adapter;
+          if (adapter) {
+            const info = adapter.info ?? {};
+            results.gpuVendor = info.vendor ?? "n/a";
+            results.gpuArchitecture = info.architecture ?? "n/a";
+          }
+        } catch (e) { results.webgpuError = String(e); }
+      }
+      results.offscreenCanvas = typeof OffscreenCanvas !== "undefined";
+    }
+
+    async function probeOpfs() {
+      results.opfs = !!navigator.storage?.getDirectory;
+      results.storageEstimate = null;
+      try {
+        const est = await navigator.storage.estimate();
+        results.storageEstimate = { quota: est.quota, usage: est.usage };
+        results.persisted = (await navigator.storage.persisted?.()) ?? null;
+      } catch (e) { results.storageError = String(e); }
+      if (results.opfs) {
+        try {
+          // Spike C probe: create + write + fsync via SyncAccessHandle
+          const root = await navigator.storage.getDirectory();
+          const fh = await root.getFileHandle("phase0-probe.bin", { create: true });
+          const w = await fh.createSyncAccessHandle();
+          const payload = new Uint8Array(4096).fill(0x5a);
+          const t0 = performance.now();
+          w.write(payload, { at: 0 });
+          w.flush();
+          const writeMs = performance.now() - t0;
+          const t1 = performance.now();
+          w.read(new Uint8Array(4096), { at: 0 });
+          const readMs = performance.now() - t1;
+          w.close();
+          results.opfsSyncAccess = {
+            writeMs: +writeMs.toFixed(3),
+            readMs: +readMs.toFixed(3),
+            impliedWriteMBs: +(4096 / 1024 / 1024 / (writeMs / 1000)).toFixed(1),
+            impliedReadMBs: +(4096 / 1024 / 1024 / (readMs / 1000)).toFixed(1),
+            note: "4 KiB single-shot; KPI row c9 wants sustained ≥40 MB/s (sweep in Phase 1 harness)",
+          };
+        } catch (e) { results.opfsSyncError = String(e); }
+      }
+    }
+
+    async function probeSharedMemoryWorkers() {
+      if (!results.sharedArrayBuffer || !results.crossOriginIsolated) {
+        results.sharedWorker = "skipped (not cross-origin isolated)";
+        return;
+      }
+      // Spike B browser twin: ping-pong over a shared WebAssembly.Memory
+      const memory = new WebAssembly.Memory({ initial: 4, maximum: 4, shared: true });
+      const view = new Int32Array(memory.buffer);
+      view[0] = 0; // seq
+      const workerSrc = `
+        self.onmessage = (e) => {
+          const { memory } = e.data;
+          const v = new Int32Array(memory.buffer);
+          for (let i = 0; i < 1000; i++) {
+            Atomics.add(v, 0, 1);
+            Atomics.notify(v, 0);
+          }
+          self.postMessage("done");
+        };`;
+      const blob = new Blob([workerSrc], { type: "text/javascript" });
+      const w = new Worker(URL.createObjectURL(blob));
+      const done = new Promise((res, rej) => {
+        w.onmessage = () => res(true);
+        w.onerror = (e) => rej(e);
+        setTimeout(() => rej(new Error("timeout")), 5000);
+      });
+      w.postMessage({ memory });
+      const t0 = performance.now();
+      await done;
+      const ms = performance.now() - t0;
+      results.sharedWorker = {
+        ok: Atomics.load(view[0]) === 1000,
+        value: Atomics.load(view[0]),
+        ms: +ms.toFixed(2),
+      };
+      w.terminate();
+    }
+
+    async function probeScanout() {
+      const canvas = new OffscreenCanvas(64, 64);
+      const ctx = canvas.getContext("2d");
+      const frame = new Uint8ClampedArray(64 * 64 * 4).fill(200);
+      const img = new ImageData(frame, 64, 64);
+      const t0 = performance.now();
+      for (let i = 0; i < 100; i++) ctx.putImageData(img, 0, 0);
+      const ms = (performance.now() - t0) / 100;
+      results.canvas2dPutMs = +ms.toFixed(4);
+      results.webgpuScanoutPath = results.webgpu && results.offscreenCanvas ? "webgpu" : "canvas2d";
+    }
+
+    document.getElementById("run").onclick = async () => {
+      out.textContent = "running…";
+      try {
+        await probeIsolation();
+        await probeWebgpu();
+        await probeOpfs();
+        await probeSharedMemoryWorkers();
+        await probeScanout();
+        out.textContent = JSON.stringify(results, null, 2);
+        console.log("[phase0-probe]", results);
+        // machine-readable hook for the Phase 1 harness
+        globalThis.__WNX_PHASE0_PROBE__ = results;
+      } catch (e) {
+        out.textContent = "ERROR: " + e;
+        console.error(e);
+      }
+    };
+  </script>
+</body>
+</html>

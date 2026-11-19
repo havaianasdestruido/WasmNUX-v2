@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "arena/**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit & spike tests
+        run: npx vitest run --reporter=basic
+
+      - name: Build (tsc)
+        run: npm run build
+
+      - name: Benchmarks
+        run: npm run bench -- --json --out benchmarks/results/ci.json
+
+      - name: Phase 0 report
+        run: npm run phase0:report
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-results-${{ github.sha }}
+          path: |
+            benchmarks/results/**
+            docs/phase0/RESULTS.md
+
+      - name: Results in job summary
+        if: always()
+        run: |
+          if [ -f docs/phase0/RESULTS.md ]; then
+            cat docs/phase0/RESULTS.md >> "$GITHUB_STEP_SUMMARY"
+          fi

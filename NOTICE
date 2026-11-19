@@ -1,0 +1,19 @@
+WasmNUX
+Copyright 2026 WasmNUX contributors
+
+This product is licensed under either the Apache License, Version 2.0
+(see LICENSE) or the MIT license (see LICENSE-MIT), at your option.
+
+---
+
+Third-party components
+======================
+
+Phase 0 (this repository) vendors no third-party source. Dependencies are
+declared in package.json / package-lock.json (npm) and carry their own
+licenses (MIT / ISC / Apache-2.0 / BSD-Clause — see `npm ls --omit=dev`).
+
+Guest image components (Debian kernel, Mesa, firmware, userland) are NOT part
+of this repository; they enter only via the Phase 1 image build and must be
+listed here with their licenses when that lands (ADR-0011: GPL components
+stay isolated in the guest image).

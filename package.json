@@ -1,0 +1,32 @@
+{
+  "name": "wasmnux",
+  "version": "0.0.0",
+  "private": true,
+  "description": "WasmNUX — a complete Debian Linux system running inside a browser tab (Phase 0: foundations, spikes, and decisions).",
+  "license": "MIT OR Apache-2.0",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "spikes/*"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "bench": "tsx packages/benchmarks/src/cli.ts",
+    "phase0:report": "tsx packages/benchmarks/src/phase0-report.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "eslint": "^9.17.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.73.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
