@@ -88,7 +88,7 @@ maintaining two is how correctness work stops happening.
 
 - Everything measured in Spike A is measured on the real code path, not on a
   prototype of it: `core/src/jit` is the design, not a model of the design.
-- Contributors need one toolchain (`npm install && npm test`) to run 255 tests.
+- Contributors need one toolchain (`npm install && npm test`) to run 288 tests.
 - The core is embeddable as a plain npm package (§1.7) with no Wasm artefact to
   serve, version, or CSP-allow.
 

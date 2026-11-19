@@ -42,7 +42,7 @@ reproduced by a committed command does not go in the report.
 
 ```sh
 npm install
-npm test                                  # 255 tests: 242 core + 13 harness
+npm test                                  # 288 tests: 271 core + 13 harness + 4 web
 npm run spike -- a                        # the benchmark suites tagged for Spike A
 npm run bench -- --all                    # every suite
 npm run bench:record -- --all --baseline  # write results/ and refresh baselines/

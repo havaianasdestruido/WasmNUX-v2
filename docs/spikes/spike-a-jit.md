@@ -8,7 +8,8 @@ Wasm globals, and **indirect control flow (returns) is the bottleneck**, not
 arithmetic.
 
 - Date: 2026-11-19
-- Commit: `fdb7d92` (branch `arena/8368d687-wasmnux-v2`)
+- Commits: `b19b6c1`…`5a271c0` on branch `arena/8368d687-wasmnux-v2`
+- Result files quoted: `benchmarks/results/20261119T164129Z-061bd0e-…` for the tables below, plus `…165929Z-fdb7d92-…` and `…172933Z-5a271c0-…` for the run-to-run spread in §3
 - Host: Node 22.22.3 (V8), linux/x64, 2 vCPUs, 3.9 GB — a shared CI-class box, not a tuned machine
 - Code: `core/src/jit/{cfg,codegen,engine,regfile}.ts`, `core/src/jit/wasm/{encoder,features}.ts`
 - Tests: `core/test/jit.test.ts` (132), `core/test/wasm-encoder.test.ts` (21)
@@ -332,7 +333,7 @@ retired instructions) so cold regions are never translated twice.
 
 ```sh
 npm install
-npm test                                   # 255 tests, incl. 132 JIT differential
+npm test                                   # 288 tests, incl. 132 JIT differential
 npm run bench -- --all                     # all three suites, text table
 npm run spike -- a                         # the suites tagged for Spike A
 npm run bench:record -- --all --baseline   # write results/ and refresh baselines/
