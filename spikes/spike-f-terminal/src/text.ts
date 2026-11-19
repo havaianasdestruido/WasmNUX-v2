@@ -22,11 +22,51 @@ export function countCells(input: string): number {
   return cells;
 }
 
+const RI_START = 0x1f1e6, RI_END = 0x1f1ff;      // regional indicator letters
+const VS16 = '\uFE0F';                          // variation selector 16 (emoji presentation)
+const KEYCAP_MARK = '\u20E3';                   // combining enclosing keycap
+const ZWJ = '\u200D';                           // zero width joiner
+
+function isRegionalIndicatorFlag(cluster: string): boolean {
+  const cps = [...cluster];
+  if (cps.length !== 2) return false;
+  return cps.every(ch => {
+    const cp = ch.codePointAt(0)!;
+    return cp >= RI_START && cp <= RI_END;
+  });
+}
+
+/** Does this whole grapheme cluster have emoji presentation (renders wide)? */
+function isEmojiPresentation(cluster: string): boolean {
+  if (isRegionalIndicatorFlag(cluster)) return true;         // 🇺🇸 → wide
+  if (cluster.includes(KEYCAP_MARK)) return true;            // 1️⃣ → wide
+  if (cluster.includes(ZWJ)) return true;                    // 👨‍👩‍👧 → wide
+  if (cluster.includes(VS16)) {
+    const base = cluster.codePointAt(0)!;
+    if (isWide(base) || isEmojiCapable(base)) return true;   // ©️️ ☀️ ☁️ etc.
+  }
+  return false;
+}
+
+// Narrow codepoints that become wide emoji with VS16 (subset of emoji-capable chars).
+function isEmojiCapable(cp: number): boolean {
+  return (
+    (cp >= 0x00A9 && cp <= 0x00AE) || // © ®
+    (cp >= 0x203C && cp <= 0x2049) || // !!
+    (cp >= 0x2122 && cp <= 0x231A && cp !== 0x2124) || // ™ ↔ ⌚ (rough range)
+    (cp >= 0x2460 && cp <= 0x24FF) || // enclosed alphanumerics
+    (cp >= 0x2600 && cp <= 0x27BF) || // misc symbols + dingbats
+    (cp >= 0x2B00 && cp <= 0x2BFF) || // arrows etc.
+    (cp >= 0x1F000 && cp <= 0x1FAFF)  // modern emoji planes
+  );
+}
+
 /** Cell width of a single grapheme cluster. */
 export function graphemeWidth(cluster: string): number {
   if (cluster.length === 0) return 0;
   const cp = cluster.codePointAt(0)!;
   if (isZeroWidth(cluster)) return 0;
+  if (isEmojiPresentation(cluster)) return 2;
   if (isWide(cp)) return 2;
   return 1;
 }

@@ -9,7 +9,7 @@
 import { performance } from 'node:perf_hooks';
 import { writeFileSync } from 'node:fs';
 import os from 'node:os';
-import { tokenizeLine, graphemeWidth } from './text.js';
+import { tokenizeLine, graphemeWidth, tokenWidth } from './text.js';
 import { GlyphAtlas } from './atlas.js';
 import { ScrollbackRing } from './scrollback.js';
 import { DamageTracker } from './damage.js';
@@ -44,10 +44,10 @@ function benchCat(lines: string[], useLigatures: boolean): { cellsPerSec: number
   for (const line of lines) {
     if (useLigatures) {
       for (const tok of tokenizeLine(line)) {
-        for (let i = 0; i < tok.text.length && i < 6; i++) getGlyph(tok.text); // stand-in: full token as key
-        void getGlyph(tok.text);
-        void graphemeWidth(tok.text);
-        cells += tok.ligature ? 2 : graphemeWidth(tok.text);
+        // one atlas lookup per token (the real renderer looks up the token's
+        // glyph once), and count cells at the token's actual width
+        getGlyph(tok.text);
+        cells += tokenWidth(tok);
       }
     } else {
       const bare = line.replace(/\P{ASCII}/gu, '?'); // ASCII-safe fast path for the plain baseline

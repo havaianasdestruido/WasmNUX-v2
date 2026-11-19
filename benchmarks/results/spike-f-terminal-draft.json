@@ -1,7 +1,7 @@
 {
   "benchmark": "wasmnux-spike-f-terminal",
   "version": 1,
-  "timestamp": "2026-11-19T01:55:32.188Z",
+  "timestamp": "2026-11-19T19:07:17.985Z",
   "host": {
     "cpus": 2,
     "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -17,19 +17,19 @@
     "height": 768
   },
   "ingest": {
-    "ligatureCellsPerSec": 1714447,
-    "ligatureLinesPerSec": 12794,
-    "ligatureAtlasHitRate": 0.9999446540880503,
-    "plainCellsPerSec": 7542255,
-    "plainLinesPerSec": 55869,
+    "ligatureCellsPerSec": 727944,
+    "ligatureLinesPerSec": 5392,
+    "ligatureAtlasHitRate": 0.9998863049095608,
+    "plainCellsPerSec": 3055023,
+    "plainLinesPerSec": 22630,
     "plainAtlasHitRate": 0.9998938271604938
   },
   "render": {
-    "fullRedrawFramesPerSec": 167.49877265274353,
-    "damageRedrawFramesPerSec2LineScroll": 9294.068989873924,
-    "fullRedrawBandwidthMBs": 658.631973874212
+    "fullRedrawFramesPerSec": 104.16461050065732,
+    "damageRedrawFramesPerSec2LineScroll": 5779.545034214971,
+    "fullRedrawBandwidthMBs": 409.59191482626466
   },
-  "scrollbackPushPerSec": 5850887,
+  "scrollbackPushPerSec": 3142719,
   "damageCoverageAfterScroll": 0.041666666666666664,
   "note": "CPU-side model only. GPU/WebGPU scanout cost: see spike-d-display and web/probe/webgpu-scanout.html."
 }

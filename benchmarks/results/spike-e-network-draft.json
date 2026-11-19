@@ -1,17 +1,17 @@
 {
   "benchmark": "wasmnux-spike-e-network",
   "version": 1,
-  "timestamp": "2026-11-19T01:53:12.433Z",
+  "timestamp": "2026-11-19T19:11:06.616Z",
   "host": {
     "cpus": 2,
     "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
     "platform": "linux",
     "release": "6.1.158+"
   },
-  "udpSerializeParseOpsPerSec": 1267349,
-  "ipv4ChecksumOpsPerSec": 11429042,
-  "icmpEchoRoundtripsPerSec": 69275,
+  "udpSerializeParseOpsPerSec": 660115,
+  "ipv4ChecksumOpsPerSec": 7284937,
+  "icmpEchoRoundtripsPerSec": 39782,
   "pongsReceived": 5000,
-  "relayLocalhostRoundtripsPerSec": 12926,
+  "relayLocalhostRoundtripsPerSec": 4485,
   "note": "Direct Sockets (IWA) cannot be measured outside an Isolated Web App; see docs/spikes/spike-e-network.md"
 }

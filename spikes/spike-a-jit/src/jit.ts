@@ -36,6 +36,7 @@ export interface CompiledRegion {
 
 const X0 = 0;
 const BINDEX = 32; // local index of $b
+const EA = 33;     // local index of $ea (i64): effective-address scratch
 
 interface Block {
   addr: number;
@@ -93,6 +94,7 @@ export function compileToWasm(program: Uint8Array, opts: CompileOptions): Compil
   const locals: Type[] = [];
   for (let i = 0; i < 32; i++) locals.push(i64);
   locals.push(i32); // $b
+  locals.push(i64); // $ea
 
   const getReg = (r: number): Expr => r === X0 ? b.i64.const(0, 0) : b.local.get(r, i64);
   const setReg = (r: number, v: Expr): Expr | null =>
@@ -102,8 +104,21 @@ export function compileToWasm(program: Uint8Array, opts: CompileOptions): Compil
     const u = BigInt.asUintN(64, v);
     return b.i64.const(Number(u & 0xffffffffn), Number((u >> 32n) & 0xffffffffn));
   };
-  const effAddr = (rs1: number, imm: bigint): Expr =>
-    b.i32.wrap(b.i64.add(getReg(rs1), i64c(imm)));
+  // RISC-V effective addresses are 64-bit; truncating to i32 silently wraps
+  // (0x1_0000_0000 -> 0). Emit an explicit high-word check and trap on any
+  // nonzero high 32 bits, then rely on the engine's bounds check for the
+  // low 32 bits (traps the region, like the interpreter's RangeError).
+  const effAddr = (rs1: number, imm: bigint): { checks: Expr[]; addr: Expr } => {
+    const sum = b.i64.add(getReg(rs1), i64c(imm));
+    const checks: Expr[] = [
+      b.local.set(EA, sum),
+      b.if(
+        b.i64.ne(b.i64.shr_u(b.local.get(EA, i64), i64c(32n)), i64c(0n)),
+        b.block(null, [b.unreachable()]),
+      ),
+    ];
+    return { checks, addr: b.i32.wrap(b.local.get(EA, i64)) };
+  };
 
   const translateTermBlock = (blk: Block): Expr[] => {
     const exprs: Expr[] = [];
@@ -171,10 +186,49 @@ export function compileToWasm(program: Uint8Array, opts: CompileOptions): Compil
           if (f7 === 0x01) {
             switch (f3) {
               case 0x0: out(b.i64.mul(a(), r2())); break;
-              case 0x4: out(b.i64.div_s(a(), r2())); break; // NOTE: wasm div-by-zero traps; RISC-V defines -1. Documented divergence.
-              case 0x5: out(b.i64.div_u(a(), r2())); break;
-              case 0x6: out(b.i64.rem_s(a(), r2())); break;
-              case 0x7: out(b.i64.rem_u(a(), r2())); break;
+              case 0x4: case 0x5: case 0x6: case 0x7: {
+                // RV64M edge cases, per the unprivileged spec:
+                //   div by zero  -> quotient = all ones; remainder = dividend
+                //   INT64_MIN/-1 -> quotient = INT64_MIN; remainder = 0
+                // WebAssembly traps on both; lower them explicitly.
+                const isDiv = f3 === 0x4 || f3 === 0x5;
+                const isSigned = f3 === 0x4 || f3 === 0x6;
+                const dividend = () => getReg(rs1), divisor = () => getReg(rs2);
+                const setV = (v: Expr) => { const s = setReg(rd, v); if (s) exprs.push(s); };
+                const mkThen = (v: () => Expr): Expr[] => {
+                  const arr: Expr[] = [];
+                  const s = setReg(rd, v());
+                  if (s) arr.push(s);
+                  return arr;
+                };
+                const zeroThen = mkThen(() => isDiv ? i64c(-1n) : dividend());
+                const normalThen = mkThen(() =>
+                  f3 === 0x4 ? b.i64.div_s(dividend(), divisor()) :
+                  f3 === 0x5 ? b.i64.div_u(dividend(), divisor()) :
+                  f3 === 0x6 ? b.i64.rem_s(dividend(), divisor()) :
+                               b.i64.rem_u(dividend(), divisor()));
+                if (isSigned) {
+                  const INT64_MIN = -(1n << 63n);
+                  const overflowThen = mkThen(() => isDiv ? i64c(INT64_MIN) : i64c(0n));
+                  exprs.push(b.if(
+                    b.i64.eq(divisor(), i64c(0n)),
+                    b.block(null, zeroThen),
+                    b.if(
+                      b.i32.and(b.i64.eq(dividend(), i64c(INT64_MIN)), b.i64.eq(divisor(), i64c(-1n))),
+                      b.block(null, overflowThen),
+                      b.block(null, normalThen),
+                    ),
+                  ));
+                } else {
+                  void setV;
+                  exprs.push(b.if(
+                    b.i64.eq(divisor(), i64c(0n)),
+                    b.block(null, zeroThen),
+                    b.block(null, normalThen),
+                  ));
+                }
+                break;
+              }
               default: throw new Error(`M funct3 ${f3} unsupported in JIT at 0x${pc.toString(16)}`);
             }
             break;
@@ -210,7 +264,9 @@ export function compileToWasm(program: Uint8Array, opts: CompileOptions): Compil
           break;
         }
         case OP.Load: {
-          const addr = effAddr(rs1, field.immI(w));
+          const ea = effAddr(rs1, field.immI(w));
+          exprs.push(...ea.checks);
+          const addr = ea.addr;
           switch (f3) {
             case 0x0: out(b.i64.extend_s(b.i32.load8_s(0, 1, addr))); break;
             case 0x1: out(b.i64.extend_s(b.i32.load16_s(0, 2, addr))); break;
@@ -224,7 +280,9 @@ export function compileToWasm(program: Uint8Array, opts: CompileOptions): Compil
           break;
         }
         case OP.Store: {
-          const addr = effAddr(rs1, field.immS(w));
+          const ea = effAddr(rs1, field.immS(w));
+          exprs.push(...ea.checks);
+          const addr = ea.addr;
           switch (f3) {
             case 0x0: exprs.push(b.i32.store8(0, 1, addr, b.i32.wrap(getReg(rs2)))); break;
             case 0x1: exprs.push(b.i32.store16(0, 2, addr, b.i32.wrap(getReg(rs2)))); break;

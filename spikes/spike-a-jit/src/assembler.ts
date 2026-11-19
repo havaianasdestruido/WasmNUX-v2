@@ -185,16 +185,16 @@ export function assemble(source: string): AssembledProgram {
       case 'lui': case 'auipc': {
         need(2);
         const rd = reg(args[0]!);
-        let imm = parseNumber(args[1]!);
-        if (opstr === 'lui') {
-          // li supports full 32-bit; lui imm is the value (assembler shifts).
-          if (imm < 0n) imm = (0x1_0000_0000n + imm) & 0xfffff000n; // allow negative lui
-          const immNum = Number(imm & 0xffffffffn);
-          word = encU(immNum << 12, rd, OP.Lui);
-        } else {
-          const immNum = Number(imm & 0xffffffffn);
-          word = encU(immNum << 12, rd, OP.Auipc);
+        const imm = parseNumber(args[1]!);
+        // Operand is the 20-bit signed upper immediate; the assembler
+        // positions it at bits 12..31 (single shift). Range-check instead
+        // of wrapping: out-of-range upper immediates are almost always a
+        // user error.
+        if (imm < -0x80000n || imm > 0x7ffffn) {
+          throw new Error(`line ${ins.line}: ${opstr} immediate out of 20-bit range: ${imm}`);
         }
+        const positioned = (Number(imm & 0xfffffn) << 12) | 0;
+        word = encU(positioned >>> 0, rd, opstr === 'lui' ? OP.Lui : OP.Auipc);
         break;
       }
       case 'jal': {

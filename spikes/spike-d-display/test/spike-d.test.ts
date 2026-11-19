@@ -59,3 +59,31 @@ test('webgpu probe: reports unavailable in Node without crashing', async () => {
   assert.equal(report.environment, 'node');
   assert.ok(report.notes.length >= 1);
 });
+
+test('Wasm SIMD blit: final partial vector does not overwrite past len', async () => {
+  const simd = await instantiateSimdBlit();
+  const mem = new Uint8Array(simd.memory.buffer);
+  // canary region after the destination: must stay 0xAB after the blit
+  const dst = 0;
+  const src = 4096;
+  const n = 1031; // 64 full vectors + 7-byte tail
+  const srcBytes = new Uint8Array(n).map((_, i) => (i * 41 + 3) & 0xff);
+  mem.set(srcBytes, src);
+  mem.fill(0xab, dst, dst + n + 32); // canary after dst
+  simd.blit(dst, src, n);
+  assert.deepEqual([...mem.subarray(dst, dst + n)], [...srcBytes]);
+  for (let i = n; i < n + 15; i++) {
+    assert.equal(mem[dst + i], 0xab, `byte ${i} past len was overwritten`);
+  }
+});
+
+test('Wasm SIMD blit: len not a multiple of 16 for len < 16', async () => {
+  const simd = await instantiateSimdBlit();
+  const mem = new Uint8Array(simd.memory.buffer);
+  const srcBytes = new Uint8Array(5).map((_, i) => 0xf0 + i);
+  mem.set(srcBytes, 8192);
+  mem.fill(0xab, 16384, 16400);
+  simd.blit(16384, 8192, 5);
+  assert.deepEqual([...mem.subarray(16384, 16389)], [...srcBytes]);
+  for (let i = 5; i < 16; i++) assert.equal(mem[16384 + i], 0xab);
+});

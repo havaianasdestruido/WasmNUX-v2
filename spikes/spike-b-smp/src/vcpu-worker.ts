@@ -8,9 +8,9 @@ import { parentPort } from 'node:worker_threads';
 import { GuestMemory, Reservation, guestSpinLock, guestSpinUnlock } from './guest-atomics.js';
 
 export type Job =
-  | { kind: 'amoadd'; buffer: SharedArrayBuffer; counterAddr: number; iterations: number }
-  | { kind: 'spinlock'; buffer: SharedArrayBuffer; lockAddr: number; plainCellAddr: number; iterations: number; criticalWork: number }
-  | { kind: 'hash'; seed: bigint; iterations: number }
+  | { kind: 'amoadd'; buffer: SharedArrayBuffer; epochs?: SharedArrayBuffer; counterAddr: number; iterations: number }
+  | { kind: 'spinlock'; buffer: SharedArrayBuffer; epochs?: SharedArrayBuffer; lockAddr: number; plainCellAddr: number; iterations: number; criticalWork: number }
+  | { kind: 'hash'; start: number; iterations: number }
   | { kind: 'litmus-sb'; buffer: SharedArrayBuffer; xIdx: number; yIdx: number; traceBase: number; role: 0 | 1; rounds: number }
   | { kind: 'litmus-lb'; buffer: SharedArrayBuffer; xIdx: number; yIdx: number; traceBase: number; role: 0 | 1; rounds: number }
   | { kind: 'wait'; buffer: SharedArrayBuffer; controlAddr: number; timeoutMs: number };
@@ -23,28 +23,19 @@ export type JobResult =
   | { kind: 'litmus-lb'; done: number }
   | { kind: 'wait'; wokeAtNs: string; result: string };
 
-const M64 = (1n << 64n) - 1n;
-
-function xorshift64(x: bigint): bigint {
-  x ^= (x << 13n) & M64;
-  x ^= x >> 7n;
-  x ^= (x << 17n) & M64;
-  return BigInt.asUintN(64, x);
-}
-
 parentPort!.on('message', (msg: { t: string; job: Job }) => {
   try {
     const job = msg.job;
     let result: JobResult;
     switch (job.kind) {
       case 'amoadd': {
-        const g = GuestMemory.wrap(job.buffer);
+        const g = GuestMemory.wrap(job.buffer, job.epochs);
         for (let i = 0; i < job.iterations; i++) g.amoAdd(job.counterAddr, 1n);
         result = { kind: 'amoadd', done: job.iterations };
         break;
       }
       case 'spinlock': {
-        const g = GuestMemory.wrap(job.buffer);
+        const g = GuestMemory.wrap(job.buffer, job.epochs);
         const res = new Reservation();
         const i32 = new Int32Array(job.buffer);
         const idx = job.plainCellAddr / 4;
@@ -61,11 +52,19 @@ parentPort!.on('message', (msg: { t: string; job: Job }) => {
         break;
       }
       case 'hash': {
-        let h = BigInt.asUintN(64, job.seed);
-        for (let i = 0; i < job.iterations; i++) {
-          h = xorshift64(h + 0x9E3779B97F4A7C15n);
+        // Element-independent SplitMix64 fold: worker i hashes keys
+        // [start, start+iterations) and xor-combines, so the combined
+        // checksum is IDENTICAL for any worker count (verified by bench).
+        let h = 0n;
+        const M1 = 0x9E3779B97F4A7C15n, M2 = 0xBF58476D1CE4E5B9n, M3 = 0x94D049BB133111EBn;
+        for (let k = 0n; k < BigInt(job.iterations); k++) {
+          let x = BigInt.asUintN(64, (BigInt(job.start) + k) * M1 + 0x12345678n);
+          x = BigInt.asUintN(64, (x ^ (x >> 30n)) * M2);
+          x = BigInt.asUintN(64, (x ^ (x >> 27n)) * M3);
+          x = x ^ (x >> 31n);
+          h ^= x;
         }
-        result = { kind: 'hash', hash: h.toString() };
+        result = { kind: 'hash', hash: h.toString(16) };
         break;
       }
       // Free-running Herlihy-style litmus with per-round epoch tags: locations

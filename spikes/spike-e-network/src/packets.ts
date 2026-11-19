@@ -89,6 +89,9 @@ export function parseArp(data: Uint8Array): ArpPacket | null {
 export interface Ipv4Packet { src: Uint8Array; dst: Uint8Array; protocol: number; ttl: number; id: number; payload: Uint8Array }
 export function buildIpv4(p: Ipv4Packet): Uint8Array {
   const total = 20 + p.payload.length;
+  if (total > 0xffff) {
+    throw new RangeError(`IPv4 packet too large to encode: ${total} bytes (max 65535); fragmentation is not supported by this minimal stack`);
+  }
   const out = new Uint8Array(total);
   const dv = new DataView(out.buffer);
   out[0] = 0x45; out[1] = 0;

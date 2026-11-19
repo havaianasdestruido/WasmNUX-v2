@@ -1,7 +1,7 @@
 {
   "benchmark": "wasmnux-spike-c-storage",
   "version": 1,
-  "timestamp": "2026-11-19T01:46:40.869Z",
+  "timestamp": "2026-11-19T19:11:34.393Z",
   "host": {
     "cpus": 2,
     "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -16,66 +16,66 @@
   "chunkSweep": [
     {
       "chunkBytes": 4096,
-      "seqWriteMBs": 1033.3172623166854,
-      "seqReadMBs": 1028.4229278904086,
-      "random4KReadIOPS": 294918.9592191966,
-      "random4KWriteIOPS": 122549.38505331283
+      "seqWriteMBs": 840.7431187499917,
+      "seqReadMBs": 915.8263670806092,
+      "random4KReadIOPS": 292273.6012150781,
+      "random4KWriteIOPS": 128255.48766755156
     },
     {
       "chunkBytes": 8192,
-      "seqWriteMBs": 1591.7095928750189,
-      "seqReadMBs": 2275.0163315105256,
-      "random4KReadIOPS": 215687.88582518586,
-      "random4KWriteIOPS": 143977.4243398629
+      "seqWriteMBs": 1218.723645858153,
+      "seqReadMBs": 1595.5609037166412,
+      "random4KReadIOPS": 180792.59473532048,
+      "random4KWriteIOPS": 131098.25950017737
     },
     {
       "chunkBytes": 16384,
-      "seqWriteMBs": 1866.2710583373723,
-      "seqReadMBs": 3001.5617688573157,
-      "random4KReadIOPS": 361468.3422411176,
-      "random4KWriteIOPS": 166883.42969924244
+      "seqWriteMBs": 1273.312418856029,
+      "seqReadMBs": 2899.0651209908046,
+      "random4KReadIOPS": 394049.5885137064,
+      "random4KWriteIOPS": 47989.25347853293
     },
     {
       "chunkBytes": 32768,
-      "seqWriteMBs": 1800.1798225262482,
-      "seqReadMBs": 4536.281197684991,
-      "random4KReadIOPS": 464105.033776015,
-      "random4KWriteIOPS": 152881.95479759556
+      "seqWriteMBs": 1218.3867494793917,
+      "seqReadMBs": 2831.2791480924934,
+      "random4KReadIOPS": 261783.78247722096,
+      "random4KWriteIOPS": 109003.07243326837
     },
     {
       "chunkBytes": 65536,
-      "seqWriteMBs": 1999.2730876305952,
-      "seqReadMBs": 4253.089673835567,
-      "random4KReadIOPS": 456049.7969894274,
-      "random4KWriteIOPS": 156489.73901997512
+      "seqWriteMBs": 1194.221160120705,
+      "seqReadMBs": 3332.0343260457303,
+      "random4KReadIOPS": 266526.3435082095,
+      "random4KWriteIOPS": 99955.92610031807
     },
     {
       "chunkBytes": 131072,
-      "seqWriteMBs": 2197.6817945228695,
-      "seqReadMBs": 5240.492300695492,
-      "random4KReadIOPS": 587729.155597772,
-      "random4KWriteIOPS": 160664.8353731697
+      "seqWriteMBs": 1351.5137532496526,
+      "seqReadMBs": 3759.520189486192,
+      "random4KReadIOPS": 298203.8288775175,
+      "random4KWriteIOPS": 101840.301778614
     },
     {
       "chunkBytes": 262144,
-      "seqWriteMBs": 2175.892800691532,
-      "seqReadMBs": 5920.486110927331,
-      "random4KReadIOPS": 548722.236255281,
-      "random4KWriteIOPS": 154451.1349815919
+      "seqWriteMBs": 1254.3352774021348,
+      "seqReadMBs": 3910.21149410714,
+      "random4KReadIOPS": 326151.1232101155,
+      "random4KWriteIOPS": 136730.1913616517
     },
     {
       "chunkBytes": 524288,
-      "seqWriteMBs": 2203.374480321835,
-      "seqReadMBs": 4504.7941191673235,
-      "random4KReadIOPS": 516398.75899049814,
-      "random4KWriteIOPS": 167903.283678922
+      "seqWriteMBs": 1472.602373600486,
+      "seqReadMBs": 3633.827057010549,
+      "random4KReadIOPS": 363190.3218979986,
+      "random4KWriteIOPS": 132307.10649253512
     },
     {
       "chunkBytes": 1048576,
-      "seqWriteMBs": 2292.322798671899,
-      "seqReadMBs": 4380.527335384112,
-      "random4KReadIOPS": 615464.6573523601,
-      "random4KWriteIOPS": 171444.49127418964
+      "seqWriteMBs": 1328.4210548819494,
+      "seqReadMBs": 3251.7935803439937,
+      "random4KReadIOPS": 457580.3213616996,
+      "random4KWriteIOPS": 134753.3158636137
     }
   ]
 }

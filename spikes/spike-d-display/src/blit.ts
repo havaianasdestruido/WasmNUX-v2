@@ -24,8 +24,10 @@ export function buildSimdBlit(): Uint8Array<ArrayBuffer> {
   const i32 = binaryen.i32, v128 = binaryen.v128;
   // params: dst (0), src (1), len (2); locals: i (3)
   const ptr = (base: number, off: binaryen.ExpressionRef) => b.i32.add(b.local.get(base, i32), off);
+  // vector loop: only complete 16-byte vectors; the final partial vector is
+  // left to the scalar tail (no over-read/over-write past len)
   const loopBody = b.block('exit', [
-    b.br_if('exit', b.i32.ge_s(b.local.get(3, i32), b.local.get(2, i32))),
+    b.br_if('exit', b.i32.gt_s(b.i32.add(b.local.get(3, i32), b.i32.const(16)), b.local.get(2, i32))),
     b.v128.store(0, 16, ptr(0, b.local.get(3, i32)),
       b.v128.load(0, 16, ptr(1, b.local.get(3, i32)))),
     b.local.set(3, b.i32.add(b.local.get(3, i32), b.i32.const(16))),

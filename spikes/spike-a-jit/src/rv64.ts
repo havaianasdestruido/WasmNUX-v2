@@ -67,6 +67,9 @@ export function encS(imm: number, rs2: number, rs1: number, funct3: number, op: 
 
 export function encB(imm: number, rs2: number, rs1: number, funct3: number, op: number): number {
   if (imm % 2 !== 0) throw new Error(`branch offset ${imm} not 2-byte aligned`);
+  if (imm < -4096 || imm > 4094) {
+    throw new Error(`branch offset ${imm} out of B-immediate range [-4096, 4094]`);
+  }
   const bit12 = (imm >> 12) & 1;
   const bit11 = (imm >> 11) & 1;
   const bit10_5 = (imm >> 5) & 0x3f;
@@ -81,6 +84,9 @@ export function encU(imm32: number, rd: number, op: number): number {
 
 export function encJ(imm: number, rd: number, op: number): number {
   if (imm % 2 !== 0) throw new Error(`jal offset ${imm} not 2-byte aligned`);
+  if (imm < -1048576 || imm > 1048574) {
+    throw new Error(`jal offset ${imm} out of J-immediate range [-1048576, 1048574]`);
+  }
   const bit20 = (imm >> 20) & 1;
   const bit19_12 = (imm >> 12) & 0xff;
   const bit11 = (imm >> 11) & 1;

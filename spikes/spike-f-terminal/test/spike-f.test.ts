@@ -77,3 +77,30 @@ test('unionMany: single rect and span', () => {
   assert.deepEqual(r, { x: 0, y: 0, w: 6, h: 6 });
   assert.equal(area(r), 36);
 });
+
+test('width: regional-indicator flag is 2 cells', () => {
+  assert.equal(graphemeWidth('🇺🇸'), 2);
+  assert.equal(graphemeWidth('🇧🇷'), 2);
+  assert.equal(countCells('🇺🇸a'), 3);
+});
+
+test('width: keycap sequence is 2 cells', () => {
+  assert.equal(graphemeWidth('1️⃣'), 2);   // '1' + VS16 + U+20E3
+  assert.equal(graphemeWidth('#️⃣'), 2);   // '#' + VS16 + U+20E3
+});
+
+test('width: narrow base + VS16 (text-vs-emoji presentation) is 2 cells', () => {
+  assert.equal(graphemeWidth('©️'), 2);    // U+00A9 + VS16
+  assert.equal(graphemeWidth('❤️'), 2);    // U+2764 + VS16
+  assert.equal(graphemeWidth('☀️'), 2);    // U+2600 + VS16
+});
+
+test('width: ZWJ emoji sequences are 2 cells', () => {
+  assert.equal(graphemeWidth('👨‍👩‍👧'), 2);
+  assert.equal(graphemeWidth('🧑🏽‍🚀'), 2);
+});
+
+test('width: VS16 sequence with a non-emoji base stays narrow or zero', () => {
+  // © without VS16 is text-presentation: narrow legacy (1 cell)
+  assert.equal(graphemeWidth('©'), 1);
+});

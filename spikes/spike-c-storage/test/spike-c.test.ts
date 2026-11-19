@@ -86,7 +86,9 @@ test('COW: scrub detects bit rot in present chunks', () => {
   const overlay = makeOverlay();
   const cow = CowOverlayDevice.open(base, overlay, { chunkSize: 4096, init: true });
   cow.write(8192, new Uint8Array(4096).fill(0x42));
-  const dataOff = 2 * META_SECTOR_BYTES + 2 * 4096;
+  const dataOff = cow.arenaOffsetOf(2)!;
+  assert.notEqual(dataOff, undefined);
+  assert.ok(dataOff >= 2 * META_SECTOR_BYTES);
   overlay.bytes[dataOff + 100] ^= 0x01; // bit rot
   const bad = cow.scrub();
   assert.deepEqual(bad, [2]);
@@ -109,4 +111,36 @@ test('durability probe: returns a structured report without crashing in Node', a
   assert.equal(typeof report.opfsAvailable, 'boolean');
   assert.ok(Array.isArray(report.recommendations));
   assert.ok(report.recommendations.length >= 1);
+});
+
+
+test('COW: crash before metadata commit keeps last committed contents (arena COW)', () => {
+  const base = makeBase();
+  const overlay = makeOverlay();
+  const cow = CowOverlayDevice.open(base, overlay, { chunkSize: 4096, init: true });
+  cow.write(0, new Uint8Array(4096).fill(0xaa));      // commit A
+  const snapshotA = overlay.bytes.slice();
+  cow.write(0, new Uint8Array(4096).fill(0xbb));      // commit B (same logical chunk)
+  // Simulate a crash *before* B's metadata landed: restore the pre-B state of
+  // both meta slots only (B's arena data stays, unreferenced).
+  const newestSlot = Number(cow.sequence % 2n);
+  const oldSlot = 1 - newestSlot;
+  overlay.bytes.set(snapshotA.subarray(0, 2 * META_SECTOR_BYTES), 0);
+  void oldSlot;
+  const recovered = CowOverlayDevice.open(base, overlay, { chunkSize: 4096 });
+  assert.deepEqual([...recovered.read(0, 4096)], [...new Uint8Array(4096).fill(0xaa)]);
+});
+
+test('COW: discard beyond logical size throws and mounts stay valid', () => {
+  const base = makeBase();           // 256 KiB => 64 chunks of 4 KiB
+  const overlay = makeOverlay();
+  const cow = CowOverlayDevice.open(base, overlay, { chunkSize: 4096, init: true });
+  const before = overlay.bytes.slice();
+  assert.throws(() => cow.discard(64 * 4096, 4096), /out of range/);
+  assert.throws(() => cow.discard(63 * 4096, 8192), /out of range/);
+  assert.throws(() => cow.discard(-1, 4096), /negative/);
+  assert.deepEqual([...overlay.bytes], [...before], 'failed discards must not write');
+  // still mounts cleanly and reads base
+  const cow2 = CowOverlayDevice.open(base, overlay, { chunkSize: 4096 });
+  assert.deepEqual([...cow2.read(4096, 32)], [...base.bytes.subarray(4096, 4128)]);
 });

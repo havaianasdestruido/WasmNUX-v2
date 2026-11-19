@@ -16,12 +16,23 @@
 
 ## Measured (2× Xeon @ 2.60 GHz, Node 22)
 
-| Metric | Value |
-|---|---|
-| UDP serialize+parse | 1.27M ops/s |
-| IPv4 checksum | 11.4M ops/s |
-| ICMP echo round trip (simulated wire) | ~69k/s |
-| wnx-relay localhost WebSocket round trip | ~12.9k msgs/s |
+Post-review hardening: DNS names reject cyclic/out-of-range compression
+pointers (jump cap + per-pointer visited set + 255-byte expansion bound — the
+previous decoder could loop forever on a malformed response); IPv4 packets
+larger than 65,535 bytes are rejected at encode time instead of wrapping the
+length field; `wnx-relay` enforces `maxBufferedBytes` (a non-draining peer is
+disconnected instead of buffering unboundedly) and `stop()` terminates every
+accepted socket, including ones that never joined a session.
+
+| Metric | 2026-11-19 run 1 | 2026-11-19 run 2 (committed JSON) |
+|---|---|---|
+| UDP serialize+parse | 1.27M ops/s | 660k ops/s |
+| IPv4 checksum | 11.4M ops/s | 7.3M ops/s |
+| ICMP echo round trip (simulated wire) | ~69k/s | ~40k/s |
+| wnx-relay localhost WebSocket round trip | ~12.9k msgs/s | ~4.5k msgs/s |
+
+Run-to-run variance is large on the shared host; both runs confirm the same
+order of magnitude and the architecture's viability. 16/16 tests.
 
 ## Notable bugs caught by tests
 

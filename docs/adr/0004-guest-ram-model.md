@@ -36,13 +36,17 @@ generated code therefore needs **explicit address translation/bounding**:
 
 SMP atomics (spike B): guest LR/SC and AMOs map onto shared-memory Wasm
 atomics (`i64.atomic.rmw.add`, `i64.atomic.rmw.cmpxchg`, `i32/i64.atomic.load`
-etc.). Memory-model validation in spike B ran store-buffering and
-load-buffering litmus tests (0 forbidden outcomes in 100k rounds) and
-confirmed `Atomics.wait` parks idle vCPUs without spinning (parked wake
-≈ 85 µs vs ≈ 4.5–5 ms for an ineffective wait/notify cycle). Contended
-`AMO` scaling is negative (0.79–0.83× for the contended counter), while
-partitioned access scaled 1.93× — guest scheduler guidance should prefer
-partitioned structures (recorded in ADR-0002-adjacent docs).
+etc.), with a **companion CPU-side epoch array** (8 bytes per 8-byte granule,
+shared alongside guest RAM) provided by the host runtime — every host-side
+write claims the granule (seqlock-style), which is how LR/SC reservations are
+made ABA-proof (a same-value store still invalidates the reservation).
+Memory-model validation in spike B ran store-buffering and load-buffering
+litmus tests (0 forbidden outcomes in 100k rounds) and confirmed
+`Atomics.wait` parks idle vCPUs without spinning (parked wake ≈ 86 µs vs
+≈ 4.5–5 ms for an ineffective wait/notify cycle). Contended `AMO` scaling is
+negative (0.63–0.79× for the contended counter), while partitioned access
+scaled 1.86–2.03× — guest scheduler guidance should prefer partitioned
+structures (recorded in ADR-0002-adjacent docs).
 
 ## Decision
 

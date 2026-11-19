@@ -1,7 +1,7 @@
 {
   "benchmark": "wasmnux-spike-d-display",
   "version": 1,
-  "timestamp": "2026-11-19T01:48:05.418Z",
+  "timestamp": "2026-11-19T19:07:22.281Z",
   "host": {
     "cpus": 2,
     "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -15,11 +15,11 @@
     "reps": 30
   },
   "blit": {
-    "typedArraySetMBs": 14943.841682911903,
-    "wasmSimdMBs": 14798.585513286751,
-    "jsManualSampleMBs": 1357.0075267370764,
-    "typedArraySetFramesPerSecond1080p": 1801.6784436381058,
-    "wasmSimdFramesPerSecond1080p": 1784.1658846072955,
+    "typedArraySetMBs": 15783.374404156391,
+    "wasmSimdMBs": 14693.330924125725,
+    "jsManualSampleMBs": 846.3001165444709,
+    "typedArraySetFramesPerSecond1080p": 1902.8952551307377,
+    "wasmSimdFramesPerSecond1080p": 1771.4760469866087,
     "simdBlitVerified": true
   },
   "note": "In-browser numbers (WebGPU writeTexture upload MB/s) are measured by the probe at web/probe/webgpu-scanout.html; Node cannot reach WebGPU here."

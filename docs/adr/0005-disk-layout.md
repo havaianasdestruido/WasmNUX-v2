@@ -55,6 +55,10 @@ redesign of this ADR).
 - Eviction pressure: on `QuotaExceededError` or bucket eviction signal, the
   overlay never discards un-checkpointed dirty chunks; the guest is paused and
   the user is told (data loss is a P0 bug, ROADMAP §1).
+- Crash consistency (post-review): every overlay write lands in a **fresh
+  arena slot** and only then commits metadata; a crash before commit leaves
+  the last committed chunk intact, and discards outside the logical size are
+  rejected up front. Arena compaction is Phase 2 work.
 - Base upgrades ship as new signed chunks; the guest's own package manager is
   the upgrade mechanism — no in-place base rewriting.
 
@@ -65,6 +69,7 @@ redesign of this ADR).
   OPFS re-measurement" until Phase 1/2 (recorded in the KPI calibration doc).
 - Chunk size default: **64 KiB** (sweep knee); snapshot engine (Phase 3)
   re-chunks for compression efficiency.
-- COW metadata journal is now load-bearing scope for Phase 2.
+- COW metadata journal is now load-bearing scope for Phase 2 (plus arena
+  compaction — rewriting hot chunks leaks unreferenced slots).
 - No EROFS in-guest; the base image is just files + a manifest, which keeps
   the guest kernel completely stock.

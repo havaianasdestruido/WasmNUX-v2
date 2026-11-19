@@ -28,20 +28,37 @@ export function encodeQuery(id: number, name: string, type: number): Uint8Array 
 export interface DnsAnswer { name: string; type: number; ttl: number; address?: string; cname?: string }
 export interface DnsResponse { id: number; rcode: number; answers: DnsAnswer[] }
 
+const MAX_NAME_BYTES = 255;   // RFC 1035 absolute limit (labels incl. length octets + root)
+const MAX_JUMPS = 16;         // compression pointers may chain, but bounded
+
 function readName(buf: Uint8Array, off: number): { name: string; next: number } {
   const labels: string[] = [];
   let jumped = false;
   let next = off;
+  let total = 0;              // bytes of expanded name
+  const seenOffsets = new Set<number>();
+  let jumps = 0;
   for (;;) {
+    if (off < 0 || off >= buf.length) throw new Error('DNS name pointer out of bounds');
     const len = buf[off]!;
     if (len === 0) { off += 1; if (!jumped) next = off; break; }
     if ((len & 0xc0) === 0xc0) {
+      if (off + 1 >= buf.length) throw new Error('truncated DNS compression pointer');
       const ptr = ((len & 0x3f) << 8) | buf[off + 1]!;
+      if (seenOffsets.has(ptr)) throw new Error('cyclic DNS compression pointer');
+      seenOffsets.add(ptr);
+      if (++jumps > MAX_JUMPS) throw new Error('too many DNS compression pointer jumps');
+      // Forward/self references are syntactically legal but pathological; the
+      // seenOffsets set + jump cap make them safe regardless.
       if (!jumped) next = off + 2;
       off = ptr;
       jumped = true;
       continue;
     }
+    if ((len & 0xc0) !== 0) throw new Error('invalid DNS label length bits');
+    if (off + 1 + len > buf.length) throw new Error('truncated DNS label');
+    total += len + 1;
+    if (total > MAX_NAME_BYTES) throw new Error('DNS name exceeds 255 bytes');
     labels.push(new TextDecoder().decode(buf.subarray(off + 1, off + 1 + len)));
     off += 1 + len;
     if (!jumped) next = off;

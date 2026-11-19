@@ -4,6 +4,7 @@
 import { Worker } from 'node:worker_threads';
 import { performance } from 'node:perf_hooks';
 import type { Job, JobResult } from './vcpu-worker.js';
+import { GuestMemory } from './guest-atomics.js';
 
 export interface ScalingPoint {
   workers: number;
@@ -36,9 +37,10 @@ export async function amoAddScaling(maxWorkers: number, iterationsPerWorker: num
   let baseWall = 0;
   for (let n = 1; n <= maxWorkers; n++) {
     const buffer = new SharedArrayBuffer(16);
+    const epochs = new GuestMemory(16).epochsBuffer;
     const t0 = performance.now();
     await Promise.all(Array.from({ length: n }, () =>
-      spawnJob({ kind: 'amoadd', buffer, counterAddr: 0, iterations: iterationsPerWorker })));
+      spawnJob({ kind: 'amoadd', buffer, epochs, counterAddr: 0, iterations: iterationsPerWorker })));
     const wallMs = performance.now() - t0;
     const got = new BigInt64Array(buffer)[0]!;
     const correct = got === BigInt(n * iterationsPerWorker);
@@ -53,10 +55,11 @@ export async function spinlockScaling(maxWorkers: number, iterationsPerWorker: n
   let baseWall = 0;
   for (let n = 1; n <= maxWorkers; n++) {
     const buffer = new SharedArrayBuffer(64);
+    const epochs = new GuestMemory(64).epochsBuffer;
     const i32 = new Int32Array(buffer);
     const t0 = performance.now();
     await Promise.all(Array.from({ length: n }, () =>
-      spawnJob({ kind: 'spinlock', buffer, lockAddr: 0, plainCellAddr: 8, iterations: iterationsPerWorker, criticalWork })));
+      spawnJob({ kind: 'spinlock', buffer, epochs, lockAddr: 0, plainCellAddr: 8, iterations: iterationsPerWorker, criticalWork })));
     const wallMs = performance.now() - t0;
     const cell = i32[2]!; // plainCellAddr 8 -> i32 index 2
     const correct = cell === n * iterationsPerWorker;
@@ -81,11 +84,11 @@ export async function hashScaling(maxWorkers: number, totalIterations: number): 
     const perWorker = Math.floor(totalIterations / n);
     const t0 = performance.now();
     const results = await Promise.all(Array.from({ length: n }, (_, i) =>
-      spawnJob({ kind: 'hash', seed: BigInt(0x1234_5678 + i * 1013904223), iterations: perWorker })));
+      spawnJob({ kind: 'hash', start: i * perWorker, iterations: perWorker })));
     const wallMs = performance.now() - t0;
     // combine: xor of sub-hashes (order-independent; a workload checksum, not a correctness oracle)
     let h = 0n;
-    for (const r of results) if (r.kind === 'hash') h ^= BigInt(r.hash);
+    for (const r of results) if (r.kind === 'hash') h ^= BigInt('0x' + r.hash);
     if (n === 1) baseWall = wallMs;
     points.push({ workers: n, wallMs, speedup: baseWall / wallMs, efficiency: baseWall / wallMs / n, hash: h.toString(16) });
   }

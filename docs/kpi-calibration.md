@@ -21,7 +21,7 @@
 
 | Metric | Target | Stretch | Phase 0 measurement | Calibration |
 |---|---|---|---|---|
-| Single-thread vs QEMU-TCG (same host) | ≥ 50% | ≥ 75% | **not directly measurable yet** (no guest). Host reference: CoreMark 29,689–32,008 iter/s @ -O2; Dhrystone 55.6M/s; gcc 12.2 compiling 5 CoreMark TUs in 337 ms | Keep proposal. Spike A effective JIT throughput ~6,160–6,969 MIPS vs RV64 interpreter ~7.8–10.2 MIPS (**670–1190×**). Translating to guest vs TCG requires Phase 1; the prior-art band (v86_64 ~530 MIPS ≈ 6× interpreted) suggests ≥ 50% of TCG is realistic, not guaranteed. |
+| Single-thread vs QEMU-TCG (same host) | ≥ 50% | ≥ 75% | **not directly measurable yet** (no guest). Host reference: CoreMark ~30k iter/s @ -O2; Dhrystone 55.6M/s; gcc 12.2 compiling 5 CoreMark TUs in 337 ms | Keep proposal. Spike A effective JIT throughput ~4,400–6,970 MIPS vs RV64 interpreter ~5–10 MIPS across two committed runs (**~750–1190×**). Translating to guest vs TCG requires Phase 1; the prior-art band (v86_64 ~530 MIPS ≈ 6× interpreted) suggests ≥ 50% of TCG is realistic, not guaranteed. |
 | Throughput vs best in-browser emulator | ≥ 3× | ≥ 5× | Spike A kernels show **600–1500× vs own interpreter**; v86_64 ≈ 530 MIPS is the competitive bar | Keep proposal; re-derive precisely in Phase 3 vs v86_64/WebVM once we have a full guest. Baseline artifacts live in `benchmarks/results/`. |
 
 ## SMP
@@ -41,8 +41,8 @@
 
 | Metric | Target | Stretch | Phase 0 measurement | Calibration |
 |---|---|---|---|---|
-| Keystroke → pixel latency | ≤ 1 frame | ≤ 8 ms | Full-frame CPU blit ~167 fps (1280×768); 2-row damage redraw ~9,300 fps; damage area after a 2-line scroll = **4.2%** of grid | Keep proposal. Input path is CPU-cheap; risk is composition/IME plumbing, not rasterization. |
-| Throughput (`cat` of large file) | saturates display, never blocks vCPU | n/a | Ligature-aware ingest ~1.71M cells/s (~12.8k lines/s); plain ~7.54M cells/s (~55.9k lines/s); atlas hit rate **99.99%**; scrollback push ~5.85M lines/s | Keep proposal. Measured ingest exceeds a 4K display's cell rate by ~10×; vCPU blocking risk is the damage/attach logic — verify in Phase 2 integration. |
+| Keystroke → pixel latency | ≤ 1 frame | ≤ 8 ms | Full-frame CPU blit ~104–177 fps (1280×768); 2-row damage redraw ~5,800–6,700 fps; damage area after a 2-line scroll = **4.2%** of grid | Keep proposal. Input path is CPU-cheap; risk is composition/IME plumbing, not rasterization. |
+| Throughput (`cat` of large file) | saturates display, never blocks vCPU | n/a | Ligature-aware ingest ~0.73–0.90M cells/s (~5.4–6.7k lines/s, post-review honest numbers); plain ~3.1–3.8M cells/s (~23–28k lines/s); atlas hit rate **99.99%**; scrollback push ~3.1–4.9M lines/s | Keep proposal. Cell ingest still exceeds a 4K display's cell rate; vCPU blocking risk is the damage/attach logic — verify in Phase 2 integration. |
 
 ## GUI
 
@@ -72,9 +72,10 @@
 ## Summary of calibration actions
 
 1. **SMP row recalibrated**: 0.8×/core is not supported by contended-kernel
-   measurements (0.79×); treat as stretch for contended workloads, keep as
-   gate for parallel (partitioned) builds. 8-vCPU re-measurement required
-   before final gates.
+   measurements (0.63× with the ADR-review epoch-reservation protocol; 0.79×
+   before it); treat as stretch for contended workloads, keep as gate for
+   parallel (partitioned) builds (~1.86× measured, partition-invariant
+   checksum verified). 8-vCPU re-measurement required before final gates.
 2. **Disk rows flagged `*`**: Node-proxy numbers are directional; browser OPFS
    re-measurement is a Phase 1 exit activity and will feed the CI gate.
 3. **Startup, memory, snapshot rows**: genuinely unmeasurable until the

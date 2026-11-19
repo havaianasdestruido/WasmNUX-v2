@@ -155,3 +155,69 @@ test('relay: wrong token is refused; third joiner on same role is rejected', asy
   await assert.rejects(connectRelay(url, 's', 'guest', 'right'), /refused/);
   await relay.stop();
 });
+
+
+test('DNS: cyclic compression pointer does not hang and is rejected', () => {
+  // answer NAME is a pointer to its own offset: c0 0c at offset 21 (0x15)
+  const msg = new Uint8Array(12 + 9 + 16);
+  const dv = new DataView(msg.buffer);
+  dv.setUint16(0, 1, false); dv.setUint16(2, 0x8180, false);
+  dv.setUint16(4, 1, false); dv.setUint16(6, 1, false);
+  dv.setUint16(8, 0, false); dv.setUint16(10, 0, false);
+  msg[12] = 0x03; msg.set([97, 98, 99], 13); msg[16] = 0; // qname 'abc'
+  dv.setUint16(17, 1, false); dv.setUint16(19, 1, false);
+  const ans = 21;
+  msg[ans] = 0xc0; msg[ans + 1] = (ans & 0xff); // pointer to itself
+  dv.setUint16(ans + 2, 1, false);               // TYPE A
+  dv.setUint16(ans + 4, 1, false);               // CLASS IN
+  dv.setUint32(ans + 6, 60, false);              // TTL
+  dv.setUint16(ans + 10, 4, false);              // RDLENGTH
+  msg.set([127, 0, 0, 1], ans + 12);
+  assert.throws(() => parseResponse(msg), /cyclic|jumps|bounds/);
+});
+
+test('DNS: self-referential qname pointer is rejected', () => {
+  // question NAME is a pointer to offset 12 (itself): c0 0c at 12
+  const msg = new Uint8Array(12 + 2);
+  const dv = new DataView(msg.buffer);
+  dv.setUint16(0, 1, false); dv.setUint16(2, 0x8180, false);
+  dv.setUint16(4, 1, false); dv.setUint16(6, 0, false);
+  msg[12] = 0xc0; msg[13] = 0x0c; // pointer to itself
+  assert.throws(() => parseResponse(msg), /cyclic|jumps|bounds/);
+});
+
+test('IPv4: payload above 65515 bytes is rejected instead of wrapping', () => {
+  const big = new Uint8Array(65_516);
+  const src = ipBytes('10.0.0.1'), dst = ipBytes('10.0.0.2');
+  assert.throws(() => buildIpv4({ src, dst, protocol: 17, ttl: 64, id: 1, payload: big }), /too large/);
+});
+
+test('relay: stop() terminates a socket that never completed the join handshake', async () => {
+  const relay = new RelayServer({});
+  const port = await relay.start(0);
+  const WebSocket = (await import('ws')).default;
+  const ws = new WebSocket(`ws://127.0.0.1:${port}`);
+  await new Promise(r => ws.on('open', r));
+  // never send a join frame; stop() must terminate it promptly
+  const t0 = Date.now();
+  await relay.stop();
+  assert.ok(Date.now() - t0 < 1000, 'stop() hung on unjoined socket');
+});
+
+test('relay: maxBufferedBytes kills a peer that is not draining', async () => {
+  const relay = new RelayServer({ maxBufferedBytes: 8 });
+  const port = await relay.start(0);
+  const url = `ws://127.0.0.1:${port}`;
+  const guest = await connectRelay(url, 's', 'guest');
+  const client = await connectRelay(url, 's', 'client');
+  client.onData = () => { /* never reads fast — butws buffers regardless; simulate by not reading */ };
+  // saturate: send more than the limit before the peer drains
+  let gotError = false;
+  guest.onClose = () => { gotError = true; };
+  for (let i = 0; i < 100; i++) client.send(new Uint8Array(1024).fill(1));
+  await new Promise(r => setTimeout(r, 300));
+  // one of the two sockets should have been closed by the relay
+  const closed = guest.readyState === 3 || client.readyState === 3 || gotError;
+  assert.ok(closed, 'relay did not enforce maxBufferedBytes');
+  await relay.stop();
+});

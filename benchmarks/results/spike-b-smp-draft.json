@@ -1,7 +1,7 @@
 {
   "benchmark": "wasmnux-spike-b-smp",
   "version": 1,
-  "timestamp": "2026-11-19T01:44:17.541Z",
+  "timestamp": "2026-11-19T18:40:39.000Z",
   "host": {
     "cpus": 2,
     "model": "Intel(R) Xeon(R) Processor @ 2.60GHz",
@@ -18,53 +18,53 @@
   "amoAddScaling": [
     {
       "workers": 1,
-      "wallMs": 42.89966,
+      "wallMs": 83.041912,
       "speedup": 1,
       "efficiency": 1,
       "correct": true
     },
     {
       "workers": 2,
-      "wallMs": 54.15472899999999,
-      "speedup": 0.7921683072220711,
-      "efficiency": 0.39608415361103555,
+      "wallMs": 131.84987399999997,
+      "speedup": 0.629821701611941,
+      "efficiency": 0.3149108508059705,
       "correct": true
     }
   ],
   "spinlockScaling": [
     {
       "workers": 1,
-      "wallMs": 39.455551,
+      "wallMs": 59.04913000000005,
       "speedup": 1,
       "efficiency": 1,
       "correct": true
     },
     {
       "workers": 2,
-      "wallMs": 47.775998999999985,
-      "speedup": 0.8258446045262186,
-      "efficiency": 0.4129223022631093,
+      "wallMs": 87.36897099999999,
+      "speedup": 0.6758592818954003,
+      "efficiency": 0.33792964094770017,
       "correct": true
     }
   ],
   "hashScaling": [
     {
       "workers": 1,
-      "wallMs": 2958.532753,
+      "wallMs": 3200.6134359999996,
       "speedup": 1,
       "efficiency": 1,
-      "hash": "8a1e698ec469689e"
+      "hash": "57ca3717a5a33fe2"
     },
     {
       "workers": 2,
-      "wallMs": 1534.6638360000002,
-      "speedup": 1.9278050890357983,
-      "efficiency": 0.9639025445178991,
-      "hash": "434648f2dc203d98"
+      "wallMs": 1718.9767099999995,
+      "speedup": 1.8619294940883757,
+      "efficiency": 0.9309647470441879,
+      "hash": "57ca3717a5a33fe2"
     }
   ],
   "atomicsWait": {
-    "wokeNs": 84558,
+    "wokeNs": 86496,
     "waitResult": "ok",
     "attempts": 1
   },
@@ -82,8 +82,8 @@
       "rounds": 100000,
       "forbidden": 0,
       "bothFresh": 0,
-      "bothStale": 0,
-      "mixed": 100000
+      "bothStale": 3,
+      "mixed": 99997
     }
   ]
 }

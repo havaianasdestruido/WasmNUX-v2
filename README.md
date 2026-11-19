@@ -40,13 +40,14 @@ WebGPU where applicable.
 
 ## Key Phase 0 findings
 
-- **JIT → Wasm is GO** (ADR-0002): RV64 blocks compile to ~131–168-byte Wasm
-  regions running ~6,000–8,500 effective MIPS vs ~8–10 MIPS interpreter
-  (600–1500×); best existing in-browser emulator (v86_64) is ~530 MIPS.
+- **JIT → Wasm is GO** (ADR-0002): RV64 blocks compile to ~131–377-byte Wasm
+  regions running ~4,400–7,000 effective MIPS vs ~5–10 MIPS interpreter
+  (~750–1200×); best existing in-browser emulator (v86_64) is ~530 MIPS.
 - **SMP works with caveats** (spike B): shared-memory atomics validated by
-  litmus tests; contended-cacheline scaling is negative (0.79×) — recalibrate
-  around partitioned workloads (1.93× on 2 cores); `Atomics.wait` parks idle
-  vCPUs (~85 µs wake).
+  litmus tests; contended-cacheline scaling is negative (0.63–0.79×) —
+  recalibrate around partitioned workloads (1.86–2.03× on 2 cores, with a
+  partition-invariant checksum); `Atomics.wait` parks idle vCPUs (~86 µs wake).
+  Reservation tracking is ABA-proof (per-granule epoch companion buffer).
 - **Software rendering is viable** (spike D/F): Wasm SIMD ≈ `typedArray.set`
   (~14.8 GB/s); 2-line damage redraw ≈ 9,300 fps; WebGPU (where shipped)
   lifts GUI to 60+ FPS at 1080p; no WebGPU on Linux yet, so the SIMD path is

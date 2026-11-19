@@ -35,20 +35,26 @@ WasmNUX spike A measurements (2× Xeon @ 2.60 GHz, Node 22.22.3,
 
 | Kernel | Interpreter | JIT (binaryen, -O2) | Speedup |
 |---|---|---|---|
-| memcpy64 | — | — | 1190× |
-| xorshift64 | — | — | 789× |
-| aggregate    | ~7–10 MIPS | ~6000–8500 effective MIPS | 600–1500× |
+| memcpy64 | — | — | 1,135× |
+| xorshift64 | — | — | 986× |
+| aggregate    | ~5–10 MIPS | ~4,400–7,000 effective MIPS | ~750–1200× |
 
-Generated Wasm is tiny (131–168 bytes per region), instantiation dominates
+(Two measurement runs on the same host; effective-MIPS halved between them
+under host contention — the ratio vs the interpreter is the honest figure.)
+Generated Wasm is tiny (131–377 bytes per region), instantiation dominates
 cold-start cost — which is what ADR-0003 (region granularity + br_table
 dispatch) exists to amortize.
 
-Known divergences accepted (spike-documented, must be fixed in Phase 1):
-- `div_s`/`rem_s` trap on INT64_MIN/-1 and div-by-zero; RISC-V defines
-  `-1`/`0x…` results. Interpreter and JIT must be taught RV semantics.
+RV64M semantics are implemented exactly as the spec defines (divisor-zero and
+INT64_MIN÷−1 handled explicitly — verified by JIT↔interpreter differential
+tests). Remaining known divergences accepted (spike-documented):
 - Guest `lr/sc` loops under a dead peer can spin; needs a timeout + fault
-  path.
+  path (the reservation itself is now ABA-proof via a per-granule epoch
+  companion buffer — see spike B).
 - Assembler immediate range is ±2048 for `li` — assembler limitation, not ABI.
+- Effective addresses with nonzero bits above bit 31 trap instead of
+  wrapping (stricter than the interpreter, which raises RangeError — same
+  outcome class).
 
 ## Decision
 

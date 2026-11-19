@@ -39,6 +39,8 @@ function tokenOk(provided: string | undefined, expected: string | undefined): bo
 export class RelayServer {
   private wss: WebSocketServer | null = null;
   private readonly sessions = new Map<string, Session>();
+  /** Every accepted socket, joined or not — stopped connections must all die. */
+  private readonly sockets = new Set<WebSocket>();
   private readonly opts: RelayOptions;
 
   constructor(opts: RelayOptions = {}) {
@@ -60,16 +62,21 @@ export class RelayServer {
   stop(): Promise<void> {
     return new Promise(resolve => {
       if (!this.wss) return resolve();
-      for (const session of this.sessions.values()) {
-        session.guest?.terminate();
-        session.client?.terminate();
-      }
+      // Terminate EVERY accepted socket, including ones that never joined a
+      // session — otherwise wss.close() waits forever for them.
+      for (const ws of this.sockets) ws.terminate();
+      this.sockets.clear();
       this.sessions.clear();
-      this.wss.close(() => resolve());
+      const wss = this.wss;
+      this.wss = null;
+      wss.close(() => resolve());
     });
   }
 
   private handleConnection(ws: WebSocket): void {
+    this.sockets.add(ws);
+    ws.on('close', () => this.sockets.delete(ws));
+    ws.on('error', () => this.sockets.delete(ws));
     let joined: { session: string; role: 'guest' | 'client' } | null = null;
     let peer: WebSocket | null = null;
 
@@ -99,9 +106,16 @@ export class RelayServer {
       // Forwarding phase: resolve the peer lazily (it may have joined after us).
       const session = this.sessions.get(joined.session);
       peer = joined.role === 'guest' ? session?.client ?? null : session?.guest ?? null;
-      if (peer && peer.readyState === WebSocket.OPEN) {
-        peer.send(data, { binary: true });
+      if (!peer || peer.readyState !== WebSocket.OPEN) return;
+      const limit = this.opts.maxBufferedBytes;
+      if (limit !== undefined && peer.bufferedAmount + data.length > limit) {
+        // Peer is not draining fast enough: kill it (and tell us), do not
+        // buffer unboundedly.
+        this.reject(peer, 'relay peer exceeded maxBufferedBytes');
+        ws.close(4002, 'peer over buffer limit');
+        return;
       }
+      peer.send(data, { binary: true });
     });
 
     ws.on('close', () => {
@@ -127,6 +141,8 @@ export interface RelayConnection {
   onData: ((data: Uint8Array) => void) | null;
   onClose: (() => void) | null;
   close(): void;
+  /** WebSocket readyState (0 connecting, 1 open, 2 closing, 3 closed). */
+  readonly readyState: number;
 }
 
 /** Client-side helper mirroring the server protocol. */
@@ -138,6 +154,7 @@ export function connectRelay(url: string, session: string, role: 'guest' | 'clie
       onData: null,
       onClose: null,
       close: () => ws.close(),
+      get readyState() { return ws.readyState; },
     };
     let settled = false;
     ws.on('open', () => {

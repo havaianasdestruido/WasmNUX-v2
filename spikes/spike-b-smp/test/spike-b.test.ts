@@ -19,8 +19,9 @@ test('LR/SC: single-thread reservation succeeds; SC without LR fails', () => {
 
 test('LR/SC: reservation breaks when another agent stores to the cell', () => {
   const buf = new SharedArrayBuffer(64);
-  const memA = GuestMemory.wrap(buf);
-  const memB = GuestMemory.wrap(buf);
+  const epochs = new GuestMemory(64).epochsBuffer;
+  const memA = GuestMemory.wrap(buf, epochs);
+  const memB = GuestMemory.wrap(buf, epochs);
   memA.store(LOCK, 5n);
   const res = new Reservation();
   assert.equal(res.loadAndReserve(memA, LOCK), 5n);
@@ -31,17 +32,19 @@ test('LR/SC: reservation breaks when another agent stores to the cell', () => {
 
 test('AMO add: exact sum under 4-worker contention', async () => {
   const buffer = new SharedArrayBuffer(64);
+  const epochs = new GuestMemory(64).epochsBuffer;
   const iters = 10_000;
   await Promise.all(Array.from({ length: 4 }, () =>
-    spawnJob({ kind: 'amoadd', buffer, counterAddr: COUNTER, iterations: iters })));
+    spawnJob({ kind: 'amoadd', buffer, epochs, counterAddr: COUNTER, iterations: iters })));
   assert.equal(new BigInt64Array(buffer)[COUNTER / 8], 40_000n);
 });
 
 test('guest spinlock: 4 workers, plain RMW inside critical section stays consistent', async () => {
   const buffer = new SharedArrayBuffer(64);
+  const epochs = new GuestMemory(64).epochsBuffer;
   const iters = 50;
   await Promise.all(Array.from({ length: 4 }, () =>
-    spawnJob({ kind: 'spinlock', buffer, lockAddr: LOCK, plainCellAddr: CELL, iterations: iters, criticalWork: 20 })));
+    spawnJob({ kind: 'spinlock', buffer, epochs, lockAddr: LOCK, plainCellAddr: CELL, iterations: iters, criticalWork: 20 })));
   assert.equal(new Int32Array(buffer)[CELL / 4], 4 * iters);
 });
 
@@ -72,4 +75,31 @@ test('measureWakeLatency returns ok with positive latency', async () => {
   const r = await measureWakeLatency();
   assert.equal(r.waitResult, 'ok');
   assert.ok(r.wokeNs > 0);
+});
+
+
+test('LR/SC: reservation is invalidated by an intervening same-value store (ABA)', () => {
+  const buf = new SharedArrayBuffer(64);
+  const epochs = new GuestMemory(64).epochsBuffer;
+  const memA = GuestMemory.wrap(buf, epochs);
+  const memB = GuestMemory.wrap(buf, epochs);
+  memA.store(LOCK, 5n);
+  const res = new Reservation();
+  assert.equal(res.loadAndReserve(memA, LOCK), 5n);
+  memB.store(LOCK, 6n);            // perturbation...
+  memB.store(LOCK, 5n);            // ...and restore: value round-trips
+  assert.equal(res.storeConditional(memA, LOCK, 42n), LR_SC_FAILURE);
+  assert.equal(memA.loadReserved(LOCK), 5n, 'failed SC must not store');
+});
+
+test('LR/SC: reservation invalidated by an intervening same-value AMO', () => {
+  const buf = new SharedArrayBuffer(64);
+  const epochs = new GuestMemory(64).epochsBuffer;
+  const memA = GuestMemory.wrap(buf, epochs);
+  const memB = GuestMemory.wrap(buf, epochs);
+  memA.store(LOCK, 7n);
+  const res = new Reservation();
+  res.loadAndReserve(memA, LOCK);
+  memB.amoXor(LOCK, 0n);           // AMO writing the SAME value still writes
+  assert.equal(res.storeConditional(memA, LOCK, 42n), LR_SC_FAILURE);
 });
