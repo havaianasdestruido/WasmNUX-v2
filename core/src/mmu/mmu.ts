@@ -124,9 +124,14 @@ export class Mmu {
 
   /** Address-specific flush (`sfence.vma rs1, rs2` with rs1 != 0). */
   invalidateVpn(va: number): void {
-    const vpn = (va >>> 0) >> 12;
-    const e = this.entries[tlbIndex(vpn)]!;
-    if (e.valid && e.vpn === vpn) e.valid = false;
+    const address = va >>> 0;
+    for (const e of this.entries) {
+      if (!e.valid) continue;
+      const bits = 12 + e.level * (e.mode === 'sv32' ? 10 : 9);
+      const span = 2 ** bits;
+      const entryVa = (e.vpn << 12) >>> 0;
+      if (Math.floor(address / span) === Math.floor(entryVa / span)) e.valid = false;
+    }
   }
 
   /**

@@ -71,7 +71,7 @@ function memoryCopy(words: number, repeats: number): Workload {
     id: 'memory-copy',
     title: `copy ${words} words x${repeats}`,
     description: 'lw/sw copy of a buffer; stands in for memcpy, page clearing and block-device transfers',
-    budget: words * repeats * 16,
+    budget: words * (repeats * 16 + 20) + 100,
     source: `_start:
   li   a1, ${DATA}
   li   a2, ${DATA + 0x40000}
@@ -79,6 +79,14 @@ function memoryCopy(words: number, repeats: number): Workload {
   li   s1, ${repeats}
   li   t0, 0
   li   s0, 0
+init:
+  slli t2, t0, 2
+  add  t3, a1, t2
+  addi t5, t0, 1
+  sw   t5, 0(t3)
+  addi t0, t0, 1
+  blt  t0, a3, init
+  li   t0, 0
 outer:
   li   t1, 0
 inner:
@@ -86,12 +94,19 @@ inner:
   add  t3, a1, t2
   add  t4, a2, t2
   lw   t5, 0(t3)
-  add  s0, s0, t5
   sw   t5, 0(t4)
   addi t1, t1, 1
   blt  t1, a3, inner
   addi t0, t0, 1
   blt  t0, s1, outer
+  li   t1, 0
+checksum:
+  slli t2, t1, 2
+  add  t4, a2, t2
+  lw   t5, 0(t4)
+  add  s0, s0, t5
+  addi t1, t1, 1
+  blt  t1, a3, checksum
   mv   a0, s0
   ${EXIT}`,
   };

@@ -9,9 +9,8 @@
  *  - region formation (ADR-0003): a region is a set of blocks compiled into one
  *    Wasm function with a `br_table` dispatch ladder, bounded by
  *    `maxRegionBlocks` / `maxRegionInsns`;
- *  - loop-header detection, because the instruction-budget check is emitted on
- *    backward edges only (checking every block costs ~30% on tight loops, see
- *    `docs/spikes/spike-a-jit.md`).
+ *  - loop-header detection, used by region metadata and optimization.
+ *    Budget checks are emitted for every block, including acyclic blocks.
  */
 
 import { decode, type Decoded } from '../cpu/encoding.ts';
@@ -87,12 +86,14 @@ export function buildCfg(mem: GuestMemory, entry: number, opts: CfgOptions = {})
   while (queue.length && blocks.size < maxBlocks) {
     const start = queue.shift()! >>> 0;
     if (blocks.has(start)) continue;
+    const startOff = mem.ramOffset(start);
+    if ((start & 3) !== 0 || startOff < 0 || startOff + 4 > mem.ramSize) continue;
     // A target inside an already-scanned block splits it.
     for (const [otherStart, other] of blocks) {
       const end = (otherStart + other.words.length * 4) >>> 0;
       if (otherStart < start && start < end) truncateBlock(other, (start - otherStart) / 4);
     }
-    const block = scanBlock(mem, start, maxBlockInsns, opts.slowPcs);
+    const block = scanBlock(mem, start, maxBlockInsns, opts.slowPcs, blocks);
     if (!block) continue;
     blocks.set(start, block);
     for (const t of successorsOf(block)) {
@@ -115,6 +116,7 @@ function scanBlock(
   start: number,
   maxInsns: number,
   slowPcs?: ReadonlySet<number>,
+  knownBlocks?: ReadonlyMap<number, BasicBlock>,
 ): BasicBlock | null {
   const words: number[] = [];
   const insns: Decoded[] = [];
@@ -122,11 +124,15 @@ function scanBlock(
   let exit: BlockExit | null = null;
 
   for (let i = 0; i < maxInsns; i++) {
+    if (i > 0 && knownBlocks?.has(pc)) {
+      exit = { kind: 'fall', next: pc };
+      break;
+    }
     const off = mem.ramOffset(pc);
     if (off < 0 || (off & 3) !== 0 || off + 4 > mem.ramSize) break;
     const word = mem.view.getUint32(off, true);
     const d = decode(word, pc);
-    if (d.illegal) {
+    if (d.illegal || ((d.mnemonic === 'jal' || d.isBranch) && (d.target & 3) !== 0)) {
       // Leave the illegal word out: the interpreter traps on it.
       exit = { kind: 'host', pc };
       break;

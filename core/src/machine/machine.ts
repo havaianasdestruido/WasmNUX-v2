@@ -213,8 +213,10 @@ export class Machine implements MachinePort {
       this.mem.u8.set(seg.bytes, off);
     }
     this.entry = elf.entry;
-    const hi = (elf.hi + 0xfff) & ~0xfff;
-    this.heapBase = Math.max(hi, this.mem.ramBase) >>> 0;
+    const hi = Math.ceil(elf.hi / 4096) * 4096;
+    if (hi > this.mem.ramBase + this.mem.ramSize || hi > 0xffffffff)
+      throw new Error('ELF heap base lies outside representable guest RAM');
+    this.heapBase = Math.max(hi, this.mem.ramBase);
     this.heapEnd = this.heapBase;
     return this.entry;
   }
@@ -226,6 +228,7 @@ export class Machine implements MachinePort {
     this.cpu.stop = 'running';
     this.cpu.exitCode = 0;
     this.cpu.instret = 0;
+    this.cpu.instretOffset = 0;
     this.cpu.cycles = 0;
     this.cpu.lrValid = false;
     this.smp?.clearReservation(this.cpu.hartId);
@@ -366,6 +369,10 @@ export class Machine implements MachinePort {
     // the Sv39 expansion.
     this.mmu.setSatp(BigInt(value) & 0xffff_ffffn);
     this.engine.invalidateAll('satp');
+  }
+
+  onFenceI(): void {
+    this.engine.invalidateAll('fence.i');
   }
 
   onSfenceVma(address: number | null, asid: number | null): void {

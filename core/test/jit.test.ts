@@ -654,7 +654,7 @@ poll:
     expect(r.reg(7)).toBe(0x42);
   });
 
-  it('flushes the code cache on fence.i so self-modifying code works', () => {
+  it('handles self-modification when the patched target has not yet run', () => {
     // Patch an addi's immediate in flight: 1 -> 10. Both words differ only in
     // the immediate field, so the guest writes the new encoding directly.
     const addi1 = 0x00128293; // addi t0, t0, 1

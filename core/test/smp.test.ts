@@ -30,6 +30,12 @@ describe('SMP channel', () => {
     c.beginWrite();
     data[0] = 2;
     c.endWrite(0x1001, 1);
+    expect(c.sc(0, 0x1000, 3, data, 0)).toBe(false);
+    data[0] = 1;
+    c.lr(0, 0x1000, data, 0);
+    c.beginWrite();
+    data[0] = 2;
+    c.endWrite(0x1000, 4);
     c.beginWrite();
     data[0] = 1;
     c.endWrite(0x1000, 4);

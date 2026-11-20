@@ -232,8 +232,8 @@ describe('formRegion', () => {
   it('honours maxRegionInsns', () => {
     const { blocks, entry } = cfgFor(LOOP);
     const region = formRegion(blocks, entry, { maxRegionBlocks: 24, maxRegionInsns: 3 })!;
-    expect(region.insnCount).toBeLessThanOrEqual(3 + 3); // one block may overshoot by its own size
-    expect(region.blocks.length).toBeGreaterThanOrEqual(1);
+    expect(region.insnCount).toBe(3);
+    expect(region.blocks.length).toBe(1);
   });
 
   it('lists unabsorbed successors as external targets', () => {
@@ -255,15 +255,12 @@ describe('formRegion', () => {
 
   it('does not steal blocks already assigned to another region', () => {
     const { blocks, entry } = cfgFor(LOOP);
-    const first = formRegion(blocks, entry, { maxRegionBlocks: 1, maxRegionInsns: 512 })!;
-    expect(first.blocks.length).toBe(1);
-    const other = first.blocks[0]!;
-    other.region = 0;
-    const second = formRegion(blocks, other.start, { maxRegionBlocks: 8, maxRegionInsns: 512 })!;
-    // The entry block itself is always allowed, but assigned successors are not.
-    expect(second.blocks.length).toBeGreaterThanOrEqual(1);
-    const stolen = formRegion(blocks, entry, { maxRegionBlocks: 8, maxRegionInsns: 512 })!;
-    expect(stolen.blocks.some((b) => b !== other && b.region >= 0)).toBe(false);
+    const successor = [...blocks.values()].find((b) => b.start !== entry)!;
+    successor.region = 0;
+    const region = formRegion(blocks, entry, { maxRegionBlocks: 8, maxRegionInsns: 512 })!;
+    expect(region.blocks).not.toContain(successor);
+    const assignedEntry = formRegion(blocks, successor.start, { maxRegionBlocks: 8, maxRegionInsns: 512 })!;
+    expect(assignedEntry.blocks[0]).toBe(successor);
   });
 
   it('can absorb assigned blocks when skipAssigned is false', () => {

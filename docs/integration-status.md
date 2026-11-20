@@ -108,8 +108,18 @@ before considering merge.
 ### Latest verification
 
 On this branch, `npm ci`, `npm run lint`, `npm audit`, the full test suite
-under Node 22.12.0 (344 tests), `npm run build`, and the Chromium 133 demo
+under Node 22.12.0 (367 tests), `npm run build`, and the Chromium 133 demo
 smoke test passed. `npm run bench` completed on Node 22.22.3, Linux x64, two
 vCPUs with the strengthened JIT preflight. The current report displays median, range and best sample; the best-sample fields and local gate are not a validated cross-host KPI.
 The external 8086emu comparator does not complete all guest programs correctly
 and must not be used to claim a normalized speedup.
+
+### Review follow-up
+
+The CodeRabbit review prompted targeted fixes and regressions in assembler
+relocations and labels, interpreter/JIT trap ordering, budget and CSR retirement,
+SMP reservations, CLINT/PLIC decoding, MMU superpage invalidation, JIT cache
+invalidation and copy-benchmark validation. Both legacy JIT `budgetCheck`
+options now check every block. Performance measurements from before this change
+and before the copy workload changed are not directly comparable. These fixes
+do not complete the missing host systems or establish full ISA conformance.

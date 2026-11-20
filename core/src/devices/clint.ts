@@ -43,7 +43,7 @@ export class Clint implements Device {
   readonly harts: number;
 
   private readonly msip: Int32Array;
-  private readonly mtimecmp: BigInt64Array;
+  private readonly mtimecmp: BigUint64Array;
   private mtime = 0n;
   private readonly now: () => bigint;
   /** CLINT timebase: QEMU virt runs mtime at 10 MHz. */
@@ -52,11 +52,12 @@ export class Clint implements Device {
   constructor(opts: ClintOptions = {}) {
     this.harts = opts.harts ?? 1;
     this.msip = new Int32Array(this.harts);
-    this.mtimecmp = new BigInt64Array(this.harts).fill(0xffffffffffffffffn);
+    this.mtimecmp = new BigUint64Array(this.harts).fill(0xffffffffffffffffn);
     this.now = opts.now ?? (() => BigInt(Math.round(performance.now() * 1e6)));
     this.onTimerPending = opts.onTimerPending ?? (() => {});
     this.onSoftwareInterrupt = opts.onSoftwareInterrupt ?? (() => {});
-    this.mtime = this.nowNsToMtime(this.now());
+    this.epochNs = this.now();
+    this.mtime = 0n;
   }
 
   private readonly onTimerPending: (hart: number, pending: boolean) => void;
@@ -69,7 +70,6 @@ export class Clint implements Device {
 
   /** Refresh mtime from the clock and re-evaluate timer interrupts. */
   tick(nowNs: bigint): void {
-    if (this.epochNs === 0n) this.epochNs = nowNs;
     this.mtime = this.nowNsToMtime(nowNs - this.epochNs);
     for (let h = 0; h < this.harts; h++) {
       this.onTimerPending(h, this.mtime >= this.mtimecmp[h]!);
@@ -82,8 +82,9 @@ export class Clint implements Device {
 
   /** Set a hart's timer comparator (used by tests to force an interrupt). */
   setCompare(hart: number, value: bigint): void {
-    this.mtimecmp[hart] = value;
-    this.onTimerPending(hart, this.mtime >= value);
+    const normalized = BigInt.asUintN(64, value);
+    this.mtimecmp[hart] = normalized;
+    this.onTimerPending(hart, this.mtime >= normalized);
   }
 
   softwareInterruptPending(hart: number): boolean {
@@ -264,9 +265,9 @@ export class Plic implements Device {
       }
       return v;
     }
-    if (offset >= 0x2000 && offset < 0x2000 + this.contexts.length * 0x100) {
-      const ctxIdx = ((offset - 0x2000) / 0x100) | 0;
-      const within = offset - 0x2000 - ctxIdx * 0x100;
+    if (offset >= 0x2000 && offset < 0x2000 + this.contexts.length * 0x80) {
+      const ctxIdx = ((offset - 0x2000) / 0x80) | 0;
+      const within = offset - 0x2000 - ctxIdx * 0x80;
       const ctx = this.contexts[ctxIdx]!;
       if (within < 0x80) {
         const word = within >> 2;
@@ -274,12 +275,14 @@ export class Plic implements Device {
         for (const irq of ctx.enables) if (irq >> 5 === word) v |= 1 << (irq & 31);
         return v;
       }
-      if (within === 0x80) return ctx.threshold;
       return 0;
     }
     if (offset >= 0x200000) {
       // Claim register: context = (offset - 0x200000) / 0x1000
       const ctxIdx = ((offset - 0x200000) >> 12) | 0;
+      const within = (offset - 0x200000) % 0x1000;
+      if (within === 0) return this.contexts[ctxIdx]?.threshold ?? 0;
+      if (within !== 4 || !this.contexts[ctxIdx]) return 0;
       const irq = this.bestFor(ctxIdx);
       if (irq) {
         this.claimed.add(irq);
@@ -298,9 +301,9 @@ export class Plic implements Device {
       if (irq < this.priority.length) this.priority[irq] = v & 7;
       return;
     }
-    if (offset >= 0x2000 && offset < 0x2000 + this.contexts.length * 0x100) {
-      const ctxIdx = ((offset - 0x2000) / 0x100) | 0;
-      const within = offset - 0x2000 - ctxIdx * 0x100;
+    if (offset >= 0x2000 && offset < 0x2000 + this.contexts.length * 0x80) {
+      const ctxIdx = ((offset - 0x2000) / 0x80) | 0;
+      const within = offset - 0x2000 - ctxIdx * 0x80;
       const ctx = this.contexts[ctxIdx]!;
       if (within < 0x80) {
         const word = within >> 2;
@@ -312,12 +315,15 @@ export class Plic implements Device {
         }
         return;
       }
-      if (within === 0x80) ctx.threshold = v & 7;
       return;
     }
     if (offset >= 0x200000) {
-      // Complete: the irq becomes claimable again.
-      this.claimed.delete(v);
+      const ctxIdx = ((offset - 0x200000) >> 12) | 0;
+      const ctx = this.contexts[ctxIdx];
+      if (!ctx) return;
+      const within = (offset - 0x200000) % 0x1000;
+      if (within === 0) ctx.threshold = v & 7;
+      else if (within === 4) this.claimed.delete(v);
       return;
     }
   }

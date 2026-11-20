@@ -89,6 +89,8 @@ export class CpuState {
 
   /** Counters, mirrored into `mcycle` / `minstret`. */
   instret = 0;
+  /** Difference between the writable guest CSR and monotonic host retirement. */
+  instretOffset = 0;
   cycles = 0;
 
   stop: StopReason = 'running';
@@ -124,7 +126,7 @@ export class CpuState {
         return this.cycles | 0;
       case CSR.minstret:
       case CSR.instret:
-        return this.instret | 0;
+        return (this.instret + this.instretOffset) | 0;
       case CSR.mhartid:
         return this.hartId;
       case CSR.time:
@@ -140,7 +142,7 @@ export class CpuState {
         this.cycles = value | 0;
         return;
       case CSR.minstret:
-        this.instret = value | 0;
+        this.instretOffset = (value >>> 0) - this.instret;
         return;
       case CSR.cycle:
       case CSR.instret:
@@ -163,6 +165,7 @@ export class CpuState {
       lrValue: this.lrValue | 0,
       lrValid: this.lrValid,
       instret: this.instret,
+      instretOffset: this.instretOffset,
       cycles: this.cycles,
       stop: this.stop,
       exitCode: this.exitCode,
@@ -180,6 +183,7 @@ export class CpuState {
     cpu.lrValue = json['lrValue'] as number;
     cpu.lrValid = json['lrValid'] as boolean;
     cpu.instret = json['instret'] as number;
+    cpu.instretOffset = (json['instretOffset'] as number | undefined) ?? 0;
     cpu.cycles = json['cycles'] as number;
     cpu.stop = json['stop'] as StopReason;
     cpu.exitCode = json['exitCode'] as number;

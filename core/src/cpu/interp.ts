@@ -75,6 +75,8 @@ export interface MachinePort {
   onSatpWrite?(value: number): void;
   /** `sfence.vma rs1, rs2` retired. */
   onSfenceVma?(address: number | null, asid: number | null): void;
+  /** Instruction cache synchronization after guest self-modification. */
+  onFenceI?(): void;
   // -- SMP barriers (absent on a single-hart machine) ------------------------
   /** Before a shared store/AMO writes. */
   onWriteBegin?(hart: number): void;
@@ -147,11 +149,19 @@ export class Interpreter {
         if (rd) regs[rd] = (pc + immU(instr)) | 0;
         break;
       case OP_JAL:
+        if (((pc + immJ(instr)) & 3) !== 0) {
+          this.trap(cpu, CAUSE.INSTRUCTION_ADDRESS_MISALIGNED, (pc + immJ(instr)) >>> 0);
+          return;
+        }
         if (rd) regs[rd] = next | 0;
         next = (pc + immJ(instr)) >>> 0;
         break;
       case OP_JALR: {
         const target = (((regs[rs1]! + immI(instr)) | 0) & ~1) >>> 0;
+        if ((target & 3) !== 0) {
+          this.trap(cpu, CAUSE.INSTRUCTION_ADDRESS_MISALIGNED, target);
+          return;
+        }
         if (rd) regs[rd] = next | 0;
         next = target;
         break;
@@ -183,10 +193,21 @@ export class Interpreter {
             this.illegal(cpu, instr, pc);
             return;
         }
-        if (taken) next = (pc + immB(instr)) >>> 0;
+        if (taken) {
+          const target = (pc + immB(instr)) >>> 0;
+          if ((target & 3) !== 0) {
+            this.trap(cpu, CAUSE.INSTRUCTION_ADDRESS_MISALIGNED, target);
+            return;
+          }
+          next = target;
+        }
         break;
       }
       case OP_LOAD: {
+        if (![0, 1, 2, 4, 5].includes(f3)) {
+          this.illegal(cpu, instr, pc);
+          return;
+        }
         const addr = ((regs[rs1]! + immI(instr)) | 0) >>> 0;
         const value = this.load(cpu, addr, f3, pc);
         if (value === null) return; // trapped into a handler
@@ -195,6 +216,10 @@ export class Interpreter {
         break;
       }
       case OP_STORE: {
+        if (f3 > 2) {
+          this.illegal(cpu, instr, pc);
+          return;
+        }
         const addr = ((regs[rs1]! + immS(instr)) | 0) >>> 0;
         if (!this.store(cpu, addr, f3, regs[rs2]!, pc)) return;
         if (cpu.stop !== 'running') return;
@@ -356,8 +381,7 @@ export class Interpreter {
         break;
       }
       case OP_MISC_MEM:
-        // FENCE / FENCE.I: JS has no reordering to fence inside one thread, and
-        // cross-worker ordering is handled by atomics. Treated as a nop.
+        if (f3 === 1) this.port.onFenceI?.();
         break;
       case OP_AMO: {
         if (f3 !== 0b010) {
@@ -468,6 +492,10 @@ export class Interpreter {
   private load(cpu: CpuState, addr: number, f3: number, pc: number): number | null {
     const mem = this.port.mem;
     const size = f3 === 0 || f3 === 4 ? 1 : f3 === 1 || f3 === 5 ? 2 : 4;
+    if (this.port.mmuActive && (addr & 0xfff) + size > 4096) {
+      this.trap(cpu, CAUSE.LOAD_ADDRESS_MISALIGNED, addr);
+      return null;
+    }
     const tr = this.translate('load', addr);
     if (!tr.ok) {
       this.trap(cpu, tr.cause, tr.tval);
@@ -505,6 +533,10 @@ export class Interpreter {
   private store(cpu: CpuState, addr: number, f3: number, value: number, pc: number): boolean {
     const mem = this.port.mem;
     const size = f3 === 0 ? 1 : f3 === 1 ? 2 : 4;
+    if (this.port.mmuActive && (addr & 0xfff) + size > 4096) {
+      this.trap(cpu, CAUSE.STORE_ADDRESS_MISALIGNED, addr);
+      return false;
+    }
     const tr = this.translate('store', addr);
     if (!tr.ok) {
       this.trap(cpu, tr.cause, tr.tval);
@@ -552,7 +584,7 @@ export class Interpreter {
       return false;
     }
     const mem = this.port.mem;
-    const tr = this.translate('amo', addr);
+    const tr = this.translate(f5 === AMO5_LR ? 'load' : 'amo', addr);
     if (!tr.ok) {
       this.trap(cpu, tr.cause, tr.tval);
       return false;

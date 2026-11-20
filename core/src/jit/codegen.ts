@@ -63,7 +63,7 @@ export interface JitConfig {
   bounds: 'trap' | 'inline';
   /** How often the pc slot is refreshed: before faulting ops only, per block, or per instruction. */
   pcTracking: 'faulting' | 'block' | 'instruction';
-  /** Instruction-budget checks: on loop back edges only, or on every block. */
+  /** Legacy policy selector; both modes check every block to preserve exact budgets. */
   budgetCheck: 'loop' | 'block';
   /** How control leaves a region: back to the JS dispatcher, or tail-called onward. */
   chaining: 'host' | 'tail';
@@ -198,7 +198,7 @@ export class RegionCodegen {
     } else {
       f.globalSet(G.REG_BASE + r);
     }
-    if (this.ctx.cfg.optimize) this.consts[r] = known;
+    if (this.ctx.cfg.optimize && r !== 0) this.consts[r] = known === undefined ? undefined : known | 0;
   }
 
   private setPc(pc: number): void {
@@ -320,26 +320,17 @@ export class RegionCodegen {
     if (this.ctx.cfg.optimize) this.consts[0] = 0;
 
     const cfg = this.ctx.cfg;
-    const checkBudget = cfg.budgetCheck === 'block' || block.isLoopHeader;
-    if (cfg.pcTracking !== 'faulting' || checkBudget) this.setPc(block.start);
+    this.setPc(block.start);
 
-    // Accounting happens in every block (a region without a loop must not be
-    // able to spin forever); only the *check* is a policy knob.
-    if (checkBudget) {
-      if (cfg.pcTracking === 'faulting') this.f.i32(block.start | 0).localSet(this.lT0);
-      this.f.localGet(this.lBudget);
-      this.f.i32(block.words.length);
-      this.f.i32Sub();
-      this.f.localTee(this.lBudget);
-      this.f.i32(0);
-      this.f.i32LeS();
-      this.f.brIf(this.depthToBudgetExit());
-    } else {
-      this.f.localGet(this.lBudget);
-      this.f.i32(block.words.length);
-      this.f.i32Sub();
-      this.f.localSet(this.lBudget);
-    }
+    // Both legacy modes check every block so an acyclic block cannot overrun its budget.
+    if (cfg.pcTracking === 'faulting') this.f.i32(block.start | 0).localSet(this.lT0);
+    this.f.localGet(this.lBudget);
+    this.f.i32(block.words.length);
+    this.f.i32Sub();
+    this.f.localTee(this.lBudget);
+    this.f.i32(0);
+    this.f.i32LeS();
+    this.f.brIf(this.depthToBudgetExit());
 
     // A Wasm trap loses local variables. Save the charged budget and the
     // current block so the host can count previous blocks and the completed
@@ -760,6 +751,8 @@ export class RegionCodegen {
         f.i32(-2);
         f.i32And();
         f.localSet(this.lT0);
+        this.setPc(addr);
+        f.localGet(this.lT0).i32(3).i32And().brIf(this.depthToFault());
         if (d.rd !== 0) {
           f.i32((addr + 4) | 0);
           this.writeReg(d.rd, (addr + 4) | 0);
@@ -1057,14 +1050,19 @@ export class RegionCodegen {
       f.localGet(this.lT2);
     }
     f.localSet(this.lT0);
+    f.localGet(this.lT0);
+    if (cfg.ramBase !== 0) f.i32(cfg.ramBase).i32Add();
+    f.i32(3).i32And().brIf(this.depthToFault());
 
     if (d.mnemonic === 'lr.w') {
       if (atomic) f.localGet(this.lT0).i32AtomicLoad(0, 2);
       else f.localGet(this.lT0).i32Load(0, 2);
       f.localSet(this.lT1);
+      f.localGet(this.lT0);
+      if (cfg.ramBase !== 0) f.i32(cfg.ramBase).i32Add();
+      this.writeSlot(G.LR_ADDR);
       f.localGet(this.lT1);
       this.writeReg(d.rd);
-      this.setSlotFromReg(G.LR_ADDR, d.rs1);
       this.setSlotFromT1(G.LR_VALUE);
       this.setSlotConst(G.LR_VALID, 1);
       return;

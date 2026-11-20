@@ -242,7 +242,7 @@ interface Build {
 }
 
 type Rec =
-  | { t: 'label'; name: string; line: number }
+  | { t: 'label'; name: string; line: number; addr: number }
   | { t: 'insn'; line: number; words: number[]; slots: (Slot | null)[]; pcrelSym?: string; addr: number }
   | { t: 'data'; line: number; bytes: number[] | null; slot: Slot | null; width: number; addr: number }
   | { t: 'align'; to: number }
@@ -900,10 +900,13 @@ function buildInsn(mnemRaw: string, ops: string[], line: number): Build {
       if (base === 'lr.w') {
         need(2);
         const m = parseMem(ops[1]!, line);
+        if (m.expr.kind !== 'const' || m.expr.value !== 0)
+          throw new AsmError('AMO offset must be zero', line);
         return B([amoType(AMO5_LR, aq, rl, parseReg(ops[0]!, line), m.reg, 0, F3_W)], [null]);
       }
       need(3);
       const m = parseMem(ops[2]!, line);
+      if (m.expr.kind !== 'const' || m.expr.value !== 0) throw new AsmError('AMO offset must be zero', line);
       return B([amoType(f5, aq, rl, parseReg(ops[0]!, line), m.reg, parseReg(ops[1]!, line), F3_W)], [null]);
     }
   }
@@ -971,7 +974,7 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
   for (const st of stmts) {
     const { line, text } = st;
     if (text.startsWith('\u0000label ')) {
-      recs.push({ t: 'label', name: text.slice(7), line });
+      recs.push({ t: 'label', name: text.slice(7), line, addr: pc });
       continue;
     }
     if (text.startsWith('.')) {
@@ -1076,7 +1079,7 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
 
   // ---- pass 1: fix up label addresses ------------------------------------
   for (const r of recs) {
-    if (r.t === 'label') defineLabel(r.name, currentAddrOf(recs, r, base), r.line);
+    if (r.t === 'label') defineLabel(r.name, r.addr, r.line);
   }
 
   // ---- pass 2: resolve expressions and emit bytes -------------------------
@@ -1097,7 +1100,7 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
       }
       case 'lo': {
         const v = resolve(expr.inner, at, line);
-        return v - (((v + 0x800) >> 12) << 12);
+        return (v - (((v + 0x800) >> 12) << 12)) | 0;
       }
       case 'pcrelHi': {
         const v = labels.get(expr.sym);
@@ -1124,7 +1127,7 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
     if (target === undefined) throw new AsmError(`undefined symbol '${sym}'`, line);
     const delta = (target - site) | 0;
     const hi = ((delta + 0x800) >> 12) << 12;
-    return delta - hi;
+    return (delta - hi) | 0;
   };
 
   const lineMap: Array<{ line: number; addr: number }> = [];
@@ -1164,23 +1167,6 @@ export function assemble(source: string, opts: AssembleOptions = {}): Assembled 
   const entry = entrySym !== undefined ? (labels.get(entrySym) ?? base) >>> 0 : base;
 
   return { bytes: img, base, entry, size, labels: new Map(labels), globals, lineMap };
-}
-
-/** Address a label record points at = the address of the next sized record. */
-function currentAddrOf(recs: Rec[], label: Rec, base: number): number {
-  const idx = recs.indexOf(label);
-  for (let i = idx + 1; i < recs.length; i++) {
-    const r = recs[i]!;
-    if (r.t === 'insn' || r.t === 'data' || r.t === 'zero') return r.addr >>> 0;
-  }
-  // Trailing label at the very end of the image.
-  let max = base;
-  for (const r of recs) {
-    if (r.t === 'insn') max = Math.max(max, r.addr + r.words.length * 4);
-    else if (r.t === 'data') max = Math.max(max, r.addr + (r.bytes ? r.bytes.length : r.width));
-    else if (r.t === 'zero') max = Math.max(max, r.addr + r.count);
-  }
-  return max >>> 0;
 }
 
 function patchImm(word: number, value: number, line: number): number {

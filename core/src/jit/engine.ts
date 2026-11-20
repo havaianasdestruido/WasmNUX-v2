@@ -204,8 +204,13 @@ export class JitCodeCache {
   remove(pc: number): void {
     const key = pc >>> 0;
     this.index.delete(key);
-    const i = this.records.findIndex((r) => r.pc >>> 0 === key);
-    if (i >= 0) this.records.splice(i, 1);
+    for (let i = this.records.length - 1; i >= 0; i--)
+      if (this.records[i]!.pc >>> 0 === key) this.records.splice(i, 1);
+  }
+
+  clear(): void {
+    this.index.clear();
+    this.records.length = 0;
   }
 
   toJSON(): string {
@@ -220,7 +225,7 @@ export class JitCodeCache {
 
 export function configHash(cfg: JitConfig): string {
   return [
-    'trap-checkpoint-v1',
+    'trap-checkpoint-v2',
     cfg.regalloc,
     cfg.bounds,
     cfg.pcTracking,
@@ -285,6 +290,8 @@ export class Engine {
       // memory. Use `regalloc: 'memory'` (with `bounds: 'inline'`) for that layout.
       throw new Error("bounds:'trap' cannot be used with a control page in guest RAM");
     }
+    if (base.bounds === 'trap' && mem.buffer.byteLength !== mem.ramSize)
+      throw new Error("bounds:'trap' needs the Wasm memory to be exactly guest RAM");
     this.config = base;
     this.rf = new RegFile(base.regalloc, base.controlOffset);
     if (base.regalloc === 'memory') this.rf.attachMemory(mem.buffer);
@@ -345,8 +352,14 @@ export class Engine {
     return out;
   }
 
+  private assertTrapBounds(): void {
+    if (this.config.bounds === 'trap' && this.mem.memory.buffer.byteLength !== this.mem.ramSize)
+      throw new Error("bounds:'trap' needs the Wasm memory to be exactly guest RAM");
+  }
+
   /** Run at most `budget` instructions, returning why we stopped. */
   run(cpu: CpuState, budget: number): StopReason {
+    this.assertTrapBounds();
     if (!this.opts.jit) {
       const before = cpu.instret;
       const reason = this.interp.run(cpu, budget);
@@ -411,6 +424,7 @@ export class Engine {
     const start = cpu.instret;
     for (let i = 0; i < limit && cpu.stop === 'running'; i++) {
       const before = cpu.pc;
+      if (this.isFenceI(before)) this.invalidateAll('fence.i');
       this.interp.step(cpu);
       this.stats.interpSteps++;
       if (cpu.stop !== 'running') break;
@@ -465,6 +479,7 @@ export class Engine {
   /** Count only instructions that actually retire on a host slow path. */
   private stepSlow(cpu: CpuState): void {
     const before = cpu.instret;
+    if (this.isFenceI(cpu.pc)) this.invalidateAll('fence.i');
     this.interp.step(cpu);
     this.stats.interpSteps++;
     this.stats.interpInstructions += cpu.instret - before;
@@ -527,7 +542,10 @@ export class Engine {
           cpu.instret += fix;
           cpu.cycles += fix;
           this.stats.jitInstructions += fix;
-          return { remaining: 0, leftJit: false, stop: false };
+          const remaining = Math.max(0, before - consumed - fix);
+          this.pushState(cpu);
+          for (let i = 0; i < remaining && cpu.stop === 'running'; i++) this.stepSlow(cpu);
+          return { remaining: 0, leftJit: true, stop: cpu.stop !== 'running' };
         }
         case EXIT.CHAIN: {
           this.stats.hostExits++;
@@ -613,6 +631,7 @@ export class Engine {
    * Returns the entry point, or null when the pc cannot be translated.
    */
   compileAt(pc: number, optimize: boolean): EntryPoint | null {
+    this.assertTrapBounds();
     const target = pc >>> 0;
     if (this.declined.has(target)) return null;
     const existing = this.compiled.get(target);
@@ -880,7 +899,7 @@ export class Engine {
 
   private isFenceI(pc: number): boolean {
     const off = this.mem.ramOffset(pc >>> 0);
-    if (off < 0) return false;
+    if (off < 0 || off + 4 > this.mem.ramSize) return false;
     const word = this.mem.view.getUint32(off, true);
     if (opcode(word) !== OP_MISC_MEM) return false;
     return decode(word, pc >>> 0).mnemonic === 'fence.i';
@@ -890,6 +909,7 @@ export class Engine {
   invalidateAll(_reason = 'explicit'): number {
     const n = this.compiled.size;
     this.compiled.clear();
+    this.opts.codeCache?.clear();
     this.heat.clear();
     this.trapCounts.clear();
     this.regionsCompiled = 0;
