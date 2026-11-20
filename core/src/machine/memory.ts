@@ -57,8 +57,15 @@ export class GuestMemory {
   view: DataView;
 
   constructor(opts: GuestMemoryOptions) {
-    this.ramBase = (opts.ramBase ?? DEFAULT_RAM_BASE) >>> 0;
+    const base = opts.ramBase ?? DEFAULT_RAM_BASE;
+    if (!Number.isSafeInteger(base) || base < 0 || base > 0xffffffff)
+      throw new RangeError('RAM base must be an unsigned 32-bit address');
+    if (!Number.isSafeInteger(opts.ramBytes) || opts.ramBytes < 1)
+      throw new RangeError('RAM size must be a positive integer');
+    this.ramBase = base;
     this.ramSize = Math.ceil(opts.ramBytes / WASM_PAGE) * WASM_PAGE;
+    if (this.ramBase + this.ramSize > 0x100000000)
+      throw new RangeError('RAM extends beyond the 32-bit physical address space');
     this.shared = opts.shared ?? false;
     this.hasControlPage = opts.controlPage ?? false;
     this.controlOffset = this.hasControlPage ? this.ramSize : -1;
@@ -66,6 +73,8 @@ export class GuestMemory {
 
     if (opts.memory) {
       this.memory = opts.memory;
+      if (this.memory.buffer instanceof SharedArrayBuffer !== this.shared)
+        throw new Error('attached memory shared flag does not match');
       if (this.memory.buffer.byteLength < pages * WASM_PAGE) {
         throw new Error('attached memory is smaller than the requested RAM');
       }
@@ -105,8 +114,9 @@ export class GuestMemory {
    * in the interpreter; generated code inlines the equivalent.
    */
   ramOffset(addr: number): number {
-    const off = (addr - this.ramBase) >>> 0;
-    return off < this.ramSize ? off : -1;
+    if (!Number.isSafeInteger(addr) || addr < 0 || addr > 0xffffffff) return -1;
+    const off = addr - this.ramBase;
+    return off >= 0 && off < this.ramSize ? off : -1;
   }
 
   inRam(addr: number): boolean {
@@ -122,13 +132,14 @@ export class GuestMemory {
 
   readBytes(addr: number, len: number): Uint8Array {
     const off = this.ramOffset(addr);
-    if (off < 0) throw new Error(`read of non-RAM address 0x${addr.toString(16)}`);
+    if (!Number.isSafeInteger(len) || len < 0 || off < 0 || len > this.ramSize - off)
+      throw new RangeError('read outside guest RAM');
     return this.u8.slice(off, off + len);
   }
 
   writeBytes(addr: number, data: Uint8Array): void {
     const off = this.ramOffset(addr);
-    if (off < 0) throw new Error(`write to non-RAM address 0x${addr.toString(16)}`);
+    if (off < 0 || data.length > this.ramSize - off) throw new RangeError('write outside guest RAM');
     this.u8.set(data, off);
   }
 
@@ -139,12 +150,12 @@ export class GuestMemory {
 
   readU16(addr: number): number {
     const off = this.ramOffset(addr);
-    return off < 0 ? 0 : this.view.getUint16(off, true);
+    return off < 0 || off + 2 > this.ramSize ? 0 : this.view.getUint16(off, true);
   }
 
   readU32(addr: number): number {
     const off = this.ramOffset(addr);
-    return off < 0 ? 0 : this.view.getUint32(off, true);
+    return off < 0 || off + 4 > this.ramSize ? 0 : this.view.getUint32(off, true);
   }
 
   writeU8(addr: number, v: number): void {
@@ -154,28 +165,32 @@ export class GuestMemory {
 
   writeU16(addr: number, v: number): void {
     const off = this.ramOffset(addr);
-    if (off >= 0) this.view.setUint16(off, v & 0xffff, true);
+    if (off >= 0 && off + 2 <= this.ramSize) this.view.setUint16(off, v & 0xffff, true);
   }
 
   writeU32(addr: number, v: number): void {
     const off = this.ramOffset(addr);
-    if (off >= 0) this.view.setUint32(off, v >>> 0, true);
+    if (off >= 0 && off + 4 <= this.ramSize) this.view.setUint32(off, v >>> 0, true);
   }
 
   /** Fetch an instruction word. Returns 0 for non-RAM addresses (caller traps). */
   fetch(addr: number): number {
     const off = this.ramOffset(addr);
-    return off < 0 ? 0 : this.view.getUint32(off, true);
+    return off < 0 || off + 4 > this.ramSize ? 0 : this.view.getUint32(off, true);
   }
 
   /** Control page accessors (used when `controlPage` is enabled). */
   ctrlRead(index: number): number {
     if (!this.hasControlPage) throw new Error('no control page');
-    return this.i32[(this.controlOffset >> 2) + index]!;
+    if (!Number.isInteger(index) || index < 0 || index >= WASM_PAGE / 4)
+      throw new RangeError('control page index out of bounds');
+    return this.i32[this.controlOffset / 4 + index]!;
   }
 
   ctrlWrite(index: number, value: number): void {
     if (!this.hasControlPage) throw new Error('no control page');
-    this.i32[(this.controlOffset >> 2) + index] = value | 0;
+    if (!Number.isInteger(index) || index < 0 || index >= WASM_PAGE / 4)
+      throw new RangeError('control page index out of bounds');
+    this.i32[this.controlOffset / 4 + index] = value | 0;
   }
 }

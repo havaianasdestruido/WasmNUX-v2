@@ -193,8 +193,8 @@ export class Machine implements MachinePort {
    */
   load(image: Uint8Array, base = this.mem.ramBase): number {
     if (isElf(image)) return this.loadElf(image);
-    const off = this.mem.ramOffset(base >>> 0);
-    if (off < 0) throw new Error(`load base 0x${(base >>> 0).toString(16)} is not guest RAM`);
+    const off = this.mem.ramOffset(base);
+    if (off < 0) throw new Error(`load base ${base} is not guest RAM`);
     if (off + image.length > this.mem.ramSize) throw new Error('image does not fit in guest RAM');
     this.mem.u8.set(image, off);
     this.entry = base >>> 0;
