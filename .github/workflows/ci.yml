@@ -96,7 +96,16 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
-      - run: npx playwright-core install --with-deps chromium
+      - name: Install Chromium
+        run: |
+          if npx playwright-core install --with-deps chromium > /tmp/chromium-install.log 2>&1; then
+            cat /tmp/chromium-install.log
+          else
+            cat /tmp/chromium-install.log
+            summary=$(tail -n 12 /tmp/chromium-install.log | tr '\n' ' ' | sed 's/%/%25/g')
+            echo "::error::Chromium install failed: $summary"
+            exit 1
+          fi
       - run: npm run test:browser
 
   browser:
