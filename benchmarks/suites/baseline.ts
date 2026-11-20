@@ -6,27 +6,25 @@
  * this suite runs the *same guest program* through both engines:
  *
  *  - `8086emu` (MIT, Rust compiled to Wasm, RV32IM) is a published in-browser
- *    emulator with an interpreter core - a fair stand-in for "what exists today".
+ *    emulator with an interpreter core, but it has not passed equivalence checks.
  *    Its own assembler is not used: the image is produced by our assembler and
  *    written into its memory, so both engines execute byte-identical code.
  *  - Ours, interpreted and JIT-compiled.
  *
- * The instruction count is taken from our interpreter's retire counter and fed
- * to `8086emu` as its step budget, so both engines are timed over the same
- * nominal number of guest instructions. The workloads are the register-only
+ * A nominal step budget is taken from our interpreter's retire counter and fed
+ * to `8086emu` as its step budget, but the comparator does not demonstrate that it retires the same instructions. The workloads are the register-only
  * ones: the comparator has no device model, no syscalls and no atomics, so
  * anything touching MMIO would not be a like-for-like comparison.
  *
- * **The comparator is a speed reference, not a correctness oracle.** Measured on
+ * **The comparator is an unverified diagnostic, not a speed reference or correctness oracle.** Measured on
  * these three workloads it neither retires exactly one instruction per step nor
  * reaches the same final register state: on `arith-loop` it halts having
  * produced `a0 = 0` where an independent model of the same program (and both of
  * our engines) produce -1188726464, and on `branchy` it stops mid-loop before
  * the step budget is spent. So this suite deliberately asserts nothing about its
- * results - it only reports how fast it went - and the checksum agreement it does
- * enforce is between *our* interpreter and *our* JIT. The authoritative
- * conformance oracles are `riscv-tests`, `riscv-arch-test` and QEMU-TCG
- * differential fuzzing in CI (ROADMAP §9), not another browser emulator.
+ * results - it reports elapsed time with throughput comparisons suppressed - and the checksum agreement it does
+ * enforce is between *our* interpreter and *our* JIT. Independent `riscv-tests`, `riscv-arch-test`, and QEMU differential testing
+ * are still planned and are not currently part of CI.
  *
  * The dependency is optional. When it is not installed the suite reports itself
  * unavailable instead of failing, so a browser-only CI job still runs.
@@ -88,7 +86,7 @@ export function comparableWorkloads(scale = 1): Workload[] {
 }
 
 /**
- * Both engines, same bytes, same instruction count.
+ * Both engines load the same bytes, but equivalent execution is unverified.
  *
  * `steps` is discovered once (untimed) by running the workload interpreted, so
  * the comparator's budget is exactly the number of instructions the guest
@@ -104,7 +102,8 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
     const steps = runWorkload({ workload: w, jit: false }).instructions;
 
     const baseline: Variant = {
-      name: `8086emu ${emu.version} (rust/wasm)`,
+      name: `8086emu ${emu.version} (unverified; no throughput comparison)`,
+      comparable: false,
       run: (): Outcome => {
         const e = emu.create();
         e.mem_write(0, image);
@@ -116,8 +115,13 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
         // engine's step accounting is not compared against ours.
         return {
           ms,
-          instructions: steps,
-          meta: { imageBytes: image.length, halted: e.halted(), stoppedAtPc: e.pc() },
+          instructions: 0, // The engine does not expose a reliable retired-instruction count.
+          meta: {
+            nominalStepBudget: steps,
+            imageBytes: image.length,
+            halted: e.halted(),
+            stoppedAtPc: e.pc(),
+          },
         };
       },
     };
@@ -144,7 +148,7 @@ export async function baselineSuite(scale = 1): Promise<Suite | null> {
 
     return {
       name: w.id,
-      description: `${w.title} - byte-identical image, ${steps} guest instructions on both engines`,
+      description: `${w.title} - comparator runs byte-identical code with nominal budget ${steps}, but equivalent execution is unverified`,
       showMeta: true,
       variants: [ours[0]!, ours[1]!, baseline],
     };

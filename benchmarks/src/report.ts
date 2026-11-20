@@ -9,6 +9,7 @@
  */
 
 import type { BenchEnv, BenchReport, CaseResult, GateResult } from './types.ts';
+import { ipsOf, isComparable } from './harness.ts';
 
 export function mips(ips: number): string {
   return (ips / 1e6).toFixed(1);
@@ -89,7 +90,14 @@ function headline(r: CaseResult): { label: string; value: number; digits: number
       digits: r.metric.digits,
       lowerIsBetter: r.metric.lowerIsBetter,
     };
-  return { label: 'MIPS', value: r.ips / 1e6, digits: 1, lowerIsBetter: false };
+  return { label: 'median MIPS', value: ipsOf(r.median) / 1e6, digits: 1, lowerIsBetter: false };
+}
+
+/** Range as a percentage of the median; absent for a single sample or zero median. */
+function sampleRangePercent(r: CaseResult): string {
+  if (r.samples.length < 2 || r.median.ms <= 0) return '-';
+  const values = r.samples.map((s) => s.ms);
+  return `${(((Math.max(...values) - Math.min(...values)) / r.median.ms) * 100).toFixed(1)}%`;
 }
 
 /** One block of text per case: the variants, their throughput, and the ratio. */
@@ -116,14 +124,17 @@ export function formatResults(results: CaseResult[]): string {
     const nameWidth = Math.max(9, ...list.map((r) => r.variant.length));
     const h = headline(list[0]!);
     const metricHeader = h.lowerIsBetter ? `${h.label} (lower better)` : h.label;
-    const head = `${left('variant', nameWidth)}  ${left('best ms', 9)} ${left(metricHeader, 18)} ${left('vs ref', 8)} ${left('insns', 11)}`;
+    const head = `${left('variant', nameWidth)}  ${left('best ms', 9)} ${left('median ms', 10)} ${left('range/med', 10)} ${left(metricHeader, 18)} ${left('vs ref', 8)} ${left('insns', 11)}`;
     out.push(anyStats ? `${head} ${STAT_COLUMNS.map((c) => left(c.header, c.width)).join(' ')}` : head);
     const ref = list[0];
     const refValue = ref ? headline(ref).value : 0;
     for (const r of list) {
       const hv = headline(r);
-      const ratio = ref && refValue > 0 && hv.value > 0 ? `x${(hv.value / refValue).toFixed(2)}` : '-';
-      const line = `${left(r.variant, nameWidth)}  ${left(r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1), 9)} ${left(hv.value.toFixed(hv.digits), 18)} ${left(ratio, 8)} ${left(String(r.best.instructions), 11)}`;
+      const ratio =
+        ref && isComparable(ref) && isComparable(r) && refValue > 0 && hv.value > 0
+          ? `x${(hv.value / refValue).toFixed(2)}`
+          : '-';
+      const line = `${left(r.variant, nameWidth)}  ${left(r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1), 9)} ${left(r.median.ms.toFixed(r.median.ms < 1 ? 3 : 1), 10)} ${left(sampleRangePercent(r), 10)} ${left(isComparable(r) ? hv.value.toFixed(hv.digits) : '-', 18)} ${left(ratio, 8)} ${left(isComparable(r) ? String(r.median.instructions) : '-', 11)}`;
       out.push(
         anyStats
           ? `${line} ${STAT_COLUMNS.map((c) => statCell(r, c)).join(' ')}`
@@ -181,8 +192,10 @@ export function toMarkdown(report: BenchReport, title = 'WasmNUX benchmark repor
   for (const suite of suites) {
     const rows = report.results.filter((r) => r.suite === suite);
     lines.push(`## ${suite}`, '');
-    lines.push('| case | variant | best ms | metric | value | vs ref | instructions |');
-    lines.push('|---|---|---:|---|---:|---:|---:|');
+    lines.push(
+      '| case | variant | best ms | median ms | range / median | metric | value | vs ref | instructions |',
+    );
+    lines.push('|---|---|---:|---:|---:|---|---:|---:|---:|');
     const cases = [...new Set(rows.map((r) => r.case))];
     for (const c of cases) {
       const list = rows.filter((r) => r.case === c);
@@ -190,16 +203,19 @@ export function toMarkdown(report: BenchReport, title = 'WasmNUX benchmark repor
       const refValue = ref ? headline(ref).value : 0;
       for (const r of list) {
         const hv = headline(r);
-        const ratio = ref && refValue > 0 && hv.value > 0 ? `x${(hv.value / refValue).toFixed(2)}` : '-';
+        const ratio =
+          ref && isComparable(ref) && isComparable(r) && refValue > 0 && hv.value > 0
+            ? `x${(hv.value / refValue).toFixed(2)}`
+            : '-';
         const label = hv.lowerIsBetter ? `${hv.label} (lower better)` : hv.label;
         lines.push(
-          `| ${c} | ${r.variant} | ${r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1)} | ${label} | ${hv.value.toFixed(hv.digits)} | ${ratio} | ${r.best.instructions} |`,
+          `| ${c} | ${r.variant} | ${r.best.ms.toFixed(r.best.ms < 1 ? 3 : 1)} | ${r.median.ms.toFixed(r.median.ms < 1 ? 3 : 1)} | ${sampleRangePercent(r)} | ${label} | ${isComparable(r) ? hv.value.toFixed(hv.digits) : '-'} | ${ratio} | ${isComparable(r) ? r.median.instructions : '-'} |`,
         );
       }
       if (list.some((r) => r.showMeta)) {
         for (const r of list) {
           const m = metaText(r).trim();
-          if (m) lines.push(`| ${c} | ${r.variant} | | | | | ${m} |`);
+          if (m) lines.push(`| ${c} | ${r.variant} | | | | | | | ${m} |`);
         }
       }
     }

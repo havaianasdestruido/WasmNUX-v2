@@ -138,6 +138,7 @@ export function measureVariant(
     case: caseName,
     variant: variant.name,
     samples,
+    comparable: variant.comparable,
     best,
     median,
     ips: ipsOf(best),
@@ -182,6 +183,11 @@ export function runSuites(suites: Suite[], opts: MeasureOptions = {}): BenchRepo
   return { version: 1, env: captureEnv(), results, durationMs: performance.now() - started };
 }
 
+/** Legacy baseline reports also contained a comparator known not to execute equivalent work. */
+export function isComparable(r: CaseResult): boolean {
+  return r.comparable !== false && !(r.suite === 'baseline' && r.variant.startsWith('8086emu '));
+}
+
 /**
  * Speedup of each variant against the first one in the same case, which by
  * convention is the reference implementation (the interpreter).
@@ -197,8 +203,10 @@ export function speedupsAgainstReference(results: CaseResult[]): Map<string, num
   const out = new Map<string, number>();
   for (const [key, list] of byCase) {
     const ref = list[0];
-    if (!ref || ref.ips <= 0) continue;
-    for (const r of list) out.set(`${key}/${r.variant}`, r.ips / ref.ips);
+    if (!ref || !isComparable(ref) || ref.metric || ipsOf(ref.median) <= 0) continue;
+    for (const r of list) {
+      if (isComparable(r) && !r.metric) out.set(`${key}/${r.variant}`, ipsOf(r.median) / ipsOf(ref.median));
+    }
   }
   return out;
 }

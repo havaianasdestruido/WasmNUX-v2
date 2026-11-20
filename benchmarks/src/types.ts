@@ -29,6 +29,8 @@ export interface Outcome extends Sample {
 /** A named way of running one workload: "interpreter", "jit globals/trap", ... */
 export interface Variant {
   name: string;
+  /** False if correctness/equivalent work has not been established; suppress comparisons. */
+  comparable?: boolean;
   /**
    * Run the workload once, from a freshly constructed machine. Implementations
    * must not reuse state between calls or the repetition count is meaningless.
@@ -87,6 +89,8 @@ export interface CaseResult {
   case: string;
   variant: string;
   samples: Sample[];
+  /** False when equivalent work has not been verified against the reference. */
+  comparable?: boolean;
   /** Fastest sample - the number a gate compares, since noise only ever adds. */
   best: Sample;
   median: Sample;

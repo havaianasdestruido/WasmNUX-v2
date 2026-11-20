@@ -4,11 +4,7 @@ name: ci
 #
 # Two things here are deliberate and easy to mistake for gaps:
 #
-#  * Benchmarks are *recorded*, not gated, on GitHub-hosted runners. A baseline
-#    is host-specific - the committed baselines were measured on a 2-vCPU Linux
-#    box and a hosted runner is a different machine, so gating against them would
-#    produce noise, not signal. The gate job below runs only when a baseline
-#    recorded on the same runner label is present.
+#  * Benchmarks are recorded, never performance-gated on GitHub-hosted runners.
 #  * The browser job is `continue-on-error` until it has been green once on a
 #    real runner. It is the only place the Spike A numbers get validated outside
 #    V8-in-Node, so it should become blocking as soon as it is trustworthy.
@@ -75,16 +71,6 @@ jobs:
             benchmarks/results/*.json
             kpi-report.md
           if-no-files-found: error
-      - name: Gate against a baseline for this runner, if one exists
-        run: |
-          if [ -f benchmarks/baselines/ci-ubuntu-latest-jit.json ]; then
-            cp benchmarks/baselines/ci-ubuntu-latest-jit.json benchmarks/baselines/jit.json
-            npm run bench:gate -- --suite jit
-          else
-            echo "no baseline recorded for ubuntu-latest; skipping the gate."
-            echo "record one with: npm run bench:record -- --suite jit --baseline"
-            echo "then commit it as benchmarks/baselines/ci-ubuntu-latest-jit.json"
-          fi
 
   browser-test:
     runs-on: ubuntu-24.04

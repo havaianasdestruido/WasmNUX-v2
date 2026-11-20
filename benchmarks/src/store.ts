@@ -4,10 +4,10 @@
  * Results are JSON files under `benchmarks/results/`, one per run, named after
  * the wall clock *and* the git commit so a number can always be traced back to
  * the code that produced it. Baselines live in `benchmarks/baselines/`, one file
- * per suite, and are what CI compares against: `npm run bench:gate` fails when a
- * variant drops more than the tolerance below its baseline.
+ * per suite, and may be used by the optional local `npm run bench:gate`. CI records results
+ * without hardware-specific performance gates.
  *
- * Throughput gates on shared CI runners are noisy, so the gate compares the
+ * The legacy local gate compares the
  * *best* sample (noise only ever adds time) and the default tolerance is wide.
  * A gate that cries wolf gets ignored, and an ignored gate is worse than none.
  */
@@ -18,6 +18,7 @@ import { cpus, totalmem } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { BenchReport, CaseResult, GateResult, GateRow, GitInfo } from './types.ts';
+import { isComparable } from './harness.ts';
 
 function git(args: string[]): string | undefined {
   try {
@@ -150,11 +151,12 @@ export function gate(report: BenchReport, tolerance = DEFAULT_TOLERANCE, dir = b
     const stored = readBaseline(suite, dir);
     if (!stored) continue;
     baselineFile = join(dir, `${suite}.json`);
-    for (const r of stored) baseline.set(key(r), r);
+    for (const r of stored) if (isComparable(r)) baseline.set(key(r), r);
   }
 
   const seen = new Set<string>();
   for (const r of report.results) {
+    if (!isComparable(r)) continue;
     const k = key(r);
     seen.add(k);
     const b = baseline.get(k);

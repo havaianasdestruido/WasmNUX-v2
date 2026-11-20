@@ -8,8 +8,9 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { ipsOf, measureVariant, runSuites, speedupsAgainstReference } from '../src/harness.ts';
+import { captureEnv, ipsOf, measureVariant, runSuites, speedupsAgainstReference } from '../src/harness.ts';
 import { gate, readReport, writeBaselines, writeReport } from '../src/store.ts';
+import { formatResults, toMarkdown } from '../src/report.ts';
 import type { BenchReport, CaseResult, Suite, Variant } from '../src/types.ts';
 
 /** A deterministic fake variant: `ms` is fixed, so throughput is predictable. */
@@ -57,6 +58,38 @@ describe('statistics', () => {
     expect(r.samples.length).toBe(6);
     expect(r.ips).toBe(100_000);
     expect(r.median.ms).toBeGreaterThanOrEqual(10);
+  });
+
+  it('shows median and dispersion and suppresses unverified comparator ratios, including historical reports', () => {
+    const ref = result('baseline', 'loop', 'reference', 1000);
+    const other = result('baseline', 'loop', '8086emu 1.5.1 (rust/wasm)', 2000);
+    other.samples = [
+      { ms: 1, instructions: 1000 },
+      { ms: 3, instructions: 1000 },
+      { ms: 5, instructions: 1000 },
+    ];
+    other.best = other.samples[0]!;
+    other.median = other.samples[1]!;
+    const text = formatResults([ref, other]);
+    expect(text).toContain('median ms');
+    expect(text).toContain('133.3%');
+    expect(text).not.toContain('x2.00');
+    expect(speedupsAgainstReference([ref, other]).has('baseline/loop/8086emu 1.5.1 (rust/wasm)')).toBe(false);
+    const markdown = toMarkdown({ version: 1, env: captureEnv(), results: [ref, other], durationMs: 0 });
+    expect(markdown).toContain('median ms');
+    expect(markdown).toContain('133.3%');
+    expect(markdown).not.toContain('x2.00');
+  });
+
+  it('computes comparable throughput ratios from median rather than fastest samples', () => {
+    const ref = result('fake', 'c', 'ref', 1000);
+    const jit = result('fake', 'c', 'jit', 2000);
+    ref.best = { ms: 1, instructions: 1000 };
+    ref.median = { ms: 10, instructions: 1000 };
+    jit.best = { ms: 1, instructions: 1000 };
+    jit.median = { ms: 5, instructions: 1000 };
+    expect(speedupsAgainstReference([ref, jit]).get('fake/c/jit')).toBe(2);
+    expect(formatResults([ref, jit])).toContain('x2.00');
   });
 
   it('runs warmup repetitions without recording them', () => {
@@ -145,6 +178,21 @@ describe('result store', () => {
     const written = writeBaselines(report, tmp);
     expect(written.length).toBe(1);
     expect(written[0]!.endsWith('fake.json')).toBe(true);
+  });
+
+  it('does not gate an unverified comparator, including in historical baselines', () => {
+    const unverified = result('baseline', 'loop', '8086emu 1.5.1 (rust/wasm)', 1000);
+    const old = { ...report, results: [unverified] };
+    const dir = mkdtempSync(join(tmpdir(), 'wnx-bench-unverified-'));
+    try {
+      writeBaselines(old, dir);
+      const current = { ...old, results: [{ ...unverified, ips: 1 }] };
+      const checked = gate(current, 0.2, dir);
+      expect(checked.failed).toBe(false);
+      expect(checked.rows).toEqual([]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('passes a gate when throughput holds', () => {
