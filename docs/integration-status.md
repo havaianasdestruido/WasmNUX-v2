@@ -10,15 +10,15 @@ draft until the gaps below are addressed and reviewed.
 
 ## 2. Architecture and implementation status
 
-| Area                                               | Status                 | Evidence and limitations                                                                                                                                                                                                                                              |
-| -------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RV32IMA interpreter, assembler, JIT                | Partial                | `core/src/cpu`, `core/src/jit`; differential corpus and targeted MMIO retirement regressions exist; full architectural compliance remains unproven.                                                                                                                   |
-| Sv32 walker / TLB                                  | Experimental           | `core/src/mmu`, `core/test/mmu.test.ts`; no complete privileged CPU, trap delegation, SUM/MXR, or JIT translation. 34-bit physical addresses are rejected rather than aliased.                                                                                        |
-| Sv39 walker                                        | Experimental / partial | Some superpage cases are tested; RV64 CPU and full-width virtual/physical address support are not implemented.                                                                                                                                                        |
-| SMP                                                | Experimental           | `core/src/smp` runs interpreter harts in Node workers with shared RAM and a reservation table; tests cover atomic increments, LR/SC lock, and invalidation. Device state, host memory writes, IPIs, WFI coordination, browser workers and JIT SMP are not integrated. |
-| Host, OPFS, display, network, relay, terminal, IWA | Planned / unsupported  | `host` and `relay` remain placeholders; no production subsystem from the other PRs has been integrated.                                                                                                                                                               |
-| Browser                                            | Partial                | Demo has Node tests and a real Chromium smoke test; future browser host subsystems are not implemented.                                                                                                                                                               |
-| Debian/kernel/virtio                               | Unsupported            | No bootable guest environment.                                                                                                                                                                                                                                        |
+| Area                                               | Status                 | Evidence and limitations                                                                                                                                                                                                                                                                          |
+| -------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RV32IMA interpreter, assembler, JIT                | Partial                | `core/src/cpu`, `core/src/jit`; differential corpus and targeted MMIO retirement regressions exist; full architectural compliance remains unproven.                                                                                                                                               |
+| Sv32 walker / TLB                                  | Experimental           | `core/src/mmu`, `core/test/mmu.test.ts`; no complete privileged CPU, trap delegation, SUM/MXR, or JIT translation. 34-bit physical addresses are rejected rather than aliased.                                                                                                                    |
+| Sv39 walker                                        | Experimental / partial | Some superpage cases are tested; RV64 CPU and full-width virtual/physical address support are not implemented.                                                                                                                                                                                    |
+| SMP                                                | Experimental           | `core/src/smp` runs interpreter harts in Node workers with shared RAM and a reservation table; tests cover atomic increments, LR/SC lock, invalidation, and an overall runtime timeout. Device state, host memory writes, IPIs, WFI coordination, browser workers and JIT SMP are not integrated. |
+| Host, OPFS, display, network, relay, terminal, IWA | Planned / unsupported  | `host` and `relay` remain placeholders; no production subsystem from the other PRs has been integrated.                                                                                                                                                                                           |
+| Browser                                            | Partial                | Demo has Node tests and a real Chromium smoke test; future browser host subsystems are not implemented.                                                                                                                                                                                           |
+| Debian/kernel/virtio                               | Unsupported            | No bootable guest environment.                                                                                                                                                                                                                                                                    |
 
 MMU privilege is currently a manually configured walker property, not a complete
 RISC-V privilege architecture. Cross-hart atomicity only applies when all writes
@@ -62,7 +62,7 @@ MMU fault, permission, TLB and JIT interactions. The current test results do not
 prove these are correct. A sliced nested-loop regression fixed block-order
 accounting. A second fix checkpoints budget before Wasm traps; six tests cover
 MMIO retirement and register state across bounds and PC-tracking configurations.
-Benchmark preflight now also compares instruction and MMIO counts.
+Benchmark preflight now also compares instruction and MMIO counts. New direct compiled DIV/REM tests check signed/unsigned edge cases against a BigInt oracle in baseline and optimized modes. `core/test/memory.test.ts` checks address rejection, bulk-copy bounds, control-page isolation and attached-memory geometry; these checks do not provide full RV64 support.
 
 ## 6. Compatibility changes
 
@@ -84,8 +84,7 @@ An earlier Node run previously showed mismatched instruction counts and
 spread up to 1017%. After the JIT fixes, a one-repetition JIT run matched
 checksums, stop reasons, instruction counts and MMIO counts across the measured
 variants, including device-poll (100007 instructions). The harness may collect
-additional samples automatically, and the CLI still emphasizes best sample; do
-not treat this as a validated median/dispersion KPI. A Chromium 133 WebAssembly-only run completed with one requested repetition;
+additional samples automatically. Reports now show median and range per variant; comparable throughput ratios use medians. The retained best-sample metrics and local gate still need methodological review; do not treat this as a validated cross-host KPI. A Chromium 133 WebAssembly-only run completed with one requested repetition;
 it is a functional smoke check, not a reproducible performance result. A JIT
 browser benchmark did not complete within 120 seconds and was stopped. A reproducible, warmed multi-sample run with median and
 dispersion remains necessary.
@@ -109,9 +108,8 @@ before considering merge.
 ### Latest verification
 
 On this branch, `npm ci`, `npm run lint`, `npm audit`, the full test suite
-under Node 22.12.0 (327 tests), `npm run build`, and the Chromium 133 demo
+under Node 22.12.0 (344 tests), `npm run build`, and the Chromium 133 demo
 smoke test passed. `npm run bench` completed on Node 22.22.3, Linux x64, two
-vCPUs with the strengthened JIT preflight. Its output still emphasizes the
-fastest sample and showed noisy samples; it is not a validated cross-host KPI.
+vCPUs with the strengthened JIT preflight. The current report displays median, range and best sample; the best-sample fields and local gate are not a validated cross-host KPI.
 The external 8086emu comparator does not complete all guest programs correctly
 and must not be used to claim a normalized speedup.

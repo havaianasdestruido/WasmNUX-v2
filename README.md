@@ -19,7 +19,7 @@ npm run bench -- --all
 **Integration in progress — not ready to merge.** The RV32 interpreter and
 JIT are the foundation, with an experimental page-table walker and Node-only
 SMP worker prototype. Privilege modes and the host subsystems are not complete.
-See [integration status](docs/integration-status.md) for evidence and blockers.
+See [architecture](ARCHITECTURE.md) and [integration status](docs/integration-status.md) for evidence and blockers.
 
 ## What works today
 
@@ -37,7 +37,7 @@ privileged architecture implementation):
 | Tiering engine | `core/src/jit/engine.ts`       | heat → compile → run → optimise, code cache, invalidation, tier-down |
 | Memory         | `core/src/machine/memory.ts`   | one lazily-reserved `WebAssembly.Memory`, optional control page      |
 | ELF            | `core/src/machine/elf.ts`      | ELF32-LE loader (EM_RISCV / EM_MIPS)                                 |
-| Devices        | `core/src/devices/`            | UART, CLINT, PLIC, sifive_test finisher, device bus                  |
+| Devices        | `core/src/devices/`            | UART, CLINT, sifive_test finisher, device bus                        |
 | Machine        | `core/src/machine/machine.ts`  | QEMU-`virt`-shaped machine, Linux syscall ABI, M-mode interrupts     |
 | Benchmarks     | `benchmarks/`                  | harness, 3 suites, result store, gate, browser runner                |
 
@@ -46,8 +46,9 @@ privileged architecture implementation):
 Historical Phase 0 samples are in `benchmarks/results/` and the original spike
 notes. Regression tests now cover the observed JIT retirement mismatch in device
 polling; the benchmark preflight also checks retired counts and MMIO effects.
-Earlier measurements showed high sample spread. Do not treat its speedups
-as correctness-validated or compare them across hosts. See
+Reports include median and sample range; throughput comparisons use median timings.
+Historical best-sample metrics and the optional local gate are not cross-host KPIs.
+The 8086emu diagnostic is not verified to perform equivalent work, and its ratios are suppressed. See
 [integration status](docs/integration-status.md).
 
 ## Decisions
@@ -124,8 +125,9 @@ read counts versus the interpreter. The JIT benchmark preflight also checks stop
 read/write counts; it is not a substitute for full architectural comparison.
 
 Not yet covered, and tracked as such: `riscv-tests`, `riscv-arch-test`, QEMU-TCG
-differential fuzzing, and browser-engine runs. All four need tooling this
-sandbox does not have; all four are CI work in Phase 1.
+differential fuzzing, and broad multi-browser coverage. A Chromium demo smoke
+test and an experimental browser benchmark run in CI; they do not establish
+full browser or CPU correctness.
 
 ## Licence
 

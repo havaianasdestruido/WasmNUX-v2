@@ -1,5 +1,10 @@
 # Architecture decision records
 
+> These records describe historical decisions and proposals, not current feature
+> completion. The active implementation and outstanding evidence are documented
+> in [architecture](../../ARCHITECTURE.md) and [integration status](../integration-status.md).
+> The prior best-sample measurements are not validated cross-host KPIs.
+
 Phase 0's exit criterion (ROADMAP §5) is "measured numbers for every KPI row,
 written ADRs, explicit go/no-go on the JIT design". This directory holds the
 ADRs. Where a spike produced numbers, the ADR cites them; where it did not, the
