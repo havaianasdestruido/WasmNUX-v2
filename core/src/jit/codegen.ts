@@ -341,6 +341,15 @@ export class RegionCodegen {
       this.f.localSet(this.lBudget);
     }
 
+    // A Wasm trap loses local variables. Save the charged budget and the
+    // current block so the host can count previous blocks and the completed
+    // prefix accurately, including across tail-called regions.
+    if (cfg.bounds === 'trap') {
+      this.f.localGet(this.lBudget).globalSet(G.TRAP_BUDGET);
+      this.f.i32(block.start | 0).globalSet(G.TRAP_BLOCK);
+      this.f.i32(block.words.length).globalSet(G.TRAP_BLOCK_LEN);
+    }
+
     for (let k = 0; k < block.insns.length; k++) {
       this.emitInsn(block.insns[k]!, (block.start + k * 4) >>> 0);
     }
@@ -948,7 +957,7 @@ export class RegionCodegen {
       }
       // Constant but outside RAM: keep the pc precise so the host can emulate
       // the MMIO access or raise the fault.
-      if (cfg.pcTracking === 'faulting') this.setPc(addr);
+      if (cfg.pcTracking !== 'instruction') this.setPc(addr);
       if (cfg.bounds === 'inline') {
         // $t2 is read by the $fault handler to publish G.INFO.
         f.i32(off | 0);
@@ -966,7 +975,7 @@ export class RegionCodegen {
       f.i32(d.imm);
       f.i32Add();
     }
-    if (cfg.pcTracking === 'faulting') this.setPc(addr);
+    if (cfg.pcTracking !== 'instruction') this.setPc(addr);
     if (cfg.ramBase !== 0) {
       f.i32(-cfg.ramBase);
       f.i32Add();
@@ -1035,7 +1044,7 @@ export class RegionCodegen {
 
     // Guest address -> Wasm offset in $t0, keeping pc precise for the fault path.
     this.readReg(d.rs1);
-    if (cfg.pcTracking === 'faulting') this.setPc(addr);
+    if (cfg.pcTracking !== 'instruction') this.setPc(addr);
     if (cfg.ramBase !== 0) {
       f.i32(-cfg.ramBase);
       f.i32Add();

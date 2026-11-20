@@ -24,7 +24,10 @@ export const G = {
   LR_ADDR: 34,
   LR_VALUE: 35,
   LR_VALID: 36,
-  COUNT: 37,
+  TRAP_BUDGET: 37,
+  TRAP_BLOCK: 38,
+  TRAP_BLOCK_LEN: 39,
+  COUNT: 40,
 } as const;
 
 export const GLOBAL_NAMES: string[] = [
@@ -34,6 +37,9 @@ export const GLOBAL_NAMES: string[] = [
   'lrAddr',
   'lrValue',
   'lrValid',
+  'trapBudget',
+  'trapBlock',
+  'trapBlockLen',
 ];
 
 export type RegAlloc = 'globals' | 'memory';

@@ -83,22 +83,36 @@ function variantOf(v: JitVariant, w: Workload): Variant {
   };
 }
 
+/** Check deterministic architectural observations before timing any variant. */
+export function assertEquivalentOutcome(
+  workload: string,
+  name: string,
+  out: Outcome,
+  reference: Outcome,
+): void {
+  for (const [field, value, expected] of [
+    ['result', out.meta?.['result'], reference.meta?.['result']],
+    ['stop', out.meta?.['stop'], reference.meta?.['stop']],
+    ['instructions', out.instructions, reference.instructions],
+    ['mmioReads', out.stats?.['mmioReads'], reference.stats?.['mmioReads']],
+    ['mmioWrites', out.stats?.['mmioWrites'], reference.stats?.['mmioWrites']],
+  ] as const) {
+    if (value === undefined || expected === undefined || value !== expected) {
+      throw new Error(
+        `workload '${workload}': variant '${name}' differs in ${field}: ${value} vs ${expected}`,
+      );
+    }
+  }
+}
+
 /** Run every workload once under every variant and check the answers agree. */
 export function verifyJitResults(workloads: Workload[] = cpuWorkloads()): void {
   for (const w of workloads) {
-    const seen = new Map<string, number>();
+    let reference: Outcome | undefined;
     for (const v of JIT_VARIANTS) {
       const out = runWorkload({ workload: w, jit: v.jit, machine: v.machine });
-      const result = Number(out.meta?.['result'] ?? NaN);
-      seen.set(v.name, result);
-    }
-    const [refName, ref] = seen.entries().next().value as [string, number];
-    for (const [name, value] of seen) {
-      if (value !== ref) {
-        throw new Error(
-          `workload '${w.id}': variant '${name}' computed ${value} but '${refName}' computed ${ref} - refusing to benchmark a disagreement`,
-        );
-      }
+      if (reference) assertEquivalentOutcome(w.id, v.name, out, reference);
+      else reference = out;
     }
   }
 }

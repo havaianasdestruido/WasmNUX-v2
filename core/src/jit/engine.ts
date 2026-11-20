@@ -220,6 +220,7 @@ export class JitCodeCache {
 
 export function configHash(cfg: JitConfig): string {
   return [
+    'trap-checkpoint-v1',
     cfg.regalloc,
     cfg.bounds,
     cfg.pcTracking,
@@ -461,6 +462,14 @@ export class Engine {
     this.compileAt(best, false);
   }
 
+  /** Count only instructions that actually retire on a host slow path. */
+  private stepSlow(cpu: CpuState): void {
+    const before = cpu.instret;
+    this.interp.step(cpu);
+    this.stats.interpSteps++;
+    this.stats.interpInstructions += cpu.instret - before;
+  }
+
   /** Follow compiled regions until the host is needed. */
   private runCompiled(
     cpu: CpuState,
@@ -484,18 +493,21 @@ export class Engine {
         if (!(err instanceof WebAssembly.RuntimeError)) throw err;
         this.stats.wasmTraps++;
         this.pushState(cpu);
-        // The region threw, so it never reported a budget and nothing was
-        // charged. The instructions before the faulting one did retire, and the
-        // pc was published ahead of the access, so they can be counted exactly.
+        // Local budgets disappear on a Wasm trap. The checkpoint is refreshed
+        // at every block (also in tail-called regions), so it includes all
+        // completed blocks and the precise prefix of the faulting block.
         const trapped = cpu.pc >>> 0;
-        const executed = this.retirePartial(current.region, trapped);
+        const savedBudget = this.rf.getSlot(G.TRAP_BUDGET);
+        const blockStart = this.rf.getSlot(G.TRAP_BLOCK) >>> 0;
+        const blockLength = this.rf.getSlot(G.TRAP_BLOCK_LEN);
+        const prefix = Math.min(blockLength, (trapped - blockStart) >>> 2);
+        const executed = before - savedBudget - blockLength + prefix;
         cpu.instret += executed;
         cpu.cycles += executed;
         this.stats.jitInstructions += executed;
         this.learnSlowPc(trapped, current.region);
         this.noteHostExit(current.region, executed);
-        this.interp.step(cpu);
-        this.stats.interpSteps++;
+        this.stepSlow(cpu);
         return { remaining: before - executed - 1, leftJit: true, stop: cpu.stop !== 'running' };
       }
       b = res.budget;
@@ -551,8 +563,7 @@ export class Engine {
           this.noteHostExit(current.region, consumed + fix);
           this.pushState(cpu);
           this.stats.slowPathFaults++;
-          this.interp.step(cpu);
-          this.stats.interpSteps++;
+          this.stepSlow(cpu);
           return { remaining: b - 1, leftJit: true, stop: cpu.stop !== 'running' };
         }
         case EXIT.RETIRE: {
@@ -567,8 +578,7 @@ export class Engine {
             // bootloaders that patch their own text.
             this.invalidateAll('fence.i');
           }
-          this.interp.step(cpu);
-          this.stats.interpSteps++;
+          this.stepSlow(cpu);
           return { remaining: b - 1, leftJit: true, stop: cpu.stop !== 'running' };
         }
         case EXIT.IDLE: {
@@ -591,8 +601,7 @@ export class Engine {
           this.declined.add(this.rf.pc);
           this.stats.declinedPcs++;
           this.pushState(cpu);
-          this.interp.step(cpu);
-          this.stats.interpSteps++;
+          this.stepSlow(cpu);
           return { remaining: b - 1, leftJit: true, stop: cpu.stop !== 'running' };
         }
       }
@@ -807,15 +816,6 @@ export class Engine {
     if (found < 0) return -1;
     const index = region.blocks.get(starts[found]!);
     return index === undefined ? -1 : index;
-  }
-
-  /** Instructions of the block containing `pc` that completed before `pc`. */
-  private retirePartial(region: CompiledRegion, pc: number): number {
-    const index = this.blockIndexAt(region, pc);
-    if (index < 0) return 0;
-    const executed = (pc - region.entryBlockStarts[index]!) >>> 2;
-    const charged = region.blockLengths[index] ?? 0;
-    return executed > charged ? charged : executed;
   }
 
   /**

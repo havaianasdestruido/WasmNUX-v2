@@ -877,3 +877,41 @@ describe('JIT retirement across sliced nested loops', () => {
     expect(Array.from(actual.cpu.regs)).toEqual(Array.from(expected.cpu.regs));
   });
 });
+
+describe('MMIO polling retirement', () => {
+  for (const bounds of ['trap', 'inline'] as const) {
+    for (const pcTracking of ['faulting', 'block', 'instruction'] as const) {
+      it(`counts prior blocks before an MMIO ${bounds} exit with ${pcTracking} PC tracking`, () => {
+        const src = `
+        li a0, 0x10000000
+        li t0, 2000
+        li s0, 0
+      poll:
+        addi s1, s1, 1
+        lbu t1, 5(a0)
+        andi t1, t1, 1
+        beqz t1, nodata
+        lbu t2, 0(a0)
+        add s0, s0, t2
+      nodata:
+        addi t0, t0, -1
+        bnez t0, poll
+        mv a0, s0
+        ${EXIT_ASM}`;
+        const reference = runInterpreted(src, { budget: 100000 });
+        const actual = run(src, {
+          budget: 100000,
+          jit: { hotThreshold: 2, interpChunk: 2, config: { bounds, pcTracking } },
+        });
+        expect(actual.cpu.stop).toBe('exit');
+        expect(actual.machine.stats().jitInstructions).toBeGreaterThan(0);
+        expect(actual.machine.stats().mmioReads).toBe(reference.machine.stats().mmioReads);
+        expect(actual.instructions).toBe(reference.instructions);
+        expect(Array.from(actual.cpu.regs)).toEqual(Array.from(reference.cpu.regs));
+        expect(actual.machine.stats().jitInstructions + actual.machine.stats().interpInstructions).toBe(
+          actual.instructions,
+        );
+      });
+    }
+  }
+});
