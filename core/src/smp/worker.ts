@@ -2,9 +2,8 @@
  * SMP hart worker. Runs one `Machine` attached to the shared guest memory and
  * the shared `SmpChannel`.
  *
- * Entry points are plain TypeScript on purpose: the runtime spawns this file
- * with `execArgv: ['--import', 'tsx']`, so no build step is needed for tests or
- * the Node host. No browser worker transport is implemented yet.
+ * A JavaScript bootstrap registers the TypeScript loader before importing this
+ * file, including on Node 22.12. No browser worker transport is implemented yet.
  */
 
 import { parentPort, workerData } from 'node:worker_threads';

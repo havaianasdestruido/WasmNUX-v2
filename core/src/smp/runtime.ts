@@ -38,7 +38,7 @@ export interface SmpRunResult {
 }
 
 function workerUrl(): URL {
-  return new URL('./worker.ts', import.meta.url);
+  return new URL('./worker-bootstrap.mjs', import.meta.url);
 }
 
 /**
@@ -73,7 +73,6 @@ export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
           ramBase: opts.ramBase ?? 0x80000000,
           ramBytes: pages * 65536,
         },
-        execArgv: ['--import', 'tsx'],
       });
       workers.push(worker);
       worker.on('message', (msg: SmpHartResult & { error?: string }) => {
