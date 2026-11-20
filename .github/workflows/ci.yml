@@ -87,7 +87,7 @@ jobs:
           fi
 
   browser-test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     steps:
       - uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
       - run: npm run test:browser
 
   browser:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: test
     # See the note at the top: make this blocking once it has been green once.
     continue-on-error: true
