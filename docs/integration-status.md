@@ -1,125 +1,103 @@
-# Integration status — work in progress, not merge-ready
+# Integration status — partial follow-up, draft required
 
-## 1. Executive summary
+## Starting point
 
-The integration uses the RV32 TypeScript emulator and benchmark harness from
-PR #5 as its foundation. It adds an experimental walker inspired by the MMU
-work in PR #4, and a Node worker prototype informed by PR #3. This is **not** a
-complete implementation of the original integration request. It must remain a
-draft until the gaps below are addressed and reviewed.
+GitHub reported PR #6 **MERGED**, merged at 2026-11-20T16:27:40Z with commit
+`27b89e622eb8c474629d4b8351529a4c32b16bd7`. This session's
+`arena/a4978d81-wasmnux-v2` started at that exact commit; ancestry was checked.
+PRs #1–#5 and their review comments were consulted, not merged or closed.
 
-## 2. Architecture and implementation status
+This follow-up does **not** complete the requested integration. The substantial
+remaining work is implementation work, not merely missing credentials or a test
+runner. Keep the PR draft; no kernel or Debian boot has been executed.
 
-| Area                                               | Status                 | Evidence and limitations                                                                                                                                                                                                                                                                          |
-| -------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RV32IMA interpreter, assembler, JIT                | Partial                | `core/src/cpu`, `core/src/jit`; differential corpus and targeted MMIO retirement regressions exist; full architectural compliance remains unproven.                                                                                                                                               |
-| Sv32 walker / TLB                                  | Experimental           | `core/src/mmu`, `core/test/mmu.test.ts`; no complete privileged CPU, trap delegation, SUM/MXR, or JIT translation. 34-bit physical addresses are rejected rather than aliased.                                                                                                                    |
-| Sv39 walker                                        | Experimental / partial | Some superpage cases are tested; RV64 CPU and full-width virtual/physical address support are not implemented.                                                                                                                                                                                    |
-| SMP                                                | Experimental           | `core/src/smp` runs interpreter harts in Node workers with shared RAM and a reservation table; tests cover atomic increments, LR/SC lock, invalidation, and an overall runtime timeout. Device state, host memory writes, IPIs, WFI coordination, browser workers and JIT SMP are not integrated. |
-| Host, OPFS, display, network, relay, terminal, IWA | Planned / unsupported  | `host` and `relay` remain placeholders; no production subsystem from the other PRs has been integrated.                                                                                                                                                                                           |
-| Browser                                            | Partial                | Demo has Node tests and a real Chromium smoke test; future browser host subsystems are not implemented.                                                                                                                                                                                           |
-| Debian/kernel/virtio                               | Unsupported            | No bootable guest environment.                                                                                                                                                                                                                                                                    |
+## Current status
 
-MMU privilege is currently a manually configured walker property, not a complete
-RISC-V privilege architecture. Cross-hart atomicity only applies when all writes
-are routed through the interpreter and the same `SmpChannel`; direct host or
-JIT memory accesses bypass the channel. Do not use this for untrusted guests.
+| Area                                       | Status                  | Evidence / remaining work                                                                                                                                                                                                                                    |
+| ------------------------------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RV32 CPU, assembler, JIT                   | Partial                 | Existing differential, DIV/REM, budget, trap, assembler and memory suites pass; no independent architecture conformance run.                                                                                                                                 |
+| RV64 / full privileged CPU                 | Not supported           | Still RV32 registers/PCs; no complete S/U modes, delegation, CSR legality or RV64 assembler/decoder/JIT.                                                                                                                                                     |
+| MMU                                        | Experimental            | Sv32 and low-32-bit Sv39 walker; new high-address rejection, reserved PTE, access-fault, SUM/MXR and TLB-hit permission tests. SUM/MXR are walker properties, not status CSR integration. Full Sv39 addresses remain unsupported.                            |
+| SMP                                        | Experimental            | One interpreter hart entry shared by Node and browser transports. Real browser four-hart AMO/LRSC stress. JIT, shared devices/IPIs and WFI remain absent. Explicit host writes and syscall input now share the reservation barrier; raw views remain unsafe. |
+| OPFS snapshots                             | Experimental            | Real bounded atomic whole-file replacement, Web Locks, worker failure and concurrency tests. A bounded transactional sector backend is now layered on snapshots; still not a guest disk, chunk overlay or durability proof.                                  |
+| Browser                                    | Partial                 | Builds demo and hart worker; tests demo, SMP and OPFS in Chromium. No Firefox/Safari evidence.                                                                                                                                                               |
+| Display/GPU, terminal, network, relay, IWA | Planned / not supported | No operational implementations added. DNS pointer cycles are not an active parser surface because there is no DNS parser.                                                                                                                                    |
+| Virtio, kernel, Debian                     | Not supported           | No bootable guest environment or boot claim.                                                                                                                                                                                                                 |
 
-## 3. PR-by-PR disposition
+## Prototype disposition after reviewing current diffs and comments
 
-- **#1**: spike prototypes and ADR skeleton audited; not incorporated as a
-  second competing runtime.
-- **#2**: OPFS, GPU, relay, web isolation and host prototypes audited; not
-  integrated without a full correctness and persistence review.
-- **#3**: SMP and benchmarking prototypes audited; worker and atomics design
-  informed the new experimental runtime. DNS/TCP/IP and vendored benchmarks are
-  not integrated.
-- **#4**: page-table and concurrency primitives audited; the walker and tests
-  incorporate the superpage and fetch-translation ideas, not the duplicate CPU.
-- **#5**: selected as the core/JIT, tests, benchmark harness, ADR and workspace
-  foundation. Its host and relay packages are placeholders.
+- **#1:** retain the existing design history, not a second CPU/host API. Reviewed
+  storage metadata, GPU ring and glyph-slot findings. Current COW code still
+  has fixed metadata capacity and in-place update concerns; no format imported.
+- **#2:** actual OPFS worker/probe ideas informed browser tests. The inspected
+  block backend writes chunks in place and assumes a serialized caller; it is
+  not used as a transactional snapshot backend. GPU/relay prototypes are deferred,
+  not called production-ready. The SMP timing comment has a recorded fix.
+- **#3:** SMP ideas already inform the base. Its reviewed fresh-slot COW revision
+  addresses the earlier overwrite finding, but explicitly never reclaims arena
+  slots and bounds its map in one metadata sector. It is not copied into this
+  snapshot API. RV64 prototype/JIT and network code are not imported; their
+  wider-address/DIV and DNS findings need independent end-to-end review.
+- **#4:** keep the base's selected MMU/reservation design, now harden it. The
+  current chunk-store diff serializes writes (the older review finding was fixed),
+  but that is not full disk integration or proof of bounded journal recovery.
+  No duplicate CPU, chunk store or echo network stack is incorporated.
+- **#5:** remains the core/workspace/JIT/benchmark foundation selected by #6.
+  The GitHub full-diff endpoint exceeded its line limit; the incorporated source
+  and tests are available in this checkout. No second implementation is added.
 
-## 4. Discarded/deferred approaches
+## Mandatory audit checklist
 
-The other PRs' duplicate CPU implementations and host prototypes are deferred,
-not represented as integrated features. Audit findings include storage journal
-interleaving and DNS compression cycles; avoiding those prototypes does not
-constitute a production storage or networking implementation.
+- Workspace/lockfile: clean `npm ci` passes; no new runtime dependencies.
+- Persistence: added failure-before-publication/reopen and real worker kill
+  tests; physical crash, eviction, quota-exhaustion and guest fsync remain open.
+- Address/copy bounds: memory tests retained; MMU no longer narrows a high VA to
+  low RAM or exposes a truncated root table. Full RV64 remains unimplemented.
+- DIV/REM, retirement and JIT budgets: existing BigInt-oracle and differential
+  regressions retained and rerun. No claim of exhaustive correctness.
+- LR/SC/AMOs: same channel in both transports; real browser contention added.
+  Direct host writes and per-hart device coherence remain blockers.
+- DNS cycles / packet buffers: no network parser incorporated; network security
+  and relay resource budgets remain unimplemented, not considered solved.
+- LUI, branches, relocations: existing assembler regressions retained and rerun.
+- MMU fetch/superpages/mepc/sfence: existing regressions retained; reserved PTE,
+  page-table access-fault and permission-cache regressions added.
 
-## 5. Fixes and unresolved correctness work
+## Compatibility and security
 
-Tests cover physical composition for selected Sv32/Sv39 superpages, fetch
-translation, legal `sfence.vma` operands, faulting `mepc`, unretired faulting
-instructions, invalid R/W PTEs, physical address wrap rejection, LR/SC
-invalidation and interpreter AMOs. Regression coverage is in `core/test/mmu.test.ts`,
-`core/test/smp.test.ts` and `core/test/interp.test.ts`.
+See [host runtime](host-runtime.md) for limits, API examples and publication
+semantics. Node SMP public types are re-exported from their previous location.
+MMU `invalidateVpn` and `rootTable` now throw RangeError for unsupported widths;
+`translate` returns a fault with the original tval, rather than silently aliasing.
+Callers must pass unsigned RV32 addresses and handle failure, not mask a wider
+address to make it pass. Inaccessible page-table memory now returns an access
+fault instead of a page fault. The interpreter's supported valid-address API
+is unchanged. None of this is an untrusted-guest security boundary.
 
-**Still required:** comprehensive JIT division/remainder and counter validation;
-full-width RV64 addresses and PCs; full privileged architecture; storage
-crash-consistency; bounded copies and buffers; cyclic DNS pointers; branch and
-assembler range checks; thorough independent SMP/AMO stress tests; additional
-MMU fault, permission, TLB and JIT interactions. The current test results do not
-prove these are correct. A sliced nested-loop regression fixed block-order
-accounting. A second fix checkpoints budget before Wasm traps; six tests cover
-MMIO retirement and register state across bounds and PC-tracking configurations.
-Benchmark preflight now also compares instruction and MMIO counts. New direct compiled DIV/REM tests check signed/unsigned edge cases against a BigInt oracle in baseline and optimized modes. `core/test/memory.test.ts` checks address rejection, bulk-copy bounds, control-page isolation and attached-memory geometry; these checks do not provide full RV64 support.
+## Verification
 
-## 6. Compatibility changes
+See [follow-up verification](follow-up-verification.md) for exact commands,
+environment, results and measurement limitations. The full requested integration
+still requires RV64/privileged CPU, full MMU/JIT, coherent system SMP, a real guest
+disk, display/network/relay/terminal/IWA, virtio and validated kernel boot.
 
-The machine keeps the original RV32 execution API. Paging uses an interpreter
-fallback. The Node SMP runtime creates a separate machine per hart and does not
-claim browser support. The active Arena branch name is fixed and differs from
-the originally requested branch name.
+## Continuation after review
 
-## 7. Test results
+- Fixed the reviewed unaligned RAM-base acceptance in a shared validator used by
+  Node and browser; tests include the exact reported input and successful execution
+  from a word-aligned non-page-aligned base. Node page rounding remains supported.
+- Added OPFS sector backend with whole-image atomic read-modify-write and explicit
+  create/open, bounded geometry, corruption rejection, discard and real concurrent
+  browser tests. SnapshotStore now limits outstanding work and supports updates.
+- Added coordinated `Machine.writeHostBytes` and routed syscall input through it;
+  tested cross-hart LR/SC invalidation including ABA, copy bounds and JIT patches.
+  Read/write syscall work is capped at 64 KiB per instruction (retry partial I/O).
+- Hardened ELF input validation and validate-before-write loading; SMP uses e_entry.
+  Removed incorrect EM_MIPS acceptance; only static ELF32 RISC-V RV32IMA is accepted.
+- Prior CI for 29a51a8 passed all jobs; it is evidence for that earlier revision,
+  not proof of completeness of this continuation. The revised verification is in
+  the follow-up report. Full requested functionality remains incomplete.
 
-See the PR description for the latest run. `npm run build` bundles the browser
-demo only, not a full system. `npm run test:browser` runs a real Chromium smoke
-test of that built demo and checks cross-origin isolation and differential results.
-It requires an installed Chromium or `WNX_BROWSER` pointing to one.
-
-## 8. Benchmark results
-
-An earlier Node run previously showed mismatched instruction counts and
-spread up to 1017%. After the JIT fixes, a one-repetition JIT run matched
-checksums, stop reasons, instruction counts and MMIO counts across the measured
-variants, including device-poll (100007 instructions). The harness may collect
-additional samples automatically. Reports now show median and range per variant; comparable throughput ratios use medians. The retained best-sample metrics and local gate still need methodological review; do not treat this as a validated cross-host KPI. A Chromium 133 WebAssembly-only run completed with one requested repetition;
-it is a functional smoke check, not a reproducible performance result. A JIT
-browser benchmark did not complete within 120 seconds and was stopped. A reproducible, warmed multi-sample run with median and
-dispersion remains necessary.
-
-## 9. Risks and limitations
-
-This is not a full Linux machine or a security boundary. No OPFS crash recovery,
-real network/relay security, browser SMP, or full RISC-V privileged ISA has been
-validated. Earlier ADRs and Phase 0 reports are historical, not evidence of
-these missing capabilities. Do not merge on the strength of the passing unit
-suite alone.
-
-## 10. Roadmap
-
-Resolve the correctness gaps with regression tests; integrate and test one
-implementation per host subsystem; extend the browser suite and build to cover future host subsystems; run
-clean-install/security and reproducible benchmark validation; update ADRs and
-subsystem docs to match the actual architecture; obtain independent review
-before considering merge.
-
-### Latest verification
-
-On this branch, `npm ci`, `npm run lint`, `npm audit`, the full test suite
-under Node 22.12.0 (367 tests), `npm run build`, and the Chromium 133 demo
-smoke test passed. `npm run bench` completed on Node 22.22.3, Linux x64, two
-vCPUs with the strengthened JIT preflight. The current report displays median, range and best sample; the best-sample fields and local gate are not a validated cross-host KPI.
-The external 8086emu comparator does not complete all guest programs correctly
-and must not be used to claim a normalized speedup.
-
-### Review follow-up
-
-The CodeRabbit review prompted targeted fixes and regressions in assembler
-relocations and labels, interpreter/JIT trap ordering, budget and CSR retirement,
-SMP reservations, CLINT/PLIC decoding, MMU superpage invalidation, JIT cache
-invalidation and copy-benchmark validation. Both legacy JIT `budgetCheck`
-options now check every block. Performance measurements from before this change
-and before the copy workload changed are not directly comparable. These fixes
-do not complete the missing host systems or establish full ISA conformance.
+Review automation also supplied commit `70ba343` with 65 additional MMU/SMP/OPFS
+tests. These were merged into the continuation, not discarded during single-
+commit consolidation. Combined local suite: 465 tests across 24 files.
