@@ -126,11 +126,12 @@ export async function serveBundle(opts: {
       });
       res.end(body);
     };
-    if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+    const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    if (req.method === 'GET' && (path === '/' || path === '/index.html')) {
       send(200, PAGE, 'text/html; charset=utf-8');
       return;
     }
-    if (req.method === 'GET' && req.url?.startsWith('/bench.js')) {
+    if (req.method === 'GET' && path === '/bench.js') {
       send(200, opts.code, 'text/javascript; charset=utf-8');
       return;
     }
@@ -138,13 +139,13 @@ export async function serveBundle(opts: {
     req.on('data', (c: Buffer) => chunks.push(c));
     req.on('end', () => {
       const body = Buffer.concat(chunks).toString('utf8');
-      if (req.url === '/log') {
+      if (path === '/log') {
         logs.push(body);
         process.stdout.write(`  [page] ${body}\n`);
         send(200, 'ok');
         return;
       }
-      if (req.url === '/report') {
+      if (path === '/report') {
         clearTimeout(timer);
         try {
           resolveDone(JSON.parse(body) as BenchReport);
@@ -154,7 +155,7 @@ export async function serveBundle(opts: {
         send(200, 'ok');
         return;
       }
-      if (req.url === '/error') {
+      if (path === '/error') {
         clearTimeout(timer);
         rejectDone(new Error(`page reported an error: ${body}`));
         send(200, 'ok');
@@ -164,7 +165,15 @@ export async function serveBundle(opts: {
     });
   });
 
-  await new Promise<void>((res) => server.listen(opts.port, '127.0.0.1', res));
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.once('error', reject);
+      server.listen(opts.port, '127.0.0.1', resolve);
+    });
+  } catch (error) {
+    clearTimeout(timer);
+    throw error;
+  }
   const address = server.address() as AddressInfo;
   return {
     server,
@@ -194,7 +203,7 @@ export function findBrowser(explicit?: string): string | null {
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
   ];
   for (const c of candidates) if (existsSync(c)) return c;
-  // playwright's own download cache, if `npx playwright install chromium` ran.
+  // playwright's own download cache, if `npx playwright-core install chromium` ran.
   const cache =
     process.env['PLAYWRIGHT_BROWSERS_PATH'] ?? `${process.env['HOME'] ?? ''}/.cache/ms-playwright`;
   if (cache && existsSync(cache)) {
@@ -224,7 +233,7 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     throw new Error(
       [
         'no Chromium/Chrome executable found.',
-        '  install one with: npx playwright install chromium',
+        '  install one with: npx playwright-core install chromium',
         '  or point at an existing binary: WNX_BROWSER=/path/to/chrome npm run bench:browser',
         'the same suites run without a browser via: npm run bench -- --all',
       ].join('\n'),
@@ -246,20 +255,24 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     timeoutMs: opts.timeoutMs ?? 20 * 60_000,
   });
 
+  // The page can report an error before navigation completes. Mark the promise
+  // handled immediately, while still propagating the error when awaited below.
+  void served.done.catch(() => {});
   const { chromium } = await import('playwright-core');
-  const browser = await chromium.launch({
-    executablePath,
-    headless: opts.headless ?? true,
-    args: [
-      // Cross-origin isolation is set by response headers; these flags make the
-      // measurement representative of a shipped PWA rather than a bare tab.
-      '--enable-features=SharedArrayBuffer,WebAssemblyGC',
-      '--enable-unsafe-swiftshader',
-      '--use-gl=swiftshader',
-      '--no-sandbox',
-    ],
-  });
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   try {
+    browser = await chromium.launch({
+      executablePath,
+      headless: opts.headless ?? true,
+      args: [
+        // Cross-origin isolation is set by response headers; these flags make the
+        // measurement representative of a shipped PWA rather than a bare tab.
+        '--enable-features=SharedArrayBuffer,WebAssemblyGC',
+        '--enable-unsafe-swiftshader',
+        '--use-gl=swiftshader',
+        '--no-sandbox',
+      ],
+    });
     const page = await browser.newPage();
     page.on('console', (msg) => process.stdout.write(`  [console.${msg.type()}] ${msg.text()}\n`));
     page.on('pageerror', (err) => process.stdout.write(`  [pageerror] ${err.message}\n`));
@@ -269,7 +282,7 @@ export async function runInBrowser(opts: BrowserRunOptions): Promise<BenchReport
     process.stdout.write(`crossOriginIsolated: ${String(isolated)}\n`);
     return await served.done;
   } finally {
-    await browser.close();
+    await browser?.close();
     served.close();
   }
 }

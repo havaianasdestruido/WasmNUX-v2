@@ -219,9 +219,9 @@ export function measureAtomicsMicro(iterations = 2_000_000): AtomicsMicroResult 
   const wasmPlain = instance.exports['plainLoop'] as (addr: number, n: number) => number;
 
   const time = (fn: () => void): number => {
-    const t0 = process.hrtime.bigint();
+    const t0 = performance.now();
     fn();
-    return Number(process.hrtime.bigint() - t0) / iterations;
+    return ((performance.now() - t0) * 1_000_000) / iterations;
   };
 
   const atomicsAddNs = time(() => {

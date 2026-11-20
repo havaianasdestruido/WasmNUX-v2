@@ -227,6 +227,8 @@ async function main(argv: string[]): Promise<number> {
         browserPath:
           typeof args.flags.get('browser') === 'string' ? (args.flags.get('browser') as string) : undefined,
         port: num(args.flags, 'port', 8420),
+        reps: num(args.flags, 'reps', args.flags.has('quick') ? 2 : DEFAULT_REPS),
+        scale: num(args.flags, 'scale', 1),
       });
       report = { ...report, env: withHostInfo(report.env, hostInfo()) };
       // The browser runner also writes page logs to stdout, so `--json` alone is

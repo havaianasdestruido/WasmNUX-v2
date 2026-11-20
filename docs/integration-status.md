@@ -85,8 +85,9 @@ spread up to 1017%. After the JIT fixes, a one-repetition JIT run matched
 checksums, stop reasons, instruction counts and MMIO counts across the measured
 variants, including device-poll (100007 instructions). The harness may collect
 additional samples automatically, and the CLI still emphasizes best sample; do
-not treat this as a validated median/dispersion KPI. No browser benchmarks were
-run in this update. A reproducible, warmed multi-sample run with median and
+not treat this as a validated median/dispersion KPI. A Chromium 133 WebAssembly-only run completed with one requested repetition;
+it is a functional smoke check, not a reproducible performance result. A JIT
+browser benchmark did not complete within 120 seconds and was stopped. A reproducible, warmed multi-sample run with median and
 dispersion remains necessary.
 
 ## 9. Risks and limitations
@@ -108,7 +109,7 @@ before considering merge.
 ### Latest verification
 
 On this branch, `npm ci`, `npm run lint`, `npm audit`, the full test suite
-under Node 22.12.0 (325 tests), `npm run build`, and the Chromium 133 demo
+under Node 22.12.0 (327 tests), `npm run build`, and the Chromium 133 demo
 smoke test passed. `npm run bench` completed on Node 22.22.3, Linux x64, two
 vCPUs with the strengthened JIT preflight. Its output still emphasizes the
 fastest sample and showed noisy samples; it is not a validated cross-host KPI.
