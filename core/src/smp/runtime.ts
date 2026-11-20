@@ -21,6 +21,8 @@ export interface SmpRunOptions {
   budget: number;
   ramBytes?: number;
   ramBase?: number;
+  /** Maximum wall-clock time including worker startup, in milliseconds (default 60 seconds). */
+  timeoutMs?: number;
 }
 
 export interface SmpHartResult {
@@ -48,6 +50,11 @@ function workerUrl(): URL {
 export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
   if (!Number.isInteger(opts.harts) || opts.harts < 1 || opts.harts > 64)
     throw new RangeError('invalid hart count');
+  if (!Number.isSafeInteger(opts.budget) || opts.budget < 0)
+    throw new RangeError('budget must be a non-negative safe integer');
+  const timeoutMs = opts.timeoutMs ?? 60_000;
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 0x7fffffff)
+    throw new RangeError('timeoutMs must be between 1 and 2147483647');
   const harts = opts.harts;
   const ramBytes = Math.max(65536, opts.ramBytes ?? 16 << 20);
   const pages = Math.ceil(ramBytes / 65536);
@@ -93,10 +100,15 @@ export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
     }
   });
 
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`SMP execution timed out after ${timeoutMs} ms`)), timeoutMs);
+  });
   try {
-    await done;
+    await Promise.race([done, timeout]);
     return { harts: results as SmpHartResult[], memory };
   } finally {
+    clearTimeout(timer);
     await Promise.all(workers.map((w) => w.terminate()));
   }
 }

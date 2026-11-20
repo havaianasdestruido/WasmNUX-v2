@@ -59,6 +59,34 @@ describe('SMP channel', () => {
   });
 });
 
+describe('SMP runtime safety', () => {
+  it('rejects invalid timeout and instruction budgets before launching workers', async () => {
+    const opts = {
+      harts: 1,
+      program: hartIdProgram().bytes,
+      entry: 0x80000000,
+      stackTop: 0x81000000,
+      budget: 1,
+    };
+    await expect(runSmp({ ...opts, timeoutMs: 0 })).rejects.toThrow(/timeoutMs/);
+    await expect(runSmp({ ...opts, timeoutMs: Infinity })).rejects.toThrow(/timeoutMs/);
+    await expect(runSmp({ ...opts, budget: Infinity })).rejects.toThrow(/budget/);
+  });
+
+  it('times out and terminates workers even when a run cannot complete', async () => {
+    await expect(
+      runSmp({
+        harts: 2,
+        program: hartIdProgram().bytes,
+        entry: 0x80000000,
+        stackTop: 0x81000000,
+        budget: 1_000_000,
+        timeoutMs: 1,
+      }),
+    ).rejects.toThrow(/timed out/);
+  }, 10_000);
+});
+
 describe('SMP stress', () => {
   it('amoadd.w is atomic across harts', async () => {
     const run = await sharedCounter();
