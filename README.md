@@ -44,9 +44,9 @@ privileged architecture implementation):
 ## Numbers
 
 Historical Phase 0 samples are in `benchmarks/results/` and the original spike
-notes. A retirement-accounting fix made several workloads agree, but the latest
-check still exposed differing interpreter/JIT counts for device polling and the
-original run showed high sample spread. Do not treat its speedups
+notes. Regression tests now cover the observed JIT retirement mismatch in device
+polling; the benchmark preflight also checks retired counts and MMIO effects.
+Earlier measurements showed high sample spread. Do not treat its speedups
 as correctness-validated or compare them across hosts. See
 [integration status](docs/integration-status.md).
 
@@ -95,6 +95,8 @@ do not. The compute path is DOM-free and tested in Node (`web/test/demo.test.ts`
 ```sh
 npm test                                  # vitest tests
 npm run test:watch
+npm run build                             # browser demo only, output in dist/web
+npm run test:browser                      # Chromium demo smoke test (requires Chromium)
 npm run lint                              # prettier --check + tsc
 npm run format
 
@@ -109,7 +111,7 @@ npm run serve                             # browser demo on :8080 (COOP/COEP)
 ```
 
 `npm run bench -- --help` lists every flag. The browser runner needs a Chromium
-binary: `npx playwright install chromium`, or point `WNX_BROWSER` at one.
+binary: `npx playwright-core install chromium`, or point `WNX_BROWSER` at one.
 
 ## Testing
 
@@ -118,8 +120,8 @@ corpus of programs — ALU loops, all seven AMOs, LR/SC success and both failure
 modes, a CAS retry loop, division corners, calls and indirect jumps, every
 load/store width, MMIO, CSR, nested loops — under **eight** JIT configurations
 and requires identical registers, guest RAM, stop reason, `minstret`, and MMIO
-read counts versus the interpreter. The benchmark verification does not currently catch all counter mismatches;
-the benchmark run reported in the integration status demonstrates that gap.
+read counts versus the interpreter. The JIT benchmark preflight also checks stop reason, retired count, and MMIO
+read/write counts; it is not a substitute for full architectural comparison.
 
 Not yet covered, and tracked as such: `riscv-tests`, `riscv-arch-test`, QEMU-TCG
 differential fuzzing, and browser-engine runs. All four need tooling this

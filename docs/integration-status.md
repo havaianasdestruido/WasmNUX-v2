@@ -12,12 +12,12 @@ draft until the gaps below are addressed and reviewed.
 
 | Area                                               | Status                 | Evidence and limitations                                                                                                                                                                                                                                              |
 | -------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| RV32IMA interpreter, assembler, JIT                | Partial                | `core/src/cpu`, `core/src/jit`; differential corpus exists, but counter mismatches remain.                                                                                                                                                                            |
+| RV32IMA interpreter, assembler, JIT                | Partial                | `core/src/cpu`, `core/src/jit`; differential corpus and targeted MMIO retirement regressions exist; full architectural compliance remains unproven.                                                                                                                   |
 | Sv32 walker / TLB                                  | Experimental           | `core/src/mmu`, `core/test/mmu.test.ts`; no complete privileged CPU, trap delegation, SUM/MXR, or JIT translation. 34-bit physical addresses are rejected rather than aliased.                                                                                        |
 | Sv39 walker                                        | Experimental / partial | Some superpage cases are tested; RV64 CPU and full-width virtual/physical address support are not implemented.                                                                                                                                                        |
 | SMP                                                | Experimental           | `core/src/smp` runs interpreter harts in Node workers with shared RAM and a reservation table; tests cover atomic increments, LR/SC lock, and invalidation. Device state, host memory writes, IPIs, WFI coordination, browser workers and JIT SMP are not integrated. |
 | Host, OPFS, display, network, relay, terminal, IWA | Planned / unsupported  | `host` and `relay` remain placeholders; no production subsystem from the other PRs has been integrated.                                                                                                                                                               |
-| Browser                                            | Partial                | Demo exists; tests in `web/test` run in Node, not an actual browser.                                                                                                                                                                                                  |
+| Browser                                            | Partial                | Demo has Node tests and a real Chromium smoke test; future browser host subsystems are not implemented.                                                                                                                                                               |
 | Debian/kernel/virtio                               | Unsupported            | No bootable guest environment.                                                                                                                                                                                                                                        |
 
 MMU privilege is currently a manually configured walker property, not a complete
@@ -54,15 +54,15 @@ instructions, invalid R/W PTEs, physical address wrap rejection, LR/SC
 invalidation and interpreter AMOs. Regression coverage is in `core/test/mmu.test.ts`,
 `core/test/smp.test.ts` and `core/test/interp.test.ts`.
 
-**Still required:** comprehensive JIT division/remainder and counter fixes;
+**Still required:** comprehensive JIT division/remainder and counter validation;
 full-width RV64 addresses and PCs; full privileged architecture; storage
 crash-consistency; bounded copies and buffers; cyclic DNS pointers; branch and
 assembler range checks; thorough independent SMP/AMO stress tests; additional
 MMU fault, permission, TLB and JIT interactions. The current test results do not
-prove these are correct. A sliced nested-loop regression exposed and fixed a JIT block-order retirement
-accounting error. After the fix, a one-sample JIT benchmark showed matching
-counts for memory-copy, matrix and calls, but device-poll still differed
-(interpreter 100007, JIT globals/trap 100001); further investigation is required.
+prove these are correct. A sliced nested-loop regression fixed block-order
+accounting. A second fix checkpoints budget before Wasm traps; six tests cover
+MMIO retirement and register state across bounds and PC-tracking configurations.
+Benchmark preflight now also compares instruction and MMIO counts.
 
 ## 6. Compatibility changes
 
@@ -73,20 +73,21 @@ the originally requested branch name.
 
 ## 7. Test results
 
-See the PR description for the latest run. The project currently has **no**
-`test:browser` or `build` npm scripts; attempts to run them fail with “Missing
-script”. `web/test` runs in Node and is not a substitute for browser testing.
+See the PR description for the latest run. `npm run build` bundles the browser
+demo only, not a full system. `npm run test:browser` runs a real Chromium smoke
+test of that built demo and checks cross-origin isolation and differential results.
+It requires an installed Chromium or `WNX_BROWSER` pointing to one.
 
 ## 8. Benchmark results
 
-`npm run bench` ran on Node 22.22.3, Linux x64, 2 vCPUs on a dirty checkout on
-2026-11-19. It printed best-of-sample results with reported sample spreads as
-high as 1017%, and different retired counts for several JIT variants. A later
-`--suite jit --reps 1` run after the block-order fix still showed a device-poll
-count mismatch; it was run concurrently with tests and is not a clean performance
-measurement. These numbers are **not** accepted as validated KPIs. No browser benchmarks were
-run. A reproducible, warmed multi-sample run with median and dispersion, a
-separate validation phase, and matching architectural counters is still needed.
+An earlier Node run previously showed mismatched instruction counts and
+spread up to 1017%. After the JIT fixes, a one-repetition JIT run matched
+checksums, stop reasons, instruction counts and MMIO counts across the measured
+variants, including device-poll (100007 instructions). The harness may collect
+additional samples automatically, and the CLI still emphasizes best sample; do
+not treat this as a validated median/dispersion KPI. No browser benchmarks were
+run in this update. A reproducible, warmed multi-sample run with median and
+dispersion remains necessary.
 
 ## 9. Risks and limitations
 
@@ -99,7 +100,17 @@ suite alone.
 ## 10. Roadmap
 
 Resolve the correctness gaps with regression tests; integrate and test one
-implementation per host subsystem; add a real browser suite and build; run
+implementation per host subsystem; extend the browser suite and build to cover future host subsystems; run
 clean-install/security and reproducible benchmark validation; update ADRs and
 subsystem docs to match the actual architecture; obtain independent review
 before considering merge.
+
+### Latest verification
+
+On this branch, `npm ci`, `npm run lint`, `npm audit`, the full test suite
+under Node 22.12.0 (325 tests), `npm run build`, and the Chromium 133 demo
+smoke test passed. `npm run bench` completed on Node 22.22.3, Linux x64, two
+vCPUs with the strengthened JIT preflight. Its output still emphasizes the
+fastest sample and showed noisy samples; it is not a validated cross-host KPI.
+The external 8086emu comparator does not complete all guest programs correctly
+and must not be used to claim a normalized speedup.

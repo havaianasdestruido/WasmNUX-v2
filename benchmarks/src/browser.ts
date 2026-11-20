@@ -201,7 +201,9 @@ export function findBrowser(explicit?: string): string | null {
     for (const dir of readdirSync(cache).filter((d) => d.startsWith('chromium'))) {
       for (const rel of [
         'chrome-linux/chrome',
+        'chrome-linux64/chrome',
         'chrome-linux/headless_shell',
+        'chrome-headless-shell-linux64/chrome-headless-shell',
         'chrome-mac/Chromium.app/Contents/MacOS/Chromium',
       ]) {
         const p = `${cache}/${dir}/${rel}`;
