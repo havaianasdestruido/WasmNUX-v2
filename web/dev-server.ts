@@ -1,13 +1,16 @@
 /**
  * Dev server for the browser demo (`npm run serve`).
  *
- * It exists for two reasons that a static file server cannot serve:
+ * It exists for two reasons that a plain static file server does not serve:
  *
  *  1. **Cross-origin isolation.** `SharedArrayBuffer` — and therefore shared
  *     guest RAM, Wasm atomics and every SMP plan in ADR-0004 — only exists in a
  *     document served with COOP/COEP (ADR-0010). Opening `web/index.html` from
  *     disk silently degrades to a single-hart, non-atomic configuration, which
- *     is the worst possible way to discover that.
+ *     is the worst possible way to discover that. The `coi-serviceworker.js`
+ *     route below keeps the same page working on hosts that cannot set those
+ *     headers (GitHub Pages, `.github/workflows/pages.yml`), by re-heading
+ *     responses from a worker instead.
  *  2. **TypeScript, unbundled-on-disk.** `core/src` is imported with `.ts`
  *     extensions and never compiled to `dist/`, so the page needs a bundler in
  *     front of it. esbuild is already a devDependency (the benchmark browser
@@ -25,6 +28,7 @@ import { build } from 'esbuild';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ENTRY = resolve(HERE, 'main.ts');
 const PAGE = resolve(HERE, 'index.html');
+const COI_WORKER = resolve(HERE, 'coi-serviceworker.js');
 const PORT = Number(process.env['PORT'] ?? 8080);
 const HOST = process.env['HOST'] ?? '0.0.0.0';
 
@@ -110,6 +114,12 @@ const server = createServer((req, res) => {
         process.stdout.write(`rebuild failed, serving previous bundle: ${String(err)}\n`);
         send(500, `// build failed: ${String(err)}\n`, 'text/javascript; charset=utf-8');
       });
+    return;
+  }
+  if (url === '/coi-serviceworker.js') {
+    // Not used here (the headers already isolate the page), but served so that
+    // the page behaves the same on a host that cannot set headers.
+    send(200, readFileSync(COI_WORKER), 'text/javascript; charset=utf-8');
     return;
   }
   if (url === '/rebuild') {

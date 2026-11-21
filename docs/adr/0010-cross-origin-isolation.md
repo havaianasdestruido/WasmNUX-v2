@@ -91,6 +91,11 @@ up to avoid two response headers is a bad trade.
 - `web/dev-server.ts` — `npm run serve` bundles the demo page with esbuild and
   serves it with the same headers; the page prints `crossOriginIsolated` and
   warns when it is false.
+- `web/coi-serviceworker.js` — the fallback in §2: re-heads same-origin
+  responses with COOP/COEP/CORP and is registered by `web/index.html`, which
+  reloads once (guarded by `?coi=1`). Shipped in `dist/web` and used by the
+  GitHub Pages deployment; the dev server sets the headers itself and never
+  needs it.
 - `benchmarks/src/browser.ts` — bundles with esbuild and serves with
   `Cross-Origin-Opener-Policy: same-origin` /
   `Cross-Origin-Embedder-Policy: require-corp` so `SharedArrayBuffer` exists.
@@ -107,3 +112,12 @@ The cross-origin-isolated Chromium suite now runs module-worker SMP and OPFS
 transactions with Web Locks in addition to the demo. Missing isolation fails
 browser SMP explicitly. This does not implement signed IWA packaging or Direct
 Sockets; neither capability is inferred from cross-origin isolation alone.
+
+## 2026-11-21 implementation checkpoint
+
+`.github/workflows/pages.yml` publishes `dist/web` to GitHub Pages. Because that
+host cannot set headers, the deployed page depends on `coi-serviceworker.js` and
+one reload to be cross-origin isolated; `web/test/pages.test.ts` pins the
+relative asset paths and the shipped worker, and `web/test/browser.ts` still
+asserts isolation against a header-setting server. The service worker is a
+compatibility path only — it is not how WASMNUX is expected to be embedded.

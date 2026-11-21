@@ -51,16 +51,51 @@
         color: #79c0ff;
       }
     </style>
+    <script>
+      /**
+       * Cross-origin isolation on static hosts (ADR-0010 §2).
+       *
+       * A host that can set COOP/COEP should: `npm run serve` does, and so does
+       * the browser test runner. GitHub Pages cannot, so there the headers come
+       * from `coi-serviceworker.js`, which needs one reload to take effect.
+       *
+       * The reload happens exactly once: `?coi=1` marks the retry, so a browser
+       * that still cannot be isolated gets `crossOriginIsolated === false`
+       * reported on the page instead of a reload loop.
+       */
+      (() => {
+        if (window.crossOriginIsolated || !('serviceWorker' in navigator)) return;
+        const url = new URL(location.href);
+        const retried = url.searchParams.has('coi');
+        navigator.serviceWorker
+          .register('./coi-serviceworker.js')
+          .then(() => navigator.serviceWorker.ready)
+          .then(() => {
+            if (retried) return;
+            url.searchParams.set('coi', '1');
+            location.replace(url.href);
+          })
+          .catch(() => {
+            // Registration refused (insecure context, private mode, a host
+            // without service workers): leave the page as it is and let
+            // main.ts report the non-isolated configuration.
+          });
+      })();
+    </script>
   </head>
   <body>
     <h1>WasmNUX &mdash; RV32IMA core in the browser</h1>
     <p class="sub">
       Assembles two guest programs, runs each interpreted and through the region JIT, and reports throughput,
-      engine counters and whether the two agree. Served with COOP/COEP so <code>SharedArrayBuffer</code> and
-      Wasm atomics exist (ADR-0004, ADR-0010). See <code>web/main.ts</code> and
-      <a href="../docs/spikes/spike-a-jit.md">Spike A</a>.
+      engine counters and whether the two agree. Cross-origin isolated via COOP/COEP &mdash; set as headers by
+      the dev server, added by a service worker on static hosts such as GitHub Pages &mdash; so
+      <code>SharedArrayBuffer</code> and Wasm atomics exist (ADR-0004, ADR-0010). See
+      <code>web/main.ts</code> and
+      <a href="https://github.com/havaianasdestruido/WasmNUX-v2/blob/main/docs/spikes/spike-a-jit.md"
+        >Spike A</a
+      >.
     </p>
     <div id="out">running&hellip;</div>
-    <script type="module" src="/main.js"></script>
+    <script type="module" src="./main.js"></script>
   </body>
 </html>

@@ -50,9 +50,13 @@ resolver requires the extension, and `allowImportingTsExtensions` is on).
 - **`core/src/devices/`** — UART, CLINT, PLIC, sifive_test, and the bus.
 - **`benchmarks/`** — `src/harness.ts` measures, `src/store.ts` persists and
   gates, `suites/*` are the workloads.
-- **`web/`** — the dev server (`npm run serve`) and the browser demo. The demo's
-  compute path is in `web/demo.ts` and has no DOM dependency, so it is tested in
-  Node; `web/main.ts` is only rendering.
+- **`web/`** — the dev server (`npm run serve`), the browser demo, the static
+  build published to GitHub Pages (`npm run build`, `web/build.ts`), and
+  `web/coi-serviceworker.js`, which gives static hosts the COOP/COEP headers
+  they cannot send (ADR-0010). The demo's compute path is in `web/demo.ts` and
+  has no DOM dependency, so it is tested in Node; `web/main.ts` is only
+  rendering. Asset URLs in `web/index.html` must stay relative: GitHub Pages
+  serves the demo from `/<repo>/`, not from the origin root.
 
 Browser-reachable core, host and web modules may not import Node built-ins.
 The Node SMP transport (`core/src/smp/runtime.ts`, `worker.ts`) is explicitly

@@ -2,10 +2,12 @@
  * DOM glue for the browser demo. All of the work happens in `web/demo.ts`,
  * which has no DOM dependency and is tested in Node (`web/test/demo.test.ts`).
  *
- * Served by `web/dev-server.ts` with COOP/COEP, because without those headers
- * `crossOriginIsolated` is false, `SharedArrayBuffer` does not exist, and the
- * page would silently demonstrate a different machine than the one that ships
- * (ADR-0004, ADR-0010). The page says so out loud when that happens.
+ * Cross-origin isolation is what makes this page representative: without COOP/COEP
+ * `crossOriginIsolated` is false, `SharedArrayBuffer` does not exist, and the page
+ * would silently demonstrate a different machine than the one that ships
+ * (ADR-0004, ADR-0010). `web/dev-server.ts` sends those headers; on a static host
+ * such as GitHub Pages `coi-serviceworker.js` adds them and the page reloads once.
+ * The page says so out loud when neither worked.
  */
 
 import { demoEnv, runDemo, type DemoCase, type DemoRun } from './demo.ts';
@@ -80,9 +82,10 @@ function main(): void {
     env.crossOriginIsolated === true ? 'ok' : 'warn',
   );
   if (env.crossOriginIsolated !== true) {
+    line(out, '             -> guest RAM cannot be shared in this configuration', 'warn');
     line(
       out,
-      '             -> serve this page with COOP/COEP (npm run serve) or guest RAM cannot be shared',
+      '             -> serve with COOP/COEP (npm run serve), or reload so coi-serviceworker.js can add them',
       'warn',
     );
   }

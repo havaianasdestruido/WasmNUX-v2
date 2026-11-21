@@ -1,0 +1,76 @@
+name: pages
+
+# Publish the browser demo to GitHub Pages.
+#
+# `npm run build` writes a static site to `dist/web` with relative asset paths,
+# so it works at https://<owner>.github.io/<repo>/ without a base-path setting.
+# GitHub Pages cannot send COOP/COEP; `coi-serviceworker.js` (shipped with the
+# page, ADR-0010 §2) adds them at fetch time and the page reloads once, so the
+# deployed demo is cross-origin isolated and actually exercises shared guest
+# RAM rather than quietly running a degraded configuration.
+#
+# One-time setup: repository Settings → Pages → Build and deployment →
+# Source: "GitHub Actions". The `enablement` input below tries to do that on
+# the first run, but a token without Pages admin rights cannot, so set it by
+# hand if the first deploy reports that no Pages site exists.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Read the repo, publish a Pages artifact, and mint the OIDC token deploy needs.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; never cancel one half-way through publishing.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build the static demo
+        run: npm run build
+      - name: Check the output is path-relative
+        # A leading slash would 404 under /<repo>/ on a project page; catch it
+        # here instead of on the live site.
+        run: |
+          if grep -nE '(src|href)="/' dist/web/index.html; then
+            echo "::error::dist/web/index.html references a root-absolute asset; GitHub Pages serves this under /${{ github.event.repository.name }}/"
+            exit 1
+          fi
+          test -f dist/web/coi-serviceworker.js
+          test -f dist/web/index.html
+          test -f dist/web/main.js
+      # `enablement` asks GitHub to turn Pages on if it is off. Some tokens
+      # (and some organisation policies) refuse that, and a refusal must not
+      # hide whether the artifact itself built correctly — the deploy job says
+      # so plainly if Pages is still not enabled.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+        continue-on-error: true
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
