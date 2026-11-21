@@ -100,3 +100,10 @@ up to avoid two response headers is a bad trade.
 - `benchmarks/suites/wasm.ts` — the `atomics-micro` case only runs when the
   probe says shared memory works, so a non-isolated context reports "unsupported"
   instead of a false failure.
+
+## 2026-11-20 implementation checkpoint
+
+The cross-origin-isolated Chromium suite now runs module-worker SMP and OPFS
+transactions with Web Locks in addition to the demo. Missing isolation fails
+browser SMP explicitly. This does not implement signed IWA packaging or Direct
+Sockets; neither capability is inferred from cross-origin isolation alone.

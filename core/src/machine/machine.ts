@@ -46,6 +46,9 @@ export const WNX_SYS = {
   poweroff: 1002,
 } as const;
 
+/** Partial syscall transfers bound host work per guest instruction. Callers may retry. */
+export const MAX_SYSCALL_IO = 64 * 1024;
+
 const EBADF = -9;
 const EINVAL = -22;
 
@@ -205,17 +208,23 @@ export class Machine implements MachinePort {
 
   private loadElf(image: Uint8Array): number {
     const elf = parseElf32(image);
-    for (const seg of elf.segments) {
-      const off = this.mem.ramOffset(seg.vaddr);
-      if (off < 0) throw new Error(`ELF segment at 0x${seg.vaddr.toString(16)} is outside guest RAM`);
-      if (off + seg.memSize > this.mem.ramSize) throw new Error('ELF segment does not fit in guest RAM');
-      this.mem.u8.fill(0, off, off + seg.memSize); // .bss
-      this.mem.u8.set(seg.bytes, off);
-    }
-    this.entry = elf.entry;
     const hi = Math.ceil(elf.hi / 4096) * 4096;
     if (hi > this.mem.ramBase + this.mem.ramSize || hi > 0xffffffff)
       throw new Error('ELF heap base lies outside representable guest RAM');
+    // Validate every segment before changing any RAM. A rejected load is non-destructive.
+    const offsets = elf.segments.map((seg) => {
+      const off = this.mem.ramOffset(seg.vaddr);
+      if (off < 0 || off + seg.memSize > this.mem.ramSize)
+        throw new Error('ELF segment does not fit in guest RAM');
+      return off;
+    });
+    for (let i = 0; i < elf.segments.length; i++) {
+      const seg = elf.segments[i]!;
+      const off = offsets[i]!;
+      this.mem.u8.fill(0, off, off + seg.memSize);
+      this.mem.u8.set(seg.bytes, off);
+    }
+    this.entry = elf.entry;
     this.heapBase = Math.max(hi, this.mem.ramBase);
     this.heapEnd = this.heapBase;
     return this.entry;
@@ -340,6 +349,26 @@ export class Machine implements MachinePort {
     this.cpu.writeCsr(CSR.mip, mip);
   }
 
+  /**
+   * Coordinated physical host/DMA write. With SMP, call from a worker because
+   * contention may block in Atomics.wait. Raw memory views bypass this contract.
+   */
+  writeHostBytes(address: number, data: Uint8Array): void {
+    const offset = this.mem.ramOffset(address);
+    if (offset < 0 || data.byteLength > this.mem.ramSize - offset)
+      throw new RangeError('host write outside guest RAM');
+    if (data.byteLength === 0) return;
+    const bytes = new Uint8Array(data);
+    this.smp?.beginWrite();
+    try {
+      this.mem.writeBytes(address, bytes);
+    } finally {
+      this.smp?.endWrite(address, bytes.byteLength);
+    }
+    // SMP does not execute generated code; for uniprocessor host writes, discard stale code.
+    this.engine.invalidateAll('host memory write');
+  }
+
   // -- MachinePort ----------------------------------------------------------
 
   translate(kind: AccessKind, va: number): TranslateResult {
@@ -406,13 +435,9 @@ export class Machine implements MachinePort {
         }
         const buf = a1 >>> 0;
         const count = a2 >>> 0;
-        let written = 0;
-        for (let i = 0; i < count; i++) {
-          const off = this.mem.ramOffset((buf + i) >>> 0);
-          if (off < 0) break;
-          this.uart.write(0, 1, this.mem.u8[off]!);
-          written++;
-        }
+        const offset = this.mem.ramOffset(buf);
+        const written = offset < 0 ? 0 : Math.min(count, MAX_SYSCALL_IO, this.mem.ramSize - offset);
+        for (let i = 0; i < written; i++) this.uart.write(0, 1, this.mem.u8[offset + i]!);
         cpu.setReg(10, written);
         return;
       }
@@ -423,12 +448,13 @@ export class Machine implements MachinePort {
         }
         const buf = a1 >>> 0;
         const count = a2 >>> 0;
-        let n = 0;
-        while (n < count && this.uart.pendingInput > 0) {
-          const off = this.mem.ramOffset((buf + n) >>> 0);
-          if (off < 0) break;
-          this.mem.u8[off] = this.uart.read(0, 1) & 0xff;
-          n++;
+        const offset = this.mem.ramOffset(buf);
+        const n =
+          offset < 0 ? 0 : Math.min(count, MAX_SYSCALL_IO, this.uart.pendingInput, this.mem.ramSize - offset);
+        if (n > 0) {
+          const bytes = new Uint8Array(n);
+          for (let i = 0; i < n; i++) bytes[i] = this.uart.read(0, 1) & 0xff;
+          this.writeHostBytes(buf, bytes);
         }
         cpu.setReg(10, n);
         return;

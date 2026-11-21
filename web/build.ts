@@ -15,3 +15,12 @@ await build({
 });
 await copyFile(new URL('./index.html', import.meta.url), `${output}index.html`);
 console.log(`Browser demo built in ${output}`);
+
+await build({
+  entryPoints: [fileURLToPath(new URL('../host/src/workers/hart.ts', import.meta.url))],
+  outfile: `${output}hart.js`,
+  bundle: true,
+  format: 'esm',
+  platform: 'browser',
+  target: 'es2022',
+});

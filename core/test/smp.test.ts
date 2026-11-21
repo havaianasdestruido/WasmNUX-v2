@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { SmpChannel, SMP_DATA, amoCounterProgram, hartIdProgram, lrscLockProgram } from '../src/index.ts';
+import {
+  assemble,
+  SmpChannel,
+  SMP_DATA,
+  amoCounterProgram,
+  hartIdProgram,
+  lrscLockProgram,
+} from '../src/index.ts';
+import { runHart } from '../src/smp/hart.ts';
 import { runSmp } from '../src/smp/runtime.ts';
 
 const HARTS = 4;
@@ -126,4 +134,33 @@ describe('SMP stress', () => {
     const ids = run.harts.map((r) => r.regs[10]!).sort((a, b) => a - b);
     expect(ids).toEqual([0, 1, 2, 3]);
   }, 30_000);
+});
+
+describe('shared hart entry point', () => {
+  it.each([0, 2])('loads at the requested entry and retires at most %i instructions', (budget) => {
+    const ramBase = 0x10000;
+    const ramBytes = 65536;
+    const entry = ramBase + 0x100;
+    const stackTop = ramBase + ramBytes - 16;
+    const program = assemble('addi a0, zero, 7\naddi a0, a0, 1\naddi a0, a0, 10', { base: entry }).bytes;
+    const memory = new WebAssembly.Memory({ initial: 1, maximum: 1, shared: true });
+
+    const result = runHart({
+      memory,
+      channel: SmpChannel.createShared(1),
+      harts: 1,
+      hartId: 0,
+      program,
+      entry,
+      stackTop,
+      budget,
+      ramBase,
+      ramBytes,
+    });
+
+    expect(result).toMatchObject({ hartId: 0, instret: budget });
+    expect(result.regs[2]).toBe(stackTop);
+    expect(result.regs[10]).toBe(budget === 0 ? 0 : 8);
+    expect(new Uint8Array(memory.buffer, entry - ramBase, program.length)).toEqual(program);
+  });
 });

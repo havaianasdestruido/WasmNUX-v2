@@ -2,7 +2,9 @@
 
 The goal is Debian Linux in a browser tab. This repository is an experimental
 RISC-V emulator foundation; it does **not** yet boot Debian or provide virtio
-devices, a network stack, persistent storage, or a terminal renderer.
+devices, a network stack, a persistent guest disk, or a terminal renderer.
+Bounded OPFS snapshots/sector storage and browser SMP workers are experimental host primitives,
+not a bootable system (see [host runtime](docs/host-runtime.md)).
 
 The whole design is in [ROADMAP.md](ROADMAP.md). This repository is Phase 0: the
 parts of that roadmap that had to be _measured_ before anything else could be
@@ -17,8 +19,8 @@ npm run bench -- --all
 ## Status
 
 **Integration in progress — not ready to merge.** The RV32 interpreter and
-JIT are the foundation, with an experimental page-table walker and Node-only
-SMP worker prototype. Privilege modes and the host subsystems are not complete.
+JIT are the foundation, with an experimental page-table walker and Node/browser
+SMP worker transports. Privilege modes and the host subsystems are not complete.
 See [architecture](ARCHITECTURE.md) and [integration status](docs/integration-status.md) for evidence and blockers.
 
 ## What works today
@@ -36,7 +38,7 @@ privileged architecture implementation):
 | Wasm encoder   | `core/src/jit/wasm/encoder.ts` | module/function/memory/table/atomic emission from scratch            |
 | Tiering engine | `core/src/jit/engine.ts`       | heat → compile → run → optimise, code cache, invalidation, tier-down |
 | Memory         | `core/src/machine/memory.ts`   | one lazily-reserved `WebAssembly.Memory`, optional control page      |
-| ELF            | `core/src/machine/elf.ts`      | ELF32-LE loader (EM_RISCV / EM_MIPS)                                 |
+| ELF            | `core/src/machine/elf.ts`      | Static ELF32-LE RISC-V loader (validated RV32IMA input)              |
 | Devices        | `core/src/devices/`            | UART, CLINT, sifive_test finisher, device bus                        |
 | Machine        | `core/src/machine/machine.ts`  | QEMU-`virt`-shaped machine, Linux syscall ABI, M-mode interrupts     |
 | Benchmarks     | `benchmarks/`                  | harness, 3 suites, result store, gate, browser runner                |
@@ -96,8 +98,8 @@ do not. The compute path is DOM-free and tested in Node (`web/test/demo.test.ts`
 ```sh
 npm test                                  # vitest tests
 npm run test:watch
-npm run build                             # browser demo only, output in dist/web
-npm run test:browser                      # Chromium demo smoke test (requires Chromium)
+npm run build                             # browser demo + hart worker, output in dist/web
+npm run test:browser                      # Chromium demo, SMP stress and OPFS fault tests
 npm run lint                              # prettier --check + tsc
 npm run format
 

@@ -1,3 +1,4 @@
+import { normalizeSmpOptions } from './options.ts';
 /**
  * Real multi-hart execution on `worker_threads`.
  *
@@ -7,38 +8,14 @@
  * This is genuine concurrency: the workers run simultaneously and communicate
  * only through shared memory and the channel's atomics.
  *
- * Node-only experimental runtime; a browser worker transport is not yet implemented.
+ * Node transport. The browser transport in host/src/smp.ts uses the same runHart entry.
  */
 
 import { Worker } from 'node:worker_threads';
 import { SmpChannel } from './channel.ts';
 
-export interface SmpRunOptions {
-  harts: number;
-  program: Uint8Array;
-  entry: number;
-  stackTop: number;
-  budget: number;
-  ramBytes?: number;
-  ramBase?: number;
-  /** Maximum wall-clock time including worker startup, in milliseconds (default 60 seconds). */
-  timeoutMs?: number;
-}
-
-export interface SmpHartResult {
-  hartId: number;
-  stop: string;
-  exitCode: number;
-  instret: number;
-  regs: number[];
-}
-
-export interface SmpRunResult {
-  harts: SmpHartResult[];
-  /** The shared guest RAM, so callers can verify shared-memory effects. */
-  memory: WebAssembly.Memory;
-}
-
+import type { SmpRunOptions, SmpHartResult, SmpRunResult } from './types.ts';
+export type { SmpRunOptions, SmpHartResult, SmpRunResult } from './types.ts';
 function workerUrl(): URL {
   return new URL('./worker-bootstrap.mjs', import.meta.url);
 }
@@ -48,16 +25,8 @@ function workerUrl(): URL {
  * order. Rejects if any worker errors or exits without a result.
  */
 export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
-  if (!Number.isInteger(opts.harts) || opts.harts < 1 || opts.harts > 64)
-    throw new RangeError('invalid hart count');
-  if (!Number.isSafeInteger(opts.budget) || opts.budget < 0)
-    throw new RangeError('budget must be a non-negative safe integer');
-  const timeoutMs = opts.timeoutMs ?? 60_000;
-  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 0x7fffffff)
-    throw new RangeError('timeoutMs must be between 1 and 2147483647');
-  const harts = opts.harts;
-  const ramBytes = Math.max(65536, opts.ramBytes ?? 16 << 20);
-  const pages = Math.ceil(ramBytes / 65536);
+  const { timeoutMs, ramBytes, ramBase, harts } = normalizeSmpOptions(opts);
+  const pages = ramBytes / 65536;
   const memory = new WebAssembly.Memory({ initial: pages, maximum: pages, shared: true });
   const channel = new SmpChannel(SmpChannel.createShared(harts), harts);
 
@@ -77,7 +46,7 @@ export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
           entry: opts.entry,
           stackTop: opts.stackTop,
           budget: opts.budget,
-          ramBase: opts.ramBase ?? 0x80000000,
+          ramBase,
           ramBytes: pages * 65536,
         },
       });
@@ -87,7 +56,11 @@ export async function runSmp(opts: SmpRunOptions): Promise<SmpRunResult> {
           reject(new Error(`hart ${h}: ${msg.error}`));
           return;
         }
-        results[msg.hartId] = msg;
+        if (msg.hartId !== h || results[h] !== null) {
+          reject(new Error(`hart ${h}: invalid or duplicate result`));
+          return;
+        }
+        results[h] = msg;
         pending--;
         if (pending === 0) resolve();
       });

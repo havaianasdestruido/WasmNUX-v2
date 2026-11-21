@@ -1,3 +1,10 @@
+> **Implementation checkpoint — 2026-11-20 follow-up to PR #6:** this remains a
+> target specification, not a completion claim. Browser interpreter SMP and
+> bounded OPFS snapshot/sector replacement are experimental; MMU boundary/permission
+> regressions have expanded. RV64, privileged CPU/CSR integration, coherent SMP
+> devices, guest storage, network/relay, display, terminal, IWA and kernel/Debian
+> boot are still incomplete or unsupported. See [integration status](docs/integration-status.md).
+
 # WasmNUX Roadmap
 
 > A complete Debian Linux system running inside a browser tab. One fullscreen terminal, a WebGPU-accelerated display, a persistent disk, and real hardware access through Chromium's Web APIs. A VM that needs no install and starts instantly.

@@ -4,6 +4,8 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { readFile } from 'node:fs/promises';
 import { chromium } from 'playwright-core';
+import { build } from 'esbuild';
+import { fileURLToPath } from 'node:url';
 import { findBrowser } from '../../benchmarks/src/browser.ts';
 
 const executablePath = findBrowser();
@@ -12,6 +14,22 @@ if (!executablePath) {
 }
 const html = await readFile(new URL('../../dist/web/index.html', import.meta.url));
 const js = await readFile(new URL('../../dist/web/main.js', import.meta.url));
+const assets = new Map<string, string | Buffer>();
+assets.set('/hart.js', await readFile(new URL('../../dist/web/hart.js', import.meta.url)));
+for (const [name, source] of [
+  ['browser-checks', '../../host/test/browser-checks.ts'],
+  ['storage-worker', '../../host/test/storage-worker.ts'],
+]) {
+  const built = await build({
+    entryPoints: [fileURLToPath(new URL(source!, import.meta.url))],
+    bundle: true,
+    write: false,
+    platform: 'browser',
+    format: 'esm',
+    target: 'es2022',
+  });
+  assets.set(`/${name}.js`, built.outputFiles![0]!.text);
+}
 const server = createServer((req, res) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
@@ -22,6 +40,9 @@ const server = createServer((req, res) => {
   } else if (req.url === '/main.js') {
     res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
     res.end(js);
+  } else if (assets.has(req.url ?? '')) {
+    res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8' });
+    res.end(assets.get(req.url!));
   } else {
     res.writeHead(404);
     res.end();
@@ -47,6 +68,12 @@ try {
     );
     const result = await page.locator('#out').innerText();
     assert.match(result, /done: both engines agree on every case/);
+    const hostResult = await page.evaluate(async () => {
+      const path = '/browser-checks.js';
+      const { browserChecks } = await import(path);
+      return browserChecks();
+    });
+    console.log(hostResult);
     assert.equal(errors.length, 0, errors.join('\n'));
     console.log(`Chromium ${browser.version()}: demo passed (cross-origin isolated)`);
   } finally {

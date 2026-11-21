@@ -95,3 +95,20 @@ instances.
 3. Storage Buckets durability semantics and eviction behaviour under pressure.
 4. Cost of a `flush()`/`close()` per fsync, and whether batching breaks the
    crash-consistency guarantee.
+
+## 2026-11-20 implementation checkpoint
+
+Status remains **Proposed**. The follow-up to #6 implements a deliberately
+smaller `SnapshotStore` using OPFS temporary writable-file replacement and Web
+Locks, with a 16 MiB ceiling. This is not the chunked sync-access-handle disk
+specified above. It provides application-level atomic publication without
+importing prototype journals or their formats. Worker termination and injected
+pre-publication failures are tested in Chromium; power-loss durability, guest
+fsync, quota/eviction, virtio-blk and the image pipeline remain unresolved.
+See [host runtime](../host-runtime.md).
+
+The continuation layers a fixed-geometry, maximum-32767-sector backend on those
+snapshots. Every sector update is a locked read-modify-replace transaction. This
+is usable host storage, but is not the sparse COW virtio disk chosen by this ADR.
+Its O(capacity) writes are a deliberate bounded correctness step, not a performance
+claim or resolution of the original disk-layout decision.

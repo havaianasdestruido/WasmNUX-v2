@@ -391,3 +391,172 @@ describe('paging activation', () => {
     expect(machine.stats().jitInstructions).toBe(0);
   });
 });
+
+describe('walker boundary and permission audit', () => {
+  it('never aliases unsupported virtual addresses, even in bare or M mode', () => {
+    let reads = 0;
+    const mmu = new Mmu({
+      readPte: () => {
+        reads++;
+        return RWX;
+      },
+    });
+    for (const satp of [0n, 0x80000000n, 8n << 60n]) {
+      mmu.setSatp(satp);
+      for (const privilege of [0, 1, 3]) {
+        mmu.privilege = privilege;
+        for (const address of [0x100000000, 0x8000000000, -1, 1.5, Infinity, NaN]) {
+          for (const access of ['fetch', 'load', 'store', 'amo'] as const) {
+            const result = mmu.translate(address, access);
+            expect(result.ok).toBe(false);
+            if (!result.ok) expect(result.tval).toBe(address);
+          }
+          expect(() => mmu.invalidateVpn(address)).toThrow(RangeError);
+        }
+      }
+    }
+    expect(reads).toBe(0);
+  });
+  it('does not truncate the public root table address', () => {
+    const mmu = new Mmu({ readPte: () => null });
+    mmu.setSatp(0x80100000n);
+    expect(() => mmu.rootTable).toThrow(RangeError);
+    mmu.setSatp((8n << 60n) | 0x100000n);
+    expect(() => mmu.rootTable).toThrow(RangeError);
+  });
+  it('rechecks SUM/MXR on TLB hits; SUM never permits supervisor execution of user pages', () => {
+    const mmu = new Mmu({ readPte: () => PTE_V | PTE_X | PTE_U | PTE_A });
+    mmu.setSatp(0x80000000n);
+    mmu.privilege = 0;
+    expect(mmu.translate(0, 'fetch').ok).toBe(true);
+    expect(mmu.translate(0, 'load').ok).toBe(false);
+    mmu.mxr = true;
+    expect(mmu.translate(0, 'load')).toEqual({ ok: true, pa: 0, tlbHit: true });
+    mmu.privilege = 1;
+    expect(mmu.translate(0, 'load').ok).toBe(false);
+    mmu.sum = true;
+    expect(mmu.translate(0, 'load').ok).toBe(true);
+    expect(mmu.translate(0, 'fetch').ok).toBe(false);
+    mmu.mxr = false;
+    expect(mmu.translate(0, 'load').ok).toBe(false);
+  });
+  it('distinguishes inaccessible page tables from invalid PTEs', () => {
+    const mmu = new Mmu({ readPte: () => null });
+    mmu.privilege = 1;
+    for (const satp of [0x80000000n, 8n << 60n]) {
+      mmu.setSatp(satp);
+      for (const [kind, cause] of [
+        ['fetch', 1],
+        ['load', 5],
+        ['store', 7],
+        ['amo', 7],
+      ] as const)
+        expect(mmu.translate(0, kind)).toEqual({ ok: false, cause, tval: 0 });
+    }
+  });
+  it('rejects reserved nonleaf flags and Sv39 high PTE bits', () => {
+    for (const flag of [PTE_U, PTE_A, PTE_D]) {
+      for (const satp of [0x80000000n, 8n << 60n]) {
+        const mmu = new Mmu({ readPte: () => PTE_V | flag });
+        mmu.privilege = 1;
+        mmu.setSatp(satp);
+        expect(mmu.translate(0, 'load')).toEqual({ ok: false, cause: 13, tval: 0 });
+      }
+    }
+    for (let bit = 54n; bit < 64n; bit++) {
+      const mmu = new Mmu({ readPte: () => RWX | (1n << bit) });
+      mmu.privilege = 1;
+      mmu.setSatp(8n << 60n);
+      expect(mmu.translate(0, 'load')).toEqual({ ok: false, cause: 13, tval: 0 });
+    }
+  });
+});
+
+describe.each([
+  { mode: 'Sv32', satp: 0x80000000n },
+  { mode: 'Sv39', satp: 8n << 60n },
+])('$mode walker at RV32 boundaries', ({ satp }) => {
+  it('preserves the highest representable root address and excludes ASID bits', () => {
+    const mmu = new Mmu({ readPte: () => null });
+    const asid = satp === 0x80000000n ? 0x1ffn << 22n : 0xffffn << 44n;
+    mmu.setSatp(satp | asid | 0xfffffn);
+    expect(mmu.rootTable).toBe(0xfffff000);
+  });
+
+  it('accepts the last RV32 byte and rejects an out-of-range flush without evicting its alias', () => {
+    const va = 0xffffffff;
+    let pte = RWX;
+    const mmu = new Mmu({ readPte: () => pte });
+    mmu.privilege = 1;
+    mmu.setSatp(satp);
+    const initial = mmu.translate(va, 'load');
+    expect(initial).toMatchObject({ ok: true, tlbHit: false });
+    pte = 0n;
+
+    expect(() => mmu.invalidateVpn(va + 0x100000000)).toThrow(RangeError);
+    expect(mmu.translate(va, 'load')).toEqual({ ...initial, tlbHit: true });
+    mmu.invalidateVpn(va);
+    expect(mmu.translate(va, 'load')).toEqual({ ok: false, cause: 13, tval: va });
+  });
+
+  it.each([
+    ['fetch', 12, 1],
+    ['load', 13, 5],
+    ['store', 15, 7],
+    ['amo', 15, 7],
+  ] as const)('uses the correct %s cause for a wide VA with and without paging', (kind, page, access) => {
+    const va = 0x100000007;
+    const mmu = new Mmu({
+      readPte: () => {
+        throw new Error('an unsupported VA must not reach the page table');
+      },
+    });
+    mmu.privilege = 1;
+    expect(mmu.translate(va, kind)).toEqual({ ok: false, cause: access, tval: va });
+    mmu.setSatp(satp);
+    expect(mmu.translate(va, kind)).toEqual({ ok: false, cause: page, tval: va });
+    mmu.privilege = 3;
+    expect(mmu.translate(va, kind)).toEqual({ ok: false, cause: access, tval: va });
+  });
+
+  it('distinguishes a failed lower-level PTE read from an invalid lower-level PTE', () => {
+    const va = 0x234; // Every VPN part is zero in both paging modes.
+    let child: bigint | null = null;
+    const mmu = new Mmu({
+      readPte: (pa) => {
+        if (pa === 0) return sv39Pointer(1n); // This small PPN has the same encoding in Sv32.
+        if (pa === 0x1000) return child;
+        return 0n;
+      },
+    });
+    mmu.privilege = 1;
+    mmu.setSatp(satp);
+    expect(mmu.translate(va, 'load')).toEqual({ ok: false, cause: 5, tval: va });
+    child = 0n;
+    expect(mmu.translate(va, 'load')).toEqual({ ok: false, cause: 13, tval: va });
+  });
+
+  it.each(['store', 'amo'] as const)('rechecks SUM on cached %s accesses', (kind) => {
+    const mmu = new Mmu({ readPte: () => RWX | PTE_U });
+    mmu.privilege = 1;
+    mmu.setSatp(satp);
+
+    expect(mmu.translate(4, kind)).toEqual({ ok: false, cause: 15, tval: 4 });
+    mmu.sum = true;
+    expect(mmu.translate(4, kind)).toEqual({ ok: true, pa: 4, tlbHit: false });
+    mmu.sum = false;
+    expect(mmu.translate(4, kind)).toEqual({ ok: false, cause: 15, tval: 4 });
+    mmu.sum = true;
+    expect(mmu.translate(4, kind)).toEqual({ ok: true, pa: 4, tlbHit: true });
+  });
+
+  it('allows MXR loads after a walk without granting write or AMO permission', () => {
+    const mmu = new Mmu({ readPte: () => PTE_V | PTE_X | PTE_A | PTE_D });
+    mmu.privilege = 1;
+    mmu.setSatp(satp);
+    mmu.mxr = true;
+    expect(mmu.translate(4, 'load')).toEqual({ ok: true, pa: 4, tlbHit: false });
+    expect(mmu.translate(4, 'store')).toEqual({ ok: false, cause: 15, tval: 4 });
+    expect(mmu.translate(4, 'amo')).toEqual({ ok: false, cause: 15, tval: 4 });
+  });
+});

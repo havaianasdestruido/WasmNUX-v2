@@ -1,0 +1,486 @@
+{
+  "version": 1,
+  "env": {
+    "date": "2026-11-20T16:58:59.455Z",
+    "runtime": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.0 Safari/537.36",
+    "platform": "browser",
+    "arch": "unknown",
+    "cpus": 2,
+    "totalMemoryMB": 3940,
+    "wasm": {
+      "threads": true,
+      "sharedMemoryGrowable": true,
+      "atomics": true,
+      "atomicWait": true,
+      "simd": true,
+      "bulkMemory": true,
+      "memory64": true,
+      "tailCalls": true,
+      "exceptions": true,
+      "maxMemory32Pages": 65536,
+      "maxSharedMemoryPages": 65536,
+      "hardwareConcurrency": 2,
+      "crossOriginIsolated": true,
+      "isWorker": false,
+      "isNode": false,
+      "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/153.0.8010.0 Safari/537.36"
+    },
+    "git": {
+      "commit": "29a51a818a132717d9197eacda277289f037a920",
+      "branch": "arena/a4978d81-wasmnux-v2",
+      "dirty": true,
+      "describe": "29a51a8-dirty"
+    }
+  },
+  "results": [
+    {
+      "suite": "wasm",
+      "case": "features",
+      "variant": "probe",
+      "samples": [
+        {
+          "ms": 0.5799999999580905,
+          "instructions": 1
+        },
+        {
+          "ms": 0.7600000000093132,
+          "instructions": 1
+        },
+        {
+          "ms": 0.6099999999860302,
+          "instructions": 1
+        },
+        {
+          "ms": 0.625,
+          "instructions": 1
+        },
+        {
+          "ms": 0.47499999997671694,
+          "instructions": 1
+        }
+      ],
+      "best": {
+        "ms": 0.47499999997671694,
+        "instructions": 1
+      },
+      "median": {
+        "ms": 0.6099999999860302,
+        "instructions": 1
+      },
+      "ips": 2105.2631579979306,
+      "meta": {
+        "threads": true,
+        "sharedMemoryGrowable": true,
+        "atomics": true,
+        "atomicWait": true,
+        "simd": true,
+        "bulkMemory": true,
+        "memory64": true,
+        "tailCalls": true,
+        "exceptions": true,
+        "maxMemory32Pages": 65536,
+        "maxSharedMemoryPages": 65536,
+        "hardwareConcurrency": 2,
+        "crossOriginIsolated": true,
+        "isWorker": false,
+        "isNode": false
+      },
+      "metric": {
+        "name": "probe ms",
+        "value": 0.47499999997671694,
+        "digits": 2,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "memory-reserve",
+      "variant": "4 GiB max, 1 page committed",
+      "samples": [
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.030000000027939677,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 65536
+        }
+      ],
+      "best": {
+        "ms": 0.005000000004656613,
+        "instructions": 65536
+      },
+      "median": {
+        "ms": 0.010000000009313226,
+        "instructions": 65536
+      },
+      "ips": 13107199987.792969,
+      "meta": {
+        "ok": true,
+        "initialPages": 1,
+        "requestedMaxPages": 65536
+      },
+      "metric": {
+        "name": "reserve ms",
+        "value": 0.005000000004656613,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "memory-reserve",
+      "variant": "4 GiB max, shared",
+      "samples": [
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 65536
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 65536
+        }
+      ],
+      "best": {
+        "ms": 0.005000000004656613,
+        "instructions": 65536
+      },
+      "median": {
+        "ms": 0.010000000009313226,
+        "instructions": 65536
+      },
+      "ips": 13107199987.792969,
+      "meta": {
+        "ok": true,
+        "initialPages": 1,
+        "requestedMaxPages": 65536
+      },
+      "metric": {
+        "name": "reserve ms",
+        "value": 0.005000000004656613,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "memory-reserve",
+      "variant": "256 MiB committed",
+      "samples": [
+        {
+          "ms": 0.2900000000372529,
+          "instructions": 4096
+        },
+        {
+          "ms": 1.8199999999487773,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.9450000000651926,
+          "instructions": 4096
+        }
+      ],
+      "best": {
+        "ms": 0.010000000009313226,
+        "instructions": 4096
+      },
+      "median": {
+        "ms": 0.2900000000372529,
+        "instructions": 4096
+      },
+      "ips": 409599999.6185303,
+      "meta": {
+        "ok": true,
+        "initialPages": 4096,
+        "requestedMaxPages": 4096
+      },
+      "metric": {
+        "name": "reserve ms",
+        "value": 0.010000000009313226,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "memory-reserve",
+      "variant": "256 MiB committed, shared",
+      "samples": [
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.010000000009313226,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.005000000004656613,
+          "instructions": 4096
+        }
+      ],
+      "best": {
+        "ms": 0.005000000004656613,
+        "instructions": 4096
+      },
+      "median": {
+        "ms": 0.005000000004656613,
+        "instructions": 4096
+      },
+      "ips": 819199999.2370605,
+      "meta": {
+        "ok": true,
+        "initialPages": 4096,
+        "requestedMaxPages": 4096
+      },
+      "metric": {
+        "name": "reserve ms",
+        "value": 0.005000000004656613,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "module-compile",
+      "variant": "256 instructions",
+      "samples": [
+        {
+          "ms": 0.07499999995343387,
+          "instructions": 256
+        },
+        {
+          "ms": 0.07999999995809048,
+          "instructions": 256
+        },
+        {
+          "ms": 0.07999999995809048,
+          "instructions": 256
+        },
+        {
+          "ms": 0.06499999994412065,
+          "instructions": 256
+        },
+        {
+          "ms": 0.19999999995343387,
+          "instructions": 256
+        }
+      ],
+      "best": {
+        "ms": 0.06499999994412065,
+        "instructions": 256
+      },
+      "median": {
+        "ms": 0.07999999995809048,
+        "instructions": 256
+      },
+      "ips": 3938461.5418473645,
+      "meta": {
+        "moduleBytes": 936,
+        "nsPerInsn": 781.25
+      },
+      "metric": {
+        "name": "compile ms",
+        "value": 0.06499999994412065,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "module-compile",
+      "variant": "4096 instructions",
+      "samples": [
+        {
+          "ms": 0.13500000000931323,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.10499999998137355,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.10499999998137355,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.10999999998603016,
+          "instructions": 4096
+        },
+        {
+          "ms": 0.08999999996740371,
+          "instructions": 4096
+        }
+      ],
+      "best": {
+        "ms": 0.08999999996740371,
+        "instructions": 4096
+      },
+      "median": {
+        "ms": 0.10499999998137355,
+        "instructions": 4096
+      },
+      "ips": 45511111.12759437,
+      "meta": {
+        "moduleBytes": 14376,
+        "nsPerInsn": 21.973
+      },
+      "metric": {
+        "name": "compile ms",
+        "value": 0.08999999996740371,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "module-compile",
+      "variant": "32768 instructions",
+      "samples": [
+        {
+          "ms": 0.375,
+          "instructions": 32768
+        },
+        {
+          "ms": 0.6700000000419095,
+          "instructions": 32768
+        },
+        {
+          "ms": 0.4100000000325963,
+          "instructions": 32768
+        },
+        {
+          "ms": 0.4649999999674037,
+          "instructions": 32768
+        },
+        {
+          "ms": 0.375,
+          "instructions": 32768
+        }
+      ],
+      "best": {
+        "ms": 0.375,
+        "instructions": 32768
+      },
+      "median": {
+        "ms": 0.4100000000325963,
+        "instructions": 32768
+      },
+      "ips": 87381333.33333333,
+      "meta": {
+        "moduleBytes": 114730,
+        "nsPerInsn": 11.444
+      },
+      "metric": {
+        "name": "compile ms",
+        "value": 0.375,
+        "digits": 3,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    },
+    {
+      "suite": "wasm",
+      "case": "atomics-micro",
+      "variant": "micro x1000000",
+      "samples": [
+        {
+          "ms": 38.660000000032596,
+          "instructions": 1000000
+        },
+        {
+          "ms": 38.66499999992084,
+          "instructions": 1000000
+        },
+        {
+          "ms": 39.14000000001397,
+          "instructions": 1000000
+        },
+        {
+          "ms": 41.15000000002328,
+          "instructions": 1000000
+        },
+        {
+          "ms": 40.68999999994412,
+          "instructions": 1000000
+        }
+      ],
+      "best": {
+        "ms": 38.660000000032596,
+        "instructions": 1000000
+      },
+      "median": {
+        "ms": 39.14000000001397,
+        "instructions": 1000000
+      },
+      "ips": 25866528.71182506,
+      "stats": {
+        "atomicsAddNs": 14.305,
+        "atomicsCmpxchgNs": 14.13,
+        "wasmAtomicAddNs": 11.19,
+        "wasmPlainStoreNs": 0.295
+      },
+      "meta": {
+        "jsAtomicsAddNs": 14.305,
+        "jsCmpxchgNs": 14.13,
+        "wasmAtomicAddNs": 11.19,
+        "wasmPlainStoreLoadNs": 0.295
+      },
+      "metric": {
+        "name": "wasm atomic ns/op",
+        "value": 11.19,
+        "digits": 2,
+        "lowerIsBetter": true
+      },
+      "showMeta": true
+    }
+  ],
+  "durationMs": 321.61999999999534
+}

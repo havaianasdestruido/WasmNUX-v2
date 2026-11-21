@@ -10,8 +10,8 @@ alternative was measured and lost.
 
 ```sh
 nvm use            # Node >= 22.12, see .nvmrc
-npm install        # workspaces: core, host, relay, benchmarks
-npm test           # 288 tests
+npm ci             # workspaces: core, host, relay, benchmarks
+npm test           # unit and differential tests
 npm run lint       # prettier --check + tsc --noEmit
 ```
 
@@ -21,17 +21,14 @@ resolver requires the extension, and `allowImportingTsExtensions` is on).
 
 ## Before you open a PR
 
-1. `npm run lint && npm test` pass. CI runs exactly this.
-2. If you touched `core/src/jit/**` or `core/src/cpu/**`, run the benchmark gate
-   and paste the output in the PR:
-
-   ```sh
-   npm run bench:record -- --all --baseline   # once, on a quiet machine, before your change
-   npm run bench:gate -- --suite jit          # after your change
-   ```
-
-   A regression beyond 20% fails the gate. See "Benchmarks" below for why that
-   number is not arbitrary and what to do when it fires.
+1. Run `npm ci`, `npm run lint`, `npm test`, `npm run build`,
+   `npm run test:browser`, `npm run bench`, `npm audit`, and `git diff --check`.
+   Browser tests require Chromium (`WNX_BROWSER` can select an installed binary)
+   and exercise actual OPFS and module workers, not mocks alone.
+2. Benchmark results must pass verification before timing, include warm-up and
+   multiple samples, and report median and dispersion plus environment. Do not
+   regenerate a baseline to hide a regression or use hardware-specific baselines
+   as hosted CI gates. The optional local gate is diagnostic only.
 
 3. New behaviour gets a test in the same PR. For anything in the JIT, that test
    should be **differential** — run it interpreted and run it compiled, compare
@@ -57,7 +54,9 @@ resolver requires the extension, and `allowImportingTsExtensions` is on).
   compute path is in `web/demo.ts` and has no DOM dependency, so it is tested in
   Node; `web/main.ts` is only rendering.
 
-Nothing in `core/src` or `web/` may import Node built-ins. `benchmarks/src/store.ts` and
+Browser-reachable core, host and web modules may not import Node built-ins.
+The Node SMP transport (`core/src/smp/runtime.ts`, `worker.ts`) is explicitly
+Node-only; shared `hart.ts` must remain browser-safe. Web build/test tooling and `benchmarks/src/store.ts` and
 `cli.ts` may (they are the Node-side tools); `benchmarks/src/harness.ts` and
 `browser-entry.ts` may not, because the same harness runs inside a browser
 bundle. That constraint is what makes `npm run bench:browser` possible and it is

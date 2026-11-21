@@ -129,3 +129,16 @@ spinlock-heavy guest path.
 - Size the shared `maximum` from `navigator.deviceMemory` and report refusals.
 - Invalidate the slow-pc set when guest mappings change.
 - Test that guest writes to the control-page offset fault.
+
+## 2026-11-20 implementation checkpoint
+
+Node and browser interpreter workers now use the same `runHart` entry, shared
+Wasm memory and SmpChannel reservation lock. The browser transport has explicit
+resource limits and cleanup tests; generated-code SMP and shared devices/IPIs
+remain unsupported. This is not an RVWMO conformance claim. See
+[host runtime](../host-runtime.md) for the host-write restriction and evidence.
+
+The continuation adds an explicit coordinated host write API and routes syscall
+input through the same reservation lock. Raw memory views remain outside the
+contract; this is not complete DMA/device coherence or JIT SMP. SMP options now
+reject RAM bases not divisible by four before allocating memory or starting workers.

@@ -270,7 +270,10 @@ describe('CodeRabbit correctness regressions', () => {
   it('rounds ELF heap placement above a high-address loaded segment', () => {
     const elf = new Uint8Array(85);
     const v = new DataView(elf.buffer);
-    elf.set([0x7f, 0x45, 0x4c, 0x46, 1, 1]);
+    elf.set([0x7f, 0x45, 0x4c, 0x46, 1, 1, 1]);
+    v.setUint16(16, 2, true);
+    v.setUint32(20, 1, true);
+    v.setUint16(40, 52, true);
     v.setUint16(18, 243, true);
     v.setUint32(24, BASE + 0x2000, true);
     v.setUint32(28, 52, true);
@@ -280,7 +283,8 @@ describe('CodeRabbit correctness regressions', () => {
     v.setUint32(56, 84, true);
     v.setUint32(60, BASE + 0x2000, true);
     v.setUint32(68, 1, true);
-    v.setUint32(72, 1, true);
+    v.setUint32(72, 4, true);
+    v.setUint32(76, 1, true);
     elf[84] = 0x42;
     const m = new Machine({ ramBytes: 65536 });
     m.load(elf);

@@ -99,3 +99,13 @@ hardware virtualisation; anything requiring Memory64 at runtime.
 - `core/src/cpu/{encoding,asm,interp,state}.ts` — the RV32IMA implementation.
 - `core/test/jit.test.ts` — 132 differential tests, interpreter vs 8 JIT configurations.
 - `benchmarks/suites/jit.ts`, `benchmarks/suites/baseline.ts` — workload shapes and the 8086emu comparator.
+
+## 2026-11-20 implementation checkpoint
+
+RV64GC remains the target, not the implemented ISA. The current MMU API accepts
+unsigned RV32 virtual addresses only, even when its experimental Sv39 walker
+is selected. Unsupported high addresses now fault rather than aliasing low RAM;
+this is a safety restriction, **not** full-width Sv39 support. Walker SUM/MXR
+controls do not implement privileged CPU status CSRs. The historical external
+comparator ratios above are not validated equivalent-work evidence; see the
+current [integration status](../integration-status.md) and verification report.

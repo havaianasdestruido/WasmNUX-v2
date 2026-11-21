@@ -21,25 +21,33 @@ all proposed features are implemented or that their benchmark evidence remains v
   the interpreter instead of the JIT.
 - **Experimental — MMU.** `core/src/mmu` provides a walker and TLB with targeted
   Sv32/Sv39 tests (`core/test/mmu.test.ts`). The CPU is RV32; this is not full
-  Sv39/RV64, and privilege, delegation, permissions and wider physical addresses
-  are incomplete. Out-of-range physical addresses are rejected, not truncated.
+  Sv39/RV64, and privilege CSR integration, delegation and wider physical addresses
+  are incomplete. SUM/MXR are explicit walker controls, not CPU status CSRs.
+  Unsupported virtual addresses are rejected before narrowing; reserved PTEs
+  fault and inaccessible page tables produce access faults. Out-of-range physical addresses are rejected, not truncated.
 - **Experimental — SMP.** `core/src/smp` starts Node `worker_threads` with shared
   Wasm RAM and a reservation table. `core/test/smp.test.ts` covers LR/SC and AMO
   stress and the runtime timeout. All coordinated writes must pass through the
-  channel; arbitrary host writes, generated code and devices are not coherent.
-  Browser workers and coherent devices/IPIs are not implemented.
+  channel; raw-view host writes, generated code and devices are not coherent.
+  Explicit `Machine.writeHostBytes` and syscall input use the reservation barrier.
+  The browser transport in `host/src/smp.ts` uses the same `runHart` function
+  and reservation channel. Coherent devices/IPIs remain unimplemented.
 - **Partial — machine and memory.** `core/src/machine` connects RAM, interpreter,
   JIT, syscall and limited MMIO handling. `core/test/memory.test.ts` covers RAM
   bounds, physical-address rejection and control-page isolation. It is not an
   untrusted-guest security boundary; public typed views can still be modified by
   callers. `core/src/devices` contains a UART, CLINT and device bus, not a full
   virtio platform.
-- **Partial — web.** `web/` builds a demo and `web/test/browser.ts` runs a
-  cross-origin-isolated Chromium smoke test. It is not a complete browser host.
-- **Planned / unsupported — host systems.** `host/src/index.ts` and
-  `relay/src/index.ts` are placeholders. Durable OPFS storage, display/GPU,
-  networking, relay, terminal, IWA, virtio and Debian boot are not implemented.
-  No storage crash-consistency or network security claim follows from this branch.
+- **Partial — web.** `web/` builds a demo and a module hart worker. `web/test/browser.ts` runs
+  cross-origin-isolated Chromium demo, SMP stress and OPFS failure tests. It is not a complete browser host.
+- **Experimental — host snapshots.** `host/src/storage/snapshot.ts` offers bounded
+  whole-file OPFS replacement under Web Locks. `createWritable` stages bytes;
+  `close` publishes. A bounded sector backend uses locked read-modify-replace
+  transactions over the same storage API. Neither is a chunk store, guest block
+  device or fsync bridge.
+  See [host runtime](docs/host-runtime.md) for limits and failure semantics.
+- **Planned / unsupported — remaining host systems.** Display/GPU, networking,
+  relay, terminal, IWA, virtio and Debian boot are not implemented.
 
 ## Measurement and verification
 
@@ -56,5 +64,6 @@ without hardware-specific performance gates.
 
 Guest inputs, devices, the loader and syscalls have not received a complete
 security review. The SMP channel only coordinates accesses using that channel.
-No browser persistence or remote network isolation guarantee exists. Do not run
+OPFS tests cover application failures and worker termination, not power loss
+or origin eviction. No remote network isolation guarantee exists. Do not run
 untrusted guests or treat these prototypes as production infrastructure.

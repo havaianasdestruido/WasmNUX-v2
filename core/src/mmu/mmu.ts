@@ -67,6 +67,9 @@ export class Mmu {
   satp = 0n;
   /** 0 = U, 1 = S, 3 = M. M-mode ignores translation. */
   privilege = 3;
+  /** Walker controls; wiring to privileged CPU mstatus/sstatus remains outstanding. */
+  sum = false;
+  mxr = false;
 
   private readonly entries: TlbEntry[] = Array.from({ length: TLB_SIZE }, () => ({
     valid: false,
@@ -99,10 +102,9 @@ export class Mmu {
 
   /** Root table physical address (PPN field shifted to a byte address). */
   get rootTable(): number {
-    if (this.mode === 'sv39') {
-      return Number((this.satp & 0x0000_0fff_ffff_ffffn) << 12n) >>> 0;
-    }
-    return Number((this.satp & 0x0000_0000_003f_ffffn) << 12n) >>> 0;
+    const ppn = this.satp & (this.mode === 'sv39' ? 0x0000_0fff_ffff_ffffn : 0x3f_ffffn);
+    if (ppn > 0xf_ffffn) throw new RangeError('root table exceeds supported physical address width');
+    return Number(ppn << 12n);
   }
 
   /** True when guest virtual addresses must be translated. */
@@ -124,7 +126,9 @@ export class Mmu {
 
   /** Address-specific flush (`sfence.vma rs1, rs2` with rs1 != 0). */
   invalidateVpn(va: number): void {
-    const address = va >>> 0;
+    if (!Number.isInteger(va) || va < 0 || va > 0xffffffff)
+      throw new RangeError('TLB address exceeds supported RV32 width');
+    const address = va;
     for (const e of this.entries) {
       if (!e.valid) continue;
       const bits = 12 + e.level * (e.mode === 'sv32' ? 10 : 9);
@@ -139,14 +143,18 @@ export class Mmu {
    * Page faults return the RISC-V cause and the faulting VA in `tval`.
    */
   translate(va: number, kind: AccessKind): TranslateResult {
-    const v = va >>> 0;
+    // This API currently supports only unsigned RV32 addresses, including in
+    // the experimental Sv39 walker. Never alias an unsupported high VA into RAM.
+    if (!Number.isInteger(va) || va < 0 || va > 0xffffffff) {
+      return {
+        ok: false,
+        cause: this.active ? this.faultCause(kind) : kind === 'fetch' ? 1 : kind === 'load' ? 5 : 7,
+        tval: va,
+      };
+    }
+    const v = va;
     if (this.mode === 'bare' || this.privilege === 3) {
       return { ok: true, pa: v, tlbHit: false };
-    }
-    if (this.mode === 'sv39' && v >= 0x8000_0000_00) {
-      // Canonical Sv39 addresses need bits 63:39 == bit 38; a 32-bit VA cannot
-      // represent the sign-extended half, so bit 38 set is always non-canonical.
-      return { ok: false, cause: this.faultCause(kind), tval: v };
     }
 
     const vpn = v >> 12;
@@ -174,7 +182,7 @@ export class Mmu {
     for (;;) {
       const vpnPart = level === 1 ? (va >>> 22) & 0x3ff : (va >>> 12) & 0x3ff;
       const pte = this.host.readPte((a + vpnPart * 4) >>> 0, 4);
-      if (pte === null) return this.fault(kind, va);
+      if (pte === null) return this.accessFault(kind, va);
       if ((pte & PTE_V) === 0n || ((pte & PTE_R) === 0n && (pte & PTE_W) !== 0n)) return this.fault(kind, va);
       if (((pte >> 10n) & 0x3f_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
       const leaf = (pte & (PTE_R | PTE_X)) !== 0n;
@@ -195,7 +203,7 @@ export class Mmu {
         this.fillTlb(vpn, 'sv32', pte, level);
         return { ok: true, pa, tlbHit: false };
       }
-      if (level === 0) return this.fault(kind, va);
+      if ((pte & (PTE_U | PTE_A | PTE_D)) !== 0n || level === 0) return this.fault(kind, va);
       // A Sv32 pointer PTE's next-level base is the full 22-bit PPN << 12.
       const next = (pte >> 10n) & 0x3f_ffffn;
       a = Number(next << 12n) >>> 0;
@@ -211,8 +219,9 @@ export class Mmu {
       const shift = 12 + level * 9;
       const vpnPart = (va >>> shift) & 0x1ff;
       const pte = this.host.readPte((a + vpnPart * 8) >>> 0, 8);
-      if (pte === null) return this.fault(kind, va);
+      if (pte === null) return this.accessFault(kind, va);
       if ((pte & PTE_V) === 0n || ((pte & PTE_R) === 0n && (pte & PTE_W) !== 0n)) return this.fault(kind, va);
+      if (pte >> 54n !== 0n) return this.fault(kind, va);
       if (((pte >> 10n) & 0x0000_0fff_ffff_ffffn) > 0xf_ffffn) return this.accessFault(kind, va);
       const leaf = (pte & (PTE_R | PTE_X)) !== 0n;
       if (leaf) {
@@ -236,7 +245,7 @@ export class Mmu {
         this.fillTlb(vpn, 'sv39', pte, level);
         return { ok: true, pa, tlbHit: false };
       }
-      if (level === 0) return this.fault(kind, va);
+      if ((pte & (PTE_U | PTE_A | PTE_D)) !== 0n || level === 0) return this.fault(kind, va);
       const next = (pte >> 10n) & 0x0000_0fff_ffff_ffffn; // 44-bit PPN
       a = Number(next << 12n) >>> 0;
       level--;
@@ -272,13 +281,15 @@ export class Mmu {
     }
     const user = (pte & PTE_U) !== 0n;
     if (this.privilege === 0 && !user) return { ok: false, cause: this.faultCause(kind) };
-    if (this.privilege === 1 && user) return { ok: false, cause: this.faultCause(kind) };
+    if (this.privilege === 1 && user && (kind === 'fetch' || !this.sum))
+      return { ok: false, cause: this.faultCause(kind) };
     switch (kind) {
       case 'fetch':
         if ((pte & PTE_X) === 0n) return { ok: false, cause: this.faultCause(kind) };
         break;
       case 'load':
-        if ((pte & PTE_R) === 0n) return { ok: false, cause: this.faultCause(kind) };
+        if ((pte & PTE_R) === 0n && !(this.mxr && (pte & PTE_X) !== 0n))
+          return { ok: false, cause: this.faultCause(kind) };
         break;
       case 'store':
       case 'amo':
