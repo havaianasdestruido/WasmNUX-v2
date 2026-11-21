@@ -82,6 +82,14 @@ the dev server and demo page, not a workspace.
 
 ## Try it in a browser
 
+Hosted: **https://havaianasdestruido.github.io/WasmNUX-v2/** — built from `main`
+by `.github/workflows/pages.yml` and published from `dist/web`. Enabling it once
+means Settings → Pages → Build and deployment → Source: **GitHub Actions**; after
+that every push to `main` deploys. Asset URLs are relative, so the build works
+from that project subpath (or any other) without a base-path setting.
+
+Locally:
+
 ```sh
 npm run serve      # http://localhost:8080
 ```
@@ -92,6 +100,12 @@ prints throughput, engine counters and whether the two engines agree. It sets
 COOP/COEP, so `SharedArrayBuffer` — and therefore shared guest RAM and Wasm
 atomics — actually exist there (ADR-0010), and it says so on the page when they
 do not. The compute path is DOM-free and tested in Node (`web/test/demo.test.ts`).
+
+GitHub Pages cannot send COOP/COEP at all, so the Pages build is statically
+hostable instead: `web/coi-serviceworker.js` adds the headers to same-origin
+responses and the page reloads once on the first visit (ADR-0010 §2). That extra
+navigation is why the dev server remains the better local path — it sets the
+headers directly, and the page works on the first load.
 
 ## Commands
 

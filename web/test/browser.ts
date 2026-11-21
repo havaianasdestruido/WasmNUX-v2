@@ -16,6 +16,12 @@ const html = await readFile(new URL('../../dist/web/index.html', import.meta.url
 const js = await readFile(new URL('../../dist/web/main.js', import.meta.url));
 const assets = new Map<string, string | Buffer>();
 assets.set('/hart.js', await readFile(new URL('../../dist/web/hart.js', import.meta.url)));
+// Served although unused here: the runner already sets COOP/COEP, so the page
+// never registers it. It keeps a 404 out of the console if that ever changes.
+assets.set(
+  '/coi-serviceworker.js',
+  await readFile(new URL('../../dist/web/coi-serviceworker.js', import.meta.url)),
+);
 for (const [name, source] of [
   ['browser-checks', '../../host/test/browser-checks.ts'],
   ['storage-worker', '../../host/test/storage-worker.ts'],

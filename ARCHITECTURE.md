@@ -38,8 +38,10 @@ all proposed features are implemented or that their benchmark evidence remains v
   untrusted-guest security boundary; public typed views can still be modified by
   callers. `core/src/devices` contains a UART, CLINT and device bus, not a full
   virtio platform.
-- **Partial — web.** `web/` builds a demo and a module hart worker. `web/test/browser.ts` runs
-  cross-origin-isolated Chromium demo, SMP stress and OPFS failure tests. It is not a complete browser host.
+- **Partial — web.** `web/` builds a demo and a module hart worker; `npm run build` emits the
+  static site deployed to GitHub Pages, where `web/coi-serviceworker.js` supplies the COOP/COEP
+  headers a static host cannot (ADR-0010). `web/test/browser.ts` runs cross-origin-isolated
+  Chromium demo, SMP stress and OPFS failure tests. It is not a complete browser host.
 - **Experimental — host snapshots.** `host/src/storage/snapshot.ts` offers bounded
   whole-file OPFS replacement under Web Locks. `createWritable` stages bytes;
   `close` publishes. A bounded sector backend uses locked read-modify-replace
